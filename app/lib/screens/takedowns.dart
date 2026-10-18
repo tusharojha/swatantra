@@ -15,7 +15,6 @@ class TakedownsScreen extends StatefulWidget {
 class _TakedownsScreenState extends State<TakedownsScreen> {
   List<ArkivEntity> items = [];
   bool loading = true;
-  bool proof = false;
   String platform = 'X';
   final law = TextEditingController(text: 'IT Act s.79 (synthetic)');
   final notes = TextEditingController();
@@ -45,13 +44,11 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
       if (list.isEmpty) {
         setState(() {
           items = ProofEdition.takedowns;
-          proof = true;
           loading = false;
         });
       } else {
         setState(() {
           items = list;
-          proof = false;
           loading = false;
         });
       }
@@ -60,7 +57,6 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
         setState(() {
           status = '$e';
           items = ProofEdition.takedowns;
-          proof = true;
           loading = false;
         });
       }
@@ -90,22 +86,18 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return PageWidth(
+      max: Swa.articleWidth,
+      child: ListView(
       padding: Swa.pagePadding,
       children: [
         const SectionHead(
           kicker: 'The record',
           title: 'Takedown log',
           dek:
-              'A public tracker of notices journalists record. Synthetic in the demo. Attributes: platform, notice_date_ms, law_cited, authority_named.',
+              'A public tracker of notices journalists record. Attributes: platform, notice_date_ms, law_cited, authority_named.',
         ),
-        const SizedBox(height: 16),
-        if (proof) ...[
-          TestModeBanner(ProofEdition.banner),
-          const SizedBox(height: 12),
-          Text('SYNTHETIC DEMO · LAYOUT ONLY · NOT ON-CHAIN', style: Swa.kicker),
-          const SizedBox(height: 12),
-        ],
+        const SizedBox(height: 24),
         if (loading) const Center(child: CircularProgressIndicator()),
         if (!loading && items.isEmpty)
           Text('No notices on Arkiv yet. File one with a funded burner.', style: Swa.serif(size: 15, color: Swa.muted)),
@@ -165,6 +157,7 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
         FilledButton(onPressed: _submit, child: const Text('WRITE TAKEDOWN ENTITY')),
         if (status != null) ...[const SizedBox(height: 12), TestModeBanner(status!)],
       ],
+    ),
     );
   }
 }

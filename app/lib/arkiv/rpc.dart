@@ -12,8 +12,8 @@ class QueryPage {
 }
 
 class ArkivRpc {
-  static final _uri = Uri.parse(Config.rpc);
   int _id = 1;
+  Uri get _uri => Uri.parse(Config.rpc);
 
   Future<dynamic> _call(String method, List<dynamic> params) async {
     final id = _id++;

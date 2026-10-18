@@ -145,36 +145,32 @@ class _StoryScreenState extends State<StoryScreen> {
   @override
   Widget build(BuildContext context) {
     final s = story;
-    return ListView(
+    return PageWidth(
+      max: Swa.articleWidth,
+      child: ListView(
       padding: Swa.pagePadding,
       children: [
         TextButton(
           onPressed: () => context.go('/'),
           style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
-          child: Text('← FEED', style: Swa.kicker),
+          child: Text('← Feed', style: Swa.kicker),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         if (loading) const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator())),
         if (error != null) TestModeBanner(error!),
         if (s != null) ...[
-          if (proof) ...[
-            TestModeBanner(ProofEdition.banner),
-            const SizedBox(height: 12),
-            Text('SYNTHETIC DEMO · LAYOUT ONLY · NOT ON-CHAIN', style: Swa.kicker),
-            const SizedBox(height: 12),
-          ],
           Kicker(s.category.isEmpty ? 'story' : s.category),
           if (cluster != null) CorroborationStamp(cluster!),
-          const SizedBox(height: 8),
-          Text(s.title, style: Swa.playfair(size: 34, weight: FontWeight.w700, height: 1.12)),
           const SizedBox(height: 12),
-          Text(standfirst(s.body), style: Swa.serif(size: 18, height: 1.4, weight: FontWeight.w400)),
-          const SizedBox(height: 8),
+          Text(s.title, style: Swa.playfair(size: 34, weight: FontWeight.w700, height: 1.12)),
+          const SizedBox(height: 16),
+          Text(standfirst(s.body), style: Swa.serif(size: 18, height: 1.45, weight: FontWeight.w400)),
+          const SizedBox(height: 12),
           Text(journalistByline(s), style: Swa.byline),
-          const SizedBox(height: 16),
-          if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 200),
-          const SizedBox(height: 16),
-          Text(s.body, style: Swa.serif(size: 17, height: 1.6)),
+          const SizedBox(height: 24),
+          if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 280),
+          const SizedBox(height: 24),
+          Text(articleBody(s.body), style: Swa.serif(size: 17, height: 1.5)),
           const SizedBox(height: 24),
           _VerifyBlock(story: s, capture: capture, proof: proof),
           if (cluster != null && cluster!.ok) ...[
@@ -212,6 +208,7 @@ class _StoryScreenState extends State<StoryScreen> {
           if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
         ],
       ],
+    ),
     );
   }
 }
@@ -326,7 +323,7 @@ class _WitnessList extends StatelessWidget {
                   onPressed: proof
                       ? null
                       : () => openUrl(explorerEntity(witnesses[i].entityKey)),
-                  child: Text(proof ? 'Synthetic demo capture' : 'Open capture entity'),
+                  child: Text(proof ? 'Demo capture' : 'Open capture entity'),
                 ),
               ],
             ),

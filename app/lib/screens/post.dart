@@ -8,6 +8,7 @@ import '../arkiv/js.dart';
 import '../arkiv/service.dart';
 import '../geo/districts.dart';
 import '../models.dart';
+import '../screens/onboard.dart';
 import '../theme.dart';
 import '../wallet.dart';
 import '../widgets/bits.dart';
@@ -129,7 +130,20 @@ class _PostScreenState extends State<PostScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    if (WalletStore.address == null) {
+      return PageWidth(
+        max: Swa.articleWidth,
+        child: ListView(
+          padding: Swa.pagePadding,
+          children: [
+            OnboardPanel(onReady: () => setState(() {})),
+          ],
+        ),
+      );
+    }
+    return PageWidth(
+      max: Swa.articleWidth,
+      child: ListView(
       padding: Swa.pagePadding,
       children: [
         const SectionHead(
@@ -285,6 +299,7 @@ class _PostScreenState extends State<PostScreen> {
           style: Swa.serif(size: 13, color: Swa.muted, height: 1.4),
         ),
       ],
+    ),
     );
   }
 }

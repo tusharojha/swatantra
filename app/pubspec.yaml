@@ -40,6 +40,16 @@ flutter:
   assets:
     - assets/logo.png
     - web/seed/
+  fonts:
+    - family: PlayfairDisplay
+      fonts:
+        - asset: fonts/PlayfairDisplay-Variable.ttf
+    - family: SourceSerif4
+      fonts:
+        - asset: fonts/SourceSerif4-Variable.ttf
+    - family: Inter
+      fonts:
+        - asset: fonts/Inter-Variable.ttf
 
 flutter_launcher_icons:
   android: true

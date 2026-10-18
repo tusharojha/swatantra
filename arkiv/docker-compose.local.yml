@@ -1,0 +1,33 @@
+# Official Arkiv / Golem Base local --dev node.
+# Build: docker compose -f arkiv/docker-compose.local.yml up --build
+# RPC http://127.0.0.1:8545  WS ws://127.0.0.1:8546  chain 1337
+# Prefunded geth --dev account is printed in the logs (eth.coinbase).
+# rpcplorer is omitted so port 8080 stays free for the Flutter demo.
+#
+# Image source: https://github.com/Golem-Base/golembase-op-geth (Dockerfile)
+
+services:
+  arkiv:
+    image: golembase-op-geth:local
+    build:
+      context: ${GOLEMBASE_OP_GETH:-../golembase-op-geth}
+      dockerfile: Dockerfile
+    network_mode: host
+    command: >
+      --dev
+      --http
+      --http.api eth,web3,net,debug,arkiv,golembase
+      --http.addr 0.0.0.0
+      --http.port 8545
+      --http.corsdomain *
+      --http.vhosts *
+      --ws
+      --ws.addr 0.0.0.0
+      --ws.port 8546
+      --ws.origins *
+      --verbosity 3
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8545"]
+      interval: 5s
+      timeout: 5s
+      retries: 8

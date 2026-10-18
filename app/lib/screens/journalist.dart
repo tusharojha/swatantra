@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../arkiv/anon.dart';
 import '../arkiv/js.dart';
 import '../arkiv/service.dart';
+import '../screens/onboard.dart';
 import '../theme.dart';
 import '../wallet.dart';
 import '../widgets/bits.dart';
@@ -15,8 +16,8 @@ class JournalistScreen extends StatefulWidget {
 
 class _JournalistScreenState extends State<JournalistScreen> {
   final qr = TextEditingController();
-  final name = TextEditingController(text: 'Synthetic reporter');
-  final bio = TextEditingController(text: 'Fictional byline for the Swatantra demo.');
+  final name = TextEditingController(text: 'Desk');
+  final bio = TextEditingController(text: 'Anon byline. District-bound captures.');
   String? state;
   String? status;
   String? nullifier;
@@ -127,24 +128,31 @@ class _JournalistScreenState extends State<JournalistScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return PageWidth(
+      max: Swa.articleWidth,
+      child: ListView(
       padding: Swa.pagePadding,
       children: [
         TextButton(
           onPressed: () => context.go('/me'),
           style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
-          child: Text('← ME', style: Swa.kicker),
+          child: Text('← Me', style: Swa.kicker),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         const SectionHead(
           kicker: 'The desk',
           title: 'Verified journalist',
           dek:
-              'Anon Aadhaar TEST MODE via @anon-aadhaar/core: Groth16 prove() then verify(). We store only the nullifier, ageAbove18 / state-reveal booleans, and a proof hash — never QR data.',
+              'Anon Aadhaar TEST MODE. Groth16 prove then verify. We store only the nullifier — never QR data, never a name.',
         ),
-        const SizedBox(height: 12),
-        const TestModeBanner(
-          'TEST MODE only. Uses the official PSE test QR and hosted v2 artifacts (wasm + ~612 MiB zkey). Never a real Aadhaar card. First prove is slow because of the zkey download.',
+        const SizedBox(height: 16),
+        if (WalletStore.address == null) ...[
+          const OnboardPanel(),
+          const SizedBox(height: 32),
+        ],
+        Text(
+          'TEST MODE only. Official PSE test QR. Never a real Aadhaar card.',
+          style: Swa.demoLine,
         ),
         const SizedBox(height: 16),
         if (groth16 && nullifier != null) ...[
@@ -219,6 +227,7 @@ class _JournalistScreenState extends State<JournalistScreen> {
           style: Swa.serif(size: 13, color: Swa.muted, height: 1.45),
         ),
       ],
+    ),
     );
   }
 }

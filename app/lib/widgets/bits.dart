@@ -58,31 +58,26 @@ class ProofBadge extends StatelessWidget {
   }
 }
 
+class DemoLine extends StatelessWidget {
+  const DemoLine({super.key});
+  static const text =
+      'Demo edition · synthetic stories · switches to live Arkiv data automatically';
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(text, style: Swa.demoLine);
+  }
+}
+
 class TestModeBanner extends StatelessWidget {
   final String text;
   const TestModeBanner(this.text, {super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-      decoration: const BoxDecoration(
-        color: Swa.paper,
-        border: Border(
-          left: BorderSide(color: Swa.magenta, width: 3),
-          top: BorderSide(color: Swa.line),
-          right: BorderSide(color: Swa.line),
-          bottom: BorderSide(color: Swa.line),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('NOTE', style: Swa.kicker),
-          const SizedBox(height: 8),
-          Text(text, style: Swa.serif(size: 14, height: 1.45)),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(text, style: Swa.serif(size: 14, color: Swa.muted, height: 1.45)),
     );
   }
 }
@@ -125,8 +120,8 @@ class SectionHead extends StatelessWidget {
         const SizedBox(height: 8),
         Text(title, style: Theme.of(context).textTheme.headlineMedium),
         if (dek != null) ...[
-          const SizedBox(height: 8),
-          Text(dek!, style: Swa.serif(size: 15, color: Swa.muted, height: 1.45)),
+          const SizedBox(height: 12),
+          Text(dek!, style: Swa.serif(size: 16.5, color: Swa.muted, height: 1.5)),
         ],
       ],
     );
@@ -162,7 +157,7 @@ class Mono extends StatelessWidget {
     return SelectableText(
       text,
       maxLines: maxLines,
-      style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: Swa.muted, height: 1.4),
+      style: Swa.ui(size: 12, color: Swa.muted, weight: FontWeight.w400, height: 1.4, spacing: 0),
     );
   }
 }
@@ -194,9 +189,28 @@ class StoryImage extends StatelessWidget {
       width: w,
       fit: fit,
       filterQuality: FilterQuality.medium,
-      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      errorBuilder: (_, __, ___) {
+        final asset = assetForStory(story);
+        if (asset == null) return const SizedBox.shrink();
+        return Image.asset(asset, height: height, width: w, fit: fit, filterQuality: FilterQuality.medium);
+      },
     );
   }
+}
+
+String? assetForStory(ArkivEntity s) {
+  final m = s.mediaUrl;
+  final name = m.split('/').last;
+  if (name.startsWith('s') && name.endsWith('.jpg')) return 'web/seed/$name';
+  if (s.key.contains('s1')) return 'web/seed/s1.jpg';
+  if (s.key.contains('s2')) return 'web/seed/s2.jpg';
+  if (s.key.contains('s3')) return 'web/seed/s3.jpg';
+  if (s.key.contains('s4')) return 'web/seed/s4.jpg';
+  if (s.key.contains('s5')) return 'web/seed/s5.jpg';
+  if (s.key.contains('s6')) return 'web/seed/s6.jpg';
+  if (s.key.contains('s7')) return 'web/seed/s7.jpg';
+  if (s.key.contains('s8')) return 'web/seed/s8.jpg';
+  return null;
 }
 
 String editionDateline([DateTime? now]) {
@@ -254,17 +268,31 @@ String relativeTime(int ms) {
   return '${d.day} ${months[d.month - 1]}';
 }
 
+const _desks = {
+  '0x2e1733523b5704cf431378618cc5e74bb1248997': 'Desk MH-A',
+  '0xf96c7f67f72301038ec538e422e0d52e7dd81ccf': 'Desk DL-B',
+  '0x68f0ee5526e28e9072a9fa398d91a5a867001645': 'Desk ML-C',
+};
+
+String deskIdFor(String creator) {
+  return _desks[creator.toLowerCase()] ?? 'Desk ${shortAddr(creator)}';
+}
+
 String journalistByline(ArkivEntity s) {
-  final place = s.city.isNotEmpty ? s.city : (s.state.isNotEmpty ? s.state : 'India');
-  return 'Verified Journalist · $place · ${relativeTime(s.createdAtMs)}';
+  final district = s.district.isNotEmpty ? s.district : (s.city.isNotEmpty ? s.city : 'India');
+  return '${deskIdFor(s.creator)} · $district district · ${relativeTime(s.createdAtMs)}';
 }
 
 String standfirst(String body) {
+  final para = articleBody(body).split(RegExp(r'\n\s*\n')).first.replaceAll('\n', ' ').trim();
+  if (para.length <= 220) return para;
+  return '${para.substring(0, 217).trim()}…';
+}
+
+String articleBody(String body) {
   var clean = body.trim();
-  clean = clean.replaceFirst(RegExp(r'^SYNTHETIC[^\n]*\n+'), '');
-  final para = clean.split(RegExp(r'\n\s*\n')).first.replaceAll('\n', ' ').trim();
-  if (para.length <= 200) return para;
-  return '${para.substring(0, 197).trim()}…';
+  clean = clean.replaceFirst(RegExp(r'^SYNTHETIC[^\n]*\n+', caseSensitive: false), '');
+  return clean;
 }
 
 Future<void> copy(BuildContext context, String text) async {

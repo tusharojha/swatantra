@@ -115,9 +115,9 @@ https://github.com/tusharojha/swatantra/blob/main/arkiv/friction.md
 | Journalist C (Northeast, synthetic) | `0x68F0Ee5526e28e9072A9Fa398d91A5a867001645` |
 | Reader burner (unused in seed) | `0x376B04bB89b6486d7f30C7B9a2251500cfae9ffF` |
 
-**[FILL AFTER SEED]** entity keys + explorer tx links: [`arkiv/seed-result.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.json). Until the seeder has ≥0.2 GLM the JSON records `status: pending_faucet` and the Hub dispenser shortfall (9.995 GLM vs a 10 GLM drip).
+**[FILL AFTER SEED]** entity keys + explorer tx links: [`arkiv/seed-result.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.json). Until the seeder has ≥0.2 GLM the JSON records `status: pending_faucet` and the Hub dispenser shortfall (9.995 GLM vs a 10 GLM drip). Fallback: `ARKIV_NETWORK=local` + `./scripts/local-node.sh` writes [`arkiv/seed-result.local.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.local.json).
 
-Judges can still **write** from the in-app burner (Me) and **read** the empty query / synthetic demo.
+Judges can still **write** from the in-app burner (Me → Create wallet) and **read** without login.
 
 ### 7. Link to `/arkiv/schema.md` \*
 
@@ -125,12 +125,12 @@ https://github.com/tusharojha/swatantra/blob/main/arkiv/schema.md
 
 ### 8. How can judges reproduce your Arkiv usage? \*
 
-1. Open https://tusharojha.github.io/swatantra/ — no wallet. Home feed is `arkiv_query` / SDK `select` for `app=swatantra AND type=story`. If the result is empty you will see a **SYNTHETIC DEMO** banner (in-app fallback seed: 3 Pune desks + 1 Mumbai solo); that list is dropped the moment entities exist. Filter **Corroborated**.
+1. Open https://tusharojha.github.io/swatantra/ — no wallet. Home feed is `arkiv_query` / SDK `select` for `app=swatantra AND type=story`. If the result is empty you will see a small **Demo edition** line (in-app fallback seed: 3 Pune desks + 1 Mumbai solo); that list is dropped the moment entities exist. Filter **Corroborated**.
 2. Open the lead (`/s/proof-s4` in the demo). Magenta stamp **CORROBORATED · 3 independent witnesses · Pune district**, witness list, 0.1° cell. Copy the protected link.
 3. Run the curl in the README; compare keys to the UI and to the explorer (`$creator` = journalist burner). Until seed: empty query is expected.
 4. Verify: capture `chain_root` vs hashing a seed JPEG with `start_ms` **and** district+geo_cell (`bridge/src/hash.ts`).
 5. Post: **Use GPS (coarse)** or the labelled **self-declared** district picker (default Pune) → camera still → chain bound to district+cell. Two phones in the same district ±30 min is the live corroboration beat.
-6. Me → CREATE BURNER → fund on the Hub faucet → tip / extend. Tracker writes a `takedown` entity.
+6. Me → **Create wallet** (one tap) or **Connect wallet** (MetaMask / injected; WalletConnect if `WALLETCONNECT_PROJECT_ID` is set) → fund on the Hub faucet → tip / extend. Then Anon Aadhaar TEST MODE. Tracker writes a `takedown` entity.
 7. Web only: journalist onboarding → bundled PSE TEST QR → Groth16 prove/verify → journalist entity with `nid` uniqueness.
 8. Explorer: creator addresses in the table above. **[FILL AFTER SEED]** creation txs from `arkiv/seed-result.json`.
 
@@ -203,13 +203,13 @@ Flutter (web + Android APK), Dart JSON-RPC + `execute` writes, `@arkiv-network/s
 
 ## 3-minute demo video — shot list and timestamps
 
-Record 1080p, spoken English, **no music bed**. Keep **SYNTHETIC DEMO** / **TEST MODE** banners visible. Hard cut at 2:55.
+Record 1080p, spoken English, **no music bed**. Keep the grey **Demo edition** line and **TEST MODE** copy visible. Hard cut at 2:55.
 
 | Time | Shot | What to say / show |
 |---|---|---|
 | 0:00–0:12 | Title card: rangoli logo + **Swatantra / स्वतंत्र**. Live URL on screen. | “Ground truth, unerasable. Independent journalism in India after Sahyog-scale takedowns.” |
 | 0:12–0:28 | Browser, **no wallet**. Masthead Hindi dateline. | “Judges can read without a wallet. The paper is an Arkiv query.” |
-| 0:28–0:50 | Feed. Scroll lead + list. Filter State = Delhi, Category = protest. | “City and category are typed attributes. If the chain is empty you see a labelled synthetic demo — it switches off the moment entities exist.” |
+| 0:28–0:50 | Feed. Scroll lead + list. Compact chips. | “City and category are typed attributes. If the chain is empty you see a Demo edition line — it switches off the moment entities exist.” |
 | 0:50–1:10 | Open lead story. Standfirst, byline `$creator`, verification block. | “Byline is `$creator`, not a field anyone can type.” |
 | 1:10–1:28 | Copy protected link `/s/<key>`. New tab. | “This survives a takedown of the tweet. It is the entity key.” |
 | 1:28–1:52 | Post: coarse GPS or self-declared **Pune**. Camera still → chain root bound to district+cell. Second phone (or the seed’s three desks). | “Precise GPS never hits Arkiv. District + 0.1° cell go in the hash and as queryable attributes.” |
@@ -219,4 +219,4 @@ Record 1080p, spoken English, **no music bed**. Keep **SYNTHETIC DEMO** / **TEST
 | 2:40–2:52 | Article: tip 0.01 GLM; Extend on Arkiv. Tracker list. | “Testnet tip is a transfer plus a tip entity. Lifetime Extension is permissionless on readonly stories. Tracker is `type=takedown`.” |
 | 2:52–3:00 | Terminal curl `arkiv_query`. Explorer address. End card: live URL, repo, APK, MIT. | “Schema and friction in the repo. Thank you.” |
 
-If the seeder is still unfunded, **do not hide the SYNTHETIC DEMO banner** — show it, then Post one live story from a funded burner so at least one real entity is on camera. **[FILL AFTER SEED]** swap the feed shot to live keys and flash `seed-result.json` explorer links for 3 seconds at 2:50.
+If the seeder is still unfunded, **keep the Demo edition line** — then Post one live story from a funded burner so at least one real entity is on camera. **[FILL AFTER SEED]** swap the feed shot to live keys and flash `seed-result.json` explorer links for 3 seconds at 2:50.

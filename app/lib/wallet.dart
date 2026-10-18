@@ -7,6 +7,8 @@ import 'arkiv/rpc.dart';
 
 class WalletStore {
   static const _k = 'swatantra.burner.pk';
+  static const _addrK = 'swatantra.wallet.addr';
+  static const _srcK = 'swatantra.wallet.src';
   static const _journalistK = 'swatantra.journalist.key';
   static const _aaNullifierK = 'swatantra.aa.nullifier';
   static const _aaGroth16K = 'swatantra.aa.groth16';
@@ -16,6 +18,7 @@ class WalletStore {
   static String? journalistKey;
   static String? aaNullifier;
   static bool aaGroth16 = false;
+  static bool injected = false;
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -23,8 +26,11 @@ class WalletStore {
     journalistKey = _prefs!.getString(_journalistK);
     aaNullifier = _prefs!.getString(_aaNullifierK);
     aaGroth16 = _prefs!.getBool(_aaGroth16K) ?? false;
+    injected = _prefs!.getString(_srcK) == 'injected';
     if (privateKey != null) {
       await unlock(privateKey!);
+    } else if (injected) {
+      address = _prefs!.getString(_addrK);
     }
   }
 
@@ -47,6 +53,7 @@ class WalletStore {
   }
 
   static Future<void> generate() async {
+    injected = false;
     if (arkivJsAvailable) {
       try {
         final r = await arkivJs('createBurner');
@@ -55,6 +62,8 @@ class WalletStore {
         if (privateKey != null) {
           await _prefs?.setString(_k, privateKey!);
         }
+        if (address != null) await _prefs?.setString(_addrK, address!);
+        await _prefs?.setString(_srcK, 'burner');
         return;
       } catch (_) {}
     }
@@ -62,6 +71,40 @@ class WalletStore {
     privateKey = bytesToHex(key.privateKey, include0x: true);
     address = key.address.hexEip55;
     await _prefs?.setString(_k, privateKey!);
+    await _prefs?.setString(_addrK, address!);
+    await _prefs?.setString(_srcK, 'burner');
+  }
+
+  static Future<void> connectInjected() async {
+    if (!arkivJsAvailable) {
+      throw Exception('NO_INJECTED: injected wallets are on web (MetaMask extension). Create wallet on this phone.');
+    }
+    final r = await arkivJs('connectInjected');
+    address = r['address'] as String?;
+    if (address == null || address!.isEmpty) {
+      throw Exception('NO_INJECTED');
+    }
+    injected = true;
+    privateKey = null;
+    await _prefs?.remove(_k);
+    await _prefs?.setString(_addrK, address!);
+    await _prefs?.setString(_srcK, 'injected');
+  }
+
+  static Future<void> connectWalletConnect(String projectId) async {
+    if (!arkivJsAvailable) {
+      throw Exception('WalletConnect is available on web.');
+    }
+    final r = await arkivJs('connectWalletConnect', {'projectId': projectId});
+    address = r['address'] as String?;
+    if (address == null || address!.isEmpty) {
+      throw Exception('WalletConnect returned no account');
+    }
+    injected = true;
+    privateKey = null;
+    await _prefs?.remove(_k);
+    await _prefs?.setString(_addrK, address!);
+    await _prefs?.setString(_srcK, 'walletconnect');
   }
 
   static Future<void> importKey(String pk) async {
@@ -95,7 +138,10 @@ class WalletStore {
     privateKey = null;
     address = null;
     journalistKey = null;
+    injected = false;
     await _prefs?.remove(_k);
+    await _prefs?.remove(_addrK);
+    await _prefs?.remove(_srcK);
     await _prefs?.remove(_journalistK);
   }
 }

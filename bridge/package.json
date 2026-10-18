@@ -7,6 +7,7 @@
     "build:aa": "node src/build-aa.mjs",
     "build": "npm run build:bridge && npm run build:aa",
     "seed": "tsx src/seed.ts",
+    "seed:local": "ARKIV_NETWORK=local tsx src/seed.ts",
     "wallets": "node src/gen-wallets.mjs"
   },
   "dependencies": {

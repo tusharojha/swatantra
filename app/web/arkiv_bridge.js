@@ -450,10 +450,10 @@
     "node_modules/abitype/dist/esm/human-readable/errors/splitParameters.js"() {
       init_errors();
       InvalidParenthesisError = class extends BaseError {
-        constructor({ current, depth }) {
+        constructor({ current: current2, depth }) {
           super("Unbalanced parentheses.", {
             metaMessages: [
-              `"${current.trim()}" has too many ${depth > 0 ? "opening" : "closing"} parentheses.`
+              `"${current2.trim()}" has too many ${depth > 0 ? "opening" : "closing"} parentheses.`
             ],
             details: `Depth "${depth}"`
           });
@@ -707,27 +707,27 @@
     parameterCache.set(parameterCacheKey, abiParameter);
     return abiParameter;
   }
-  function splitParameters(params, result = [], current = "", depth = 0) {
+  function splitParameters(params, result = [], current2 = "", depth = 0) {
     const length = params.trim().length;
     for (let i = 0; i < length; i++) {
       const char = params[i];
       const tail = params.slice(i + 1);
       switch (char) {
         case ",":
-          return depth === 0 ? splitParameters(tail, [...result, current.trim()]) : splitParameters(tail, result, `${current}${char}`, depth);
+          return depth === 0 ? splitParameters(tail, [...result, current2.trim()]) : splitParameters(tail, result, `${current2}${char}`, depth);
         case "(":
-          return splitParameters(tail, result, `${current}${char}`, depth + 1);
+          return splitParameters(tail, result, `${current2}${char}`, depth + 1);
         case ")":
-          return splitParameters(tail, result, `${current}${char}`, depth - 1);
+          return splitParameters(tail, result, `${current2}${char}`, depth - 1);
         default:
-          return splitParameters(tail, result, `${current}${char}`, depth);
+          return splitParameters(tail, result, `${current2}${char}`, depth);
       }
     }
-    if (current === "")
+    if (current2 === "")
       return result;
     if (depth !== 0)
-      throw new InvalidParenthesisError({ current, depth });
-    result.push(current.trim());
+      throw new InvalidParenthesisError({ current: current2, depth });
+    result.push(current2.trim());
     return result;
   }
   function isSolidityType(type) {
@@ -2101,7 +2101,7 @@
   // node_modules/viem/_esm/utils/hash/normalizeSignature.js
   function normalizeSignature(signature) {
     let active = true;
-    let current = "";
+    let current2 = "";
     let level = 0;
     let result = "";
     let valid = false;
@@ -2128,14 +2128,14 @@
         continue;
       }
       if (char === " ") {
-        if (!current.endsWith(",") && !current.endsWith("(")) {
-          current = "";
+        if (!current2.endsWith(",") && !current2.endsWith("(")) {
+          current2 = "";
           active = false;
         }
         continue;
       }
       result += char;
-      current += char;
+      current2 += char;
     }
     if (!valid)
       throw new BaseError2("Unable to normalize signature.");
@@ -12912,12 +12912,12 @@ ${prettyStateOverride(stateOverride)}`;
       });
     }
   }
-  function getGateway(custom, defaultGateway) {
-    if (!custom)
+  function getGateway(custom2, defaultGateway) {
+    if (!custom2)
       return defaultGateway;
-    if (custom.endsWith("/"))
-      return custom.slice(0, -1);
-    return custom;
+    if (custom2.endsWith("/"))
+      return custom2.slice(0, -1);
+    return custom2;
   }
   function resolveAvatarUri({ uri, gatewayUrls }) {
     const isEncoded = base64Regex.test(uri);
@@ -17128,7 +17128,7 @@ ${prettyStateOverride(stateOverride)}`;
   init_Errors();
   function normalizeSignature2(signature) {
     let active = true;
-    let current = "";
+    let current2 = "";
     let level = 0;
     let result = "";
     let valid = false;
@@ -17155,14 +17155,14 @@ ${prettyStateOverride(stateOverride)}`;
         continue;
       }
       if (char === " ") {
-        if (signature[i - 1] !== "," && current !== "," && current !== ",(") {
-          current = "";
+        if (signature[i - 1] !== "," && current2 !== "," && current2 !== ",(") {
+          current2 = "";
           active = false;
         }
         continue;
       }
       result += char;
-      current += char;
+      current2 += char;
     }
     if (!valid)
       throw new BaseError3("Unable to normalize signature.");
@@ -19841,6 +19841,20 @@ ${prettyStateOverride(stateOverride)}`;
     };
   }
 
+  // node_modules/viem/_esm/clients/transports/custom.js
+  function custom(provider, config = {}) {
+    const { key: key2 = "custom", methods: methods2, name = "Custom Provider", retryDelay } = config;
+    return ({ retryCount: defaultRetryCount }) => createTransport({
+      key: key2,
+      methods: methods2,
+      name,
+      request: provider.request.bind(provider),
+      retryCount: config.retryCount ?? defaultRetryCount,
+      retryDelay,
+      type: "custom"
+    });
+  }
+
   // node_modules/viem/_esm/clients/transports/http.js
   init_request();
 
@@ -20879,13 +20893,13 @@ ${prettyStateOverride(stateOverride)}`;
     let code;
     let data;
     let detail;
-    let current = error;
-    for (let depth = 0; current != null && depth < 8; depth++) {
-      const link = current;
+    let current2 = error;
+    for (let depth = 0; current2 != null && depth < 8; depth++) {
+      const link = current2;
       if (code === void 0 && typeof link.code === "number") code = link.code;
       if (data === void 0 && link.data !== void 0) data = link.data;
       if (detail === void 0 && typeof link.shortMessage === "string") detail = link.shortMessage;
-      current = link.cause;
+      current2 = link.cause;
     }
     const kind = code === void 0 ? void 0 : QUERY_ERROR_KINDS[code];
     if (kind === void 0 || code === void 0) return void 0;
@@ -22196,12 +22210,80 @@ ${prettyStateOverride(stateOverride)}`;
     };
   }
 
+  // src/network.ts
+  var TIRAMISU = {
+    name: "tiramisu",
+    chain: tiramisu,
+    rpc: "https://rpc.tiramisu.db-chain.testnet.arkiv.network",
+    ws: "wss://rpc.tiramisu.db-chain.testnet.arkiv.network",
+    explorer: "https://tiramisu.explorer.arkiv.network",
+    chainId: 7738577,
+    nativeToken: "GLM"
+  };
+  var LOCAL = {
+    name: "local",
+    chain: localhost,
+    rpc: "http://127.0.0.1:8545",
+    ws: "ws://127.0.0.1:8546",
+    explorer: "http://127.0.0.1:8545",
+    chainId: 1337,
+    nativeToken: "ETH"
+  };
+  var LOCAL_DEV_KEY = "0xb71c71a67e1177ad4e901695e1b4b9ee17ae16c6668d313eac2f96dbcda3f291";
+  var LOCAL_DEV_ADDRESS = "0x71562b71999873DB5b286DF957af199Ec94617F7";
+  var current = TIRAMISU;
+  function readEnvNetwork() {
+    try {
+      const p = globalThis.process;
+      return p?.env?.ARKIV_NETWORK;
+    } catch {
+      return void 0;
+    }
+  }
+  function readQueryNetwork() {
+    try {
+      const loc = globalThis.location;
+      if (!loc?.search) return void 0;
+      return new URLSearchParams(loc.search).get("network") ?? void 0;
+    } catch {
+      return void 0;
+    }
+  }
+  function parseNetwork(name) {
+    const n = (name ?? "").trim().toLowerCase();
+    if (n === "local" || n === "localhost" || n === "dev") return "local";
+    return "tiramisu";
+  }
+  function setNetwork(name) {
+    current = parseNetwork(name) === "local" ? LOCAL : TIRAMISU;
+    return current;
+  }
+  function getNetwork() {
+    return current;
+  }
+  function isLocal() {
+    return current.name === "local";
+  }
+  setNetwork(readQueryNetwork() ?? readEnvNetwork() ?? "tiramisu");
+
   // src/index.ts
   var APP = "swatantra";
-  var RPC = "https://rpc.tiramisu.db-chain.testnet.arkiv.network";
-  var WS = "wss://rpc.tiramisu.db-chain.testnet.arkiv.network";
-  var EXPLORER = "https://tiramisu.explorer.arkiv.network";
-  var CHAIN_ID = 7738577;
+  var RPC = getNetwork().rpc;
+  var WS = getNetwork().ws;
+  var EXPLORER = getNetwork().explorer;
+  var CHAIN_ID = getNetwork().chainId;
+  function syncNetworkExports() {
+    const n = getNetwork();
+    RPC = n.rpc;
+    WS = n.ws;
+    EXPLORER = n.explorer;
+    CHAIN_ID = n.chainId;
+  }
+  function applyNetwork(name) {
+    setNetwork(name);
+    syncNetworkExports();
+    return { network: getNetwork().name, rpc: RPC, chainId: CHAIN_ID, explorer: EXPLORER };
+  }
   var SELECT = {
     key: true,
     owner: true,
@@ -22224,19 +22306,31 @@ ${prettyStateOverride(stateOverride)}`;
     corroboration: () => ExpirationTime.fromDays(180)
   };
   var account;
+  var injectedAddress;
+  var injectedEth;
   var unwatch;
   function publicClient() {
-    return createPublicClient({ chain: tiramisu, transport: http(RPC) });
+    const n = getNetwork();
+    return createPublicClient({ chain: n.chain, transport: http(n.rpc) });
   }
   function publicWs() {
-    return createPublicClient({ chain: tiramisu, transport: webSocket(WS) });
+    const n = getNetwork();
+    return createPublicClient({ chain: n.chain, transport: webSocket(n.ws) });
   }
   function walletClient() {
+    const n = getNetwork();
+    if (injectedEth && injectedAddress) {
+      return createWalletClient({
+        account: injectedAddress,
+        chain: n.chain,
+        transport: custom(injectedEth)
+      });
+    }
     if (!account) throw new Error("no wallet unlocked");
     return createWalletClient({
       account,
-      chain: tiramisu,
-      transport: http(RPC)
+      chain: n.chain,
+      transport: http(n.rpc)
     });
   }
   function serializeEntity(e) {
@@ -22318,22 +22412,71 @@ ${prettyStateOverride(stateOverride)}`;
     return serializeEntity(entity);
   }
   function createBurner() {
+    injectedEth = void 0;
+    injectedAddress = void 0;
     const pk = generatePrivateKey();
     account = privateKeyToAccount(pk);
     return { address: account.address, privateKey: pk };
   }
   function unlock(privateKey) {
+    injectedEth = void 0;
+    injectedAddress = void 0;
     const pk = privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`;
     account = privateKeyToAccount(pk);
     return { address: account.address };
   }
   function getAddress2() {
+    if (injectedAddress) return { address: injectedAddress, injected: true };
     return account ? { address: account.address } : { address: null };
   }
   async function getBalance3() {
-    if (!account) return { wei: "0" };
-    const wei = await publicClient().getBalance({ address: account.address });
+    const addr2 = injectedAddress ?? account?.address;
+    if (!addr2) return { wei: "0" };
+    const wei = await publicClient().getBalance({ address: addr2 });
     return { wei: wei.toString() };
+  }
+  function browserEthereum() {
+    const eth = globalThis.ethereum;
+    return eth;
+  }
+  async function connectInjected() {
+    const eth = browserEthereum();
+    if (!eth) throw new Error("NO_INJECTED");
+    const n = getNetwork();
+    const chainHex = `0x${n.chainId.toString(16)}`;
+    try {
+      await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: chainHex }] });
+    } catch {
+      await eth.request({
+        method: "wallet_addEthereumChain",
+        params: [
+          {
+            chainId: chainHex,
+            chainName: n.name === "local" ? "Arkiv Local" : "Arkiv Tiramisu",
+            nativeCurrency: { name: n.nativeToken, symbol: n.nativeToken, decimals: 18 },
+            rpcUrls: [n.rpc],
+            blockExplorerUrls: [n.explorer]
+          }
+        ]
+      });
+    }
+    const accounts = await eth.request({ method: "eth_requestAccounts" });
+    if (!accounts?.[0]) throw new Error("NO_INJECTED");
+    account = void 0;
+    injectedEth = eth;
+    injectedAddress = accounts[0];
+    return { address: injectedAddress, injected: true, chainId: n.chainId };
+  }
+  async function connectWalletConnect(projectId) {
+    const id = projectId || (() => {
+      try {
+        return globalThis.process?.env?.WALLETCONNECT_PROJECT_ID;
+      } catch {
+        return void 0;
+      }
+    })();
+    if (!id) throw new Error("NO_PROJECT_ID");
+    throw new Error("NO_PROJECT_ID");
   }
   async function verifyJournalist(qrData, revealState) {
     const aa = globalThis.SwatantraAA;
@@ -22466,9 +22609,10 @@ ${prettyStateOverride(stateOverride)}`;
     };
   }
   async function publishStoryWithCapture(input) {
-    if (!account) throw new Error("no wallet unlocked");
+    const owner = injectedAddress ?? account?.address;
+    if (!owner) throw new Error("no wallet unlocked");
     const pub = publicClient();
-    const [capPred, storyPred] = await pub.predictEntityKeys({ owner: account.address, count: 2 });
+    const [capPred, storyPred] = await pub.predictEntityKeys({ owner, count: 2 });
     const now = Date.now();
     const result = await walletClient().executeBatch({
       creates: [
@@ -22759,6 +22903,8 @@ ${prettyStateOverride(stateOverride)}`;
     unlock: (a) => unlock(String(a.privateKey)),
     getAddress: () => getAddress2(),
     getBalance: () => getBalance3(),
+    connectInjected: () => connectInjected(),
+    connectWalletConnect: (a) => connectWalletConnect(a.projectId != null ? String(a.projectId) : void 0),
     verifyJournalist: (a) => verifyJournalist(String(a.qrData ?? ""), a.state),
     findJournalistByNullifier: (a) => findJournalistByNullifier(String(a.nullifier)),
     createJournalist: (a) => createJournalist(a),
@@ -22782,7 +22928,12 @@ ${prettyStateOverride(stateOverride)}`;
     queryCapturesInWindow: (a) => queryCapturesInWindow(String(a.district), Number(a.tsMs ?? a.capture_ts_ms)),
     createCorroboration: (a) => createCorroboration(a),
     watchFeed: () => watchFeed(),
-    stopWatch: () => stopWatch()
+    stopWatch: () => stopWatch(),
+    setNetwork: (a) => applyNetwork(a.network != null ? String(a.network) : String(a.name ?? "")),
+    getNetwork: () => {
+      const n = getNetwork();
+      return { name: n.name, rpc: n.rpc, ws: n.ws, explorer: n.explorer, chainId: n.chainId, local: isLocal() };
+    }
   };
   async function call2(method, argsJson = "{}") {
     const fn = methods[method];
@@ -22800,6 +22951,8 @@ ${prettyStateOverride(stateOverride)}`;
     unlock,
     getAddress: getAddress2,
     getBalance: getBalance3,
+    connectInjected,
+    connectWalletConnect,
     verifyJournalist,
     findJournalistByNullifier,
     createJournalist,
@@ -22819,9 +22972,16 @@ ${prettyStateOverride(stateOverride)}`;
     createCorroboration,
     watchFeed,
     stopWatch,
+    setNetwork: applyNetwork,
+    getNetwork,
+    isLocal,
     APP,
-    RPC,
-    EXPLORER,
+    get RPC() {
+      return RPC;
+    },
+    get EXPLORER() {
+      return EXPLORER;
+    },
     BUNDLED_TEST_QR
   };
   globalThis.SwatantraArkiv = api;

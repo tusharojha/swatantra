@@ -97,7 +97,9 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
+    return PageWidth(
+      max: Swa.articleWidth,
+      child: ListView(
       padding: Swa.pagePadding,
       children: [
         const SectionHead(
@@ -107,8 +109,9 @@ class _VerifyScreenState extends State<VerifyScreen> {
               'Recompute the SHA-256 chain from a media file and compare it to a capture entity on Arkiv. Video/photos stay off Arkiv because of size and cost (128 KiB payload cap).',
         ),
         const SizedBox(height: 16),
-        const TestModeBanner(
-          'h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms) || place); place = sha256(district || 0x00 || geo_cell). Precise GPS is never hashed. Seed stills use capture start_ms as the timestamp.',
+        Text(
+          'h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms) || place); place = sha256(district || 0x00 || geo_cell). Precise GPS is never hashed.',
+          style: Swa.serif(size: 15, color: Swa.muted, height: 1.5),
         ),
         const SizedBox(height: 16),
         TextField(
@@ -145,6 +148,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         ],
         if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
       ],
+    ),
     );
   }
 }

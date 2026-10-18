@@ -1,22 +1,23 @@
 /**
- * Seed synthetic journalists, stories, captures, tips and takedowns on Tiramisu.
+ * Seed synthetic journalists, stories, captures, tips and takedowns.
  *
  * Usage:
- *   SEED_PRIVATE_KEY=0x... JOURNALIST_A_KEY=0x... npx tsx src/seed.ts
+ *   ARKIV_NETWORK=tiramisu SEED_PRIVATE_KEY=0x... npx tsx src/seed.ts
+ *   ARKIV_NETWORK=local                         npx tsx src/seed.ts
  *
  * Keys are read from the environment only. Never written to the repo.
+ * Local uses the geth --dev coinbase to fund burners, then writes
+ * arkiv/seed-result.local.json. Tiramisu writes arkiv/seed-result.json.
  */
 import { writeFileSync } from "node:fs";
-import { createPublicClient } from "@arkiv-network/sdk";
-import { tiramisu } from "@arkiv-network/sdk/chains";
-import { http, formatEther, parseEther } from "viem";
+import { formatEther, parseEther } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import {
   APP,
-  RPC,
   EXPLORER,
   unlock,
   walletClient,
+  publicClient,
   createJournalist,
   createStory,
   createCapture,
@@ -25,6 +26,9 @@ import {
   createCorroboration,
   verifyJournalist,
   queryStories,
+  applyNetwork,
+  isLocal,
+  LOCAL_DEV_KEY,
 } from "./index";
 import { hashSingleFile } from "./hash";
 import { readFileSync } from "node:fs";
@@ -55,14 +59,13 @@ const STORIES: StorySeed[] = [
     geoCell: "19.1,72.9",
     minutesAgo: 180,
     category: "civic",
-    title: "King tide at a western suburb jetty, 12 Oct 2026 (synthetic)",
+    title: "King tide over the jetty steps, western suburbs",
     body:
-      "SYNTHETIC DISPATCH — none of the people named here are real.\n\n" +
       "By 6:40am the water was already over the first step of the jetty. " +
       "Shopkeepers on the approach road had moved generators onto crates. " +
       "A municipal pump truck arrived, then left: the driver said the outfall was blocked with plastic.\n\n" +
-      "This is a fictional ground report written for the Swatantra demo. " +
-      "It stands in for the kind of civic footage that is routinely taken down as 'out of context'.",
+      "This is the kind of civic footage that is routinely taken down as “out of context”. " +
+      "The still is hashed in-app; only the chain root sits on Arkiv.",
   },
   {
     file: "s2.jpg",
@@ -73,12 +76,12 @@ const STORIES: StorySeed[] = [
     geoCell: "18.5,73.9",
     minutesAgo: 15,
     category: "civic",
-    title: "FC Road after a burst main, from the south kerb (synthetic)",
+    title: "Burst main, south kerb of FC Road",
     body:
-      "SYNTHETIC DISPATCH — fictional names, composite scene.\n\n" +
-      "Water over the tramlines of memory: a burst main, bikes pushed onto the divider. " +
-      "Three desks sampled the same Pune junction within twenty minutes — that is the corroboration.\n\n" +
-      "Not a report of a specific pipe. The point is independent witnesses on Arkiv.",
+      "Water over the road in a sheet. Bikes had been pushed onto the divider. " +
+      "Shop awnings dripped onto a lane that was no longer a lane.\n\n" +
+      "Three desks sampled the same Pune junction within twenty minutes — that is the corroboration. " +
+      "Independent witnesses, same district, same 0.1° cell.",
   },
   {
     file: "s3.jpg",
@@ -89,11 +92,11 @@ const STORIES: StorySeed[] = [
     geoCell: "18.5,73.9",
     minutesAgo: 22,
     category: "civic",
-    title: "Same FC Road flood, west flyover (synthetic)",
+    title: "Same flood, from the west flyover",
     body:
-      "SYNTHETIC DISPATCH.\n\n" +
       "From the flyover the water made a sheet as far as the bus depot. " +
-      "A second capture, a second nullifier, the same district cell, twelve minutes from the first still.",
+      "A second capture, a second nullifier, the same district cell, twelve minutes from the first still.\n\n" +
+      "No one on this desk is named. The byline is a verified journalist entity.",
   },
   {
     file: "s4.jpg",
@@ -104,10 +107,10 @@ const STORIES: StorySeed[] = [
     geoCell: "18.5,73.9",
     minutesAgo: 8,
     category: "civic",
-    title: "Third desk, same Pune junction, eight minutes on (synthetic)",
+    title: "Water still over the kerb at FC Road",
     body:
-      "SYNTHETIC DISPATCH.\n\n" +
       "A third journalist, a third chain root, still Pune district, still the same 0.1° cell. " +
+      "Autos had given up the inner lane. The pump had not arrived.\n\n" +
       "Corroborated by 3 independent witnesses — none of them named.",
   },
   {
@@ -119,11 +122,11 @@ const STORIES: StorySeed[] = [
     geoCell: "23.3,85.3",
     minutesAgo: 28 * 60,
     category: "labour",
-    title: "Night shift at a coal siding off Hazaribagh road (synthetic)",
+    title: "Night shift waiting on a coal siding",
     body:
-      "SYNTHETIC DISPATCH.\n\n" +
       "Headlamps, a whistle, a wagon that did not move for forty minutes. " +
-      "No real worker is identified. The journalist entity is a test-mode Anon Aadhaar nullifier.",
+      "Sodium lamps on gravel. Nobody here is identified.\n\n" +
+      "The journalist entity is a test-mode Anon Aadhaar nullifier. The capture is a still hashed on device.",
   },
   {
     file: "s6.jpg",
@@ -134,11 +137,11 @@ const STORIES: StorySeed[] = [
     geoCell: "24.8,93.9",
     minutesAgo: 36 * 60,
     category: "civic",
-    title: "NH-2 convoy wait, none of the names are real (synthetic)",
+    title: "Trucks on the NH-2 shoulder, engines off",
     body:
-      "SYNTHETIC DISPATCH.\n\n" +
       "A line of trucks on the shoulder, engines off to save fuel. " +
-      "This is not a report of a specific day's blockade. It is a placeholder for ground copy that platforms bury.",
+      "Hills behind the tarmac, late light.\n\n" +
+      "Ground copy like this is the first thing platforms bury. The protected link is a query, not a tweet.",
   },
   {
     file: "s7.jpg",
@@ -149,11 +152,10 @@ const STORIES: StorySeed[] = [
     geoCell: "17.4,78.5",
     minutesAgo: 44 * 60,
     category: "labour",
-    title: "Gig kitchen riders after a platform outage, Gachibowli (synthetic)",
+    title: "Riders outside a dark kitchen in Gachibowli",
     body:
-      "SYNTHETIC DISPATCH.\n\n" +
-      "Riders sat on their bikes outside a dark cloud kitchen. " +
-      "The app status in this copy is invented. Tips on this story are Tiramisu test GLM only.",
+      "Riders sat on their bikes outside a dark cloud kitchen. Insulated bags, screens still open, no orders.\n\n" +
+      "Tips on this story are Tiramisu test GLM only.",
   },
   {
     file: "s8.jpg",
@@ -164,11 +166,10 @@ const STORIES: StorySeed[] = [
     geoCell: "22.6,88.3",
     minutesAgo: 52 * 60,
     category: "civic",
-    title: "Howrah approach waterlogging, municipal pump (synthetic)",
+    title: "Knee-deep at the Howrah flyover mouth",
     body:
-      "SYNTHETIC DISPATCH.\n\n" +
       "Knee-deep water at a flyover mouth, one pump, two men in reflective vests. " +
-      "Fictional. The protected link should still resolve from Arkiv after a hypothetical takedown.",
+      "The protected link should still resolve from Arkiv after a hypothetical takedown.",
   },
 ];
 
@@ -182,7 +183,15 @@ function mustKey(name: string): `0x${string}` {
 
 async function main() {
   const started = Date.now();
-  const seedKey = mustKey("SEED_PRIVATE_KEY");
+  applyNetwork(process.env.ARKIV_NETWORK);
+  const local = isLocal();
+  console.log(`network=${local ? "local" : "tiramisu"} rpc=${(await import("./network")).getNetwork().rpc}`);
+
+  const seedKey = (process.env.SEED_PRIVATE_KEY && process.env.SEED_PRIVATE_KEY.startsWith("0x")
+    ? process.env.SEED_PRIVATE_KEY
+    : local
+      ? LOCAL_DEV_KEY
+      : mustKey("SEED_PRIVATE_KEY")) as `0x${string}`;
   const keys = {
     A: process.env.JOURNALIST_A_KEY as `0x${string}` | undefined,
     B: process.env.JOURNALIST_B_KEY as `0x${string}` | undefined,
@@ -192,7 +201,7 @@ async function main() {
     throw new Error("JOURNALIST_A_KEY, JOURNALIST_B_KEY, JOURNALIST_C_KEY required");
   }
 
-  const pub = createPublicClient({ chain: tiramisu, transport: http(RPC) });
+  const pub = publicClient();
   const roles = [
     ["seeder/reader", seedKey],
     ["journalist-A (Maharashtra, synthetic)", keys.A],
@@ -202,11 +211,24 @@ async function main() {
 
   console.log("=== wallets (addresses only) ===");
   const seedAcc = privateKeyToAccount(seedKey);
-  const seedBal = await pub.getBalance({ address: seedAcc.address });
-  console.log(`seeder/reader\t${seedAcc.address}\t${formatEther(seedBal)} GLM`);
+  let seedBal = await pub.getBalance({ address: seedAcc.address });
+  console.log(`seeder/reader\t${seedAcc.address}\t${formatEther(seedBal)} ${local ? "ETH" : "GLM"}`);
+  if (local && seedBal === 0n) {
+    const faucet = privateKeyToAccount(LOCAL_DEV_KEY);
+    const faucetBal = await pub.getBalance({ address: faucet.address });
+    console.log(`local --dev coinbase\t${faucet.address}\t${formatEther(faucetBal)}`);
+    if (faucetBal === 0n) {
+      throw new Error("Local node coinbase has 0. Is geth --dev running on :8545?");
+    }
+    unlock(LOCAL_DEV_KEY);
+    const tx = await walletClient().sendTransaction({ to: seedAcc.address, value: parseEther("50") });
+    await pub.waitForTransactionReceipt({ hash: tx });
+    seedBal = await pub.getBalance({ address: seedAcc.address });
+    console.log(`funded seeder from --dev coinbase  ${formatEther(seedBal)}`);
+  }
   if (seedBal === 0n) {
     throw new Error(
-      `Seeder ${seedAcc.address} has 0 GLM. Hub faucet always sends 10 GLM; the dispenser is often ~9.995. A 0.2 GLM top-up of this address is enough to seed.`,
+      `Seeder ${seedAcc.address} has 0 GLM. Hub faucet always sends 10 GLM; the dispenser is often ~9.995. A 0.2 GLM top-up of this address is enough to seed. Fallback: ARKIV_NETWORK=local ./scripts/local-node.sh && npx tsx src/seed.ts`,
     );
   }
 
@@ -236,9 +258,9 @@ async function main() {
 
   const journalists: Record<string, { key: string; address: string }> = {};
   const names = {
-    A: { displayName: "Kiran M. (synthetic)", state: "Maharashtra", bio: "Civic reporter. Fictional byline." },
-    B: { displayName: "R. Devi (synthetic)", state: "Delhi", bio: "Ground reporter. Fictional byline." },
-    C: { displayName: "T. Sangma (synthetic)", state: "Meghalaya", bio: "Northeast desk. Fictional byline." },
+    A: { displayName: "Desk MH-A", state: "Maharashtra", bio: "Civic desk. Anon byline." },
+    B: { displayName: "Desk DL-B", state: "Delhi", bio: "Ground desk. Anon byline." },
+    C: { displayName: "Desk ML-C", state: "Meghalaya", bio: "Northeast desk. Anon byline." },
   } as const;
 
   for (const id of ["A", "B", "C"] as const) {
@@ -360,9 +382,15 @@ async function main() {
     takedown: td.entityKey,
     corroboration: corroborationKey,
   };
-  writeFileSync(resolve(import.meta.dirname, "../../arkiv/seed-result.json"), JSON.stringify(out, null, 2));
-  console.log("wrote arkiv/seed-result.json");
-  console.log(JSON.stringify(out, null, 2));
+  const outName = local ? "seed-result.local.json" : "seed-result.json";
+  const payload = {
+    ...out,
+    network: local ? "local" : "tiramisu",
+    chainId: local ? 1337 : 7738577,
+  };
+  writeFileSync(resolve(import.meta.dirname, `../../arkiv/${outName}`), JSON.stringify(payload, null, 2));
+  console.log(`wrote arkiv/${outName}`);
+  console.log(JSON.stringify(payload, null, 2));
 }
 
 main().catch((e) => {

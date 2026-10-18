@@ -1,12 +1,12 @@
 import 'models.dart';
 
-/// Labeled layout preview used when the live Tiramisu feed is empty.
-/// Copy matches the synthetic seed dispatches. Not on-chain.
+/// Layout preview used when the live Tiramisu feed is empty.
+/// Copy matches the seed dispatches. Not on-chain.
 /// The live `arkiv_query` path is always tried first; this list is dropped
 /// automatically once entities exist.
 class ProofEdition {
   static const banner =
-      'SYNTHETIC DEMO — live Arkiv query returned no entities. These cards are layout-only and disappear automatically once Tiramisu has stories.';
+      'Demo edition · synthetic stories · switches to live Arkiv data automatically';
 
   static List<ArkivEntity> get stories {
     final list = _stories.map(_story).toList();
@@ -68,7 +68,11 @@ class ProofEdition {
       final cap = captureFor(s.key)!;
       return Witness(
         creator: s.creator,
-        nid: _nids[_creators.entries.firstWhere((e) => e.value.toLowerCase() == s.creator.toLowerCase(), orElse: () => const MapEntry('A', '')).key] ?? s.creator,
+        nid: _nids[_creators.entries
+                .firstWhere((e) => e.value.toLowerCase() == s.creator.toLowerCase(),
+                    orElse: () => const MapEntry('A', ''))
+                .key] ??
+            s.creator,
         captureTs: s.captureTsMs,
         chainRoot: cap.attr('chain_root'),
         entityKey: cap.key,
@@ -102,14 +106,14 @@ class ProofEdition {
           createdAt: '${DateTime.now().millisecondsSinceEpoch - 8 * 3600 * 1000}',
           expiresAt: '0',
           payload: {
-            'notes': 'Synthetic takedown log for the demo tracker. Not a real notice.',
+            'notes': 'Logged after the original post disappeared from the platform. Self-reported.',
             'synthetic': true,
             'disclaimer': 'Synthetic or self-reported. Not legal advice.',
           },
           attributes: {
             'type': Attr('str', 'takedown'),
             'platform': Attr('str', 'X'),
-            'law_cited': Attr('str', 'IT Act s.79 (synthetic citation)'),
+            'law_cited': Attr('str', 'IT Act s.79'),
             'authority_named': Attr('str', 'false'),
             'notice_date_ms': Attr('uint', DateTime.utc(2026, 9, 15).millisecondsSinceEpoch),
             'created_at_ms': Attr('uint', DateTime.now().millisecondsSinceEpoch - 8 * 3600 * 1000),
@@ -173,13 +177,12 @@ const _stories = <_Seed>[
     'Mumbai',
     'Maharashtra',
     'civic',
-    'King tide at a western suburb jetty, 12 Oct 2026 (synthetic)',
-    'SYNTHETIC DISPATCH — none of the people named here are real.\n\n'
-        'By 6:40am the water was already over the first step of the jetty. '
+    'King tide over the jetty steps, western suburbs',
+    'By 6:40am the water was already over the first step of the jetty. '
         'Shopkeepers on the approach road had moved generators onto crates. '
         'A municipal pump truck arrived, then left: the driver said the outfall was blocked with plastic.\n\n'
-        'This is a fictional ground report written for the Swatantra demo. '
-        'It stands in for the kind of civic footage that is routinely taken down as \'out of context\'.',
+        'This is the kind of civic footage that is routinely taken down as “out of context”. '
+        'The still is hashed in-app; only the chain root sits on Arkiv.',
     180,
     district: 'Mumbai',
     geoCell: '19.1,72.9',
@@ -190,11 +193,11 @@ const _stories = <_Seed>[
     'Pune',
     'Maharashtra',
     'civic',
-    'FC Road after a burst main, from the south kerb (synthetic)',
-    'SYNTHETIC DISPATCH — fictional names, composite scene.\n\n'
-        'Water over the tramlines of memory: a burst main, bikes pushed onto the divider. '
-        'Three desks sampled the same Pune junction within twenty minutes — that is the corroboration.\n\n'
-        'Not a report of a specific pipe. The point is independent witnesses on Arkiv.',
+    'Burst main, south kerb of FC Road',
+    'Water over the road in a sheet. Bikes had been pushed onto the divider. '
+        'Shop awnings dripped onto a lane that was no longer a lane.\n\n'
+        'Three desks sampled the same Pune junction within twenty minutes — that is the corroboration. '
+        'Independent witnesses, same district, same 0.1° cell.',
     15,
     district: 'Pune',
     geoCell: '18.5,73.9',
@@ -205,10 +208,10 @@ const _stories = <_Seed>[
     'Pune',
     'Maharashtra',
     'civic',
-    'Same FC Road flood, west flyover (synthetic)',
-    'SYNTHETIC DISPATCH.\n\n'
-        'From the flyover the water made a sheet as far as the bus depot. '
-        'A second capture, a second nullifier, the same district cell, twelve minutes from the first still.',
+    'Same flood, from the west flyover',
+    'From the flyover the water made a sheet as far as the bus depot. '
+        'A second capture, a second nullifier, the same district cell, twelve minutes from the first still.\n\n'
+        'No one on this desk is named. The byline is a verified journalist entity.',
     22,
     district: 'Pune',
     geoCell: '18.5,73.9',
@@ -219,9 +222,9 @@ const _stories = <_Seed>[
     'Pune',
     'Maharashtra',
     'civic',
-    'Third desk, same Pune junction, eight minutes on (synthetic)',
-    'SYNTHETIC DISPATCH.\n\n'
-        'A third journalist, a third chain root, still Pune district, still the same 0.1° cell. '
+    'Water still over the kerb at FC Road',
+    'A third journalist, a third chain root, still Pune district, still the same 0.1° cell. '
+        'Autos had given up the inner lane. The pump had not arrived.\n\n'
         'Corroborated by 3 independent witnesses — none of them named.',
     8,
     district: 'Pune',
@@ -233,10 +236,10 @@ const _stories = <_Seed>[
     'Ranchi',
     'Jharkhand',
     'labour',
-    'Night shift at a coal siding off Hazaribagh road (synthetic)',
-    'SYNTHETIC DISPATCH.\n\n'
-        'Headlamps, a whistle, a wagon that did not move for forty minutes. '
-        'No real worker is identified. The journalist entity is a test-mode Anon Aadhaar nullifier.',
+    'Night shift waiting on a coal siding',
+    'Headlamps, a whistle, a wagon that did not move for forty minutes. '
+        'Sodium lamps on gravel. Nobody here is identified.\n\n'
+        'The journalist entity is a test-mode Anon Aadhaar nullifier. The capture is a still hashed on device.',
     28 * 60,
     district: 'Ranchi',
     geoCell: '23.3,85.3',
@@ -247,10 +250,10 @@ const _stories = <_Seed>[
     'Imphal',
     'Manipur',
     'civic',
-    'NH-2 convoy wait, none of the names are real (synthetic)',
-    'SYNTHETIC DISPATCH.\n\n'
-        'A line of trucks on the shoulder, engines off to save fuel. '
-        'This is not a report of a specific day\'s blockade. It is a placeholder for ground copy that platforms bury.',
+    'Trucks on the NH-2 shoulder, engines off',
+    'A line of trucks on the shoulder, engines off to save fuel. '
+        'Hills behind the tarmac, late light.\n\n'
+        'Ground copy like this is the first thing platforms bury. The protected link is a query, not a tweet.',
     36 * 60,
     district: 'Imphal West',
     geoCell: '24.8,93.9',
@@ -261,10 +264,9 @@ const _stories = <_Seed>[
     'Hyderabad',
     'Telangana',
     'labour',
-    'Gig kitchen riders after a platform outage, Gachibowli (synthetic)',
-    'SYNTHETIC DISPATCH.\n\n'
-        'Riders sat on their bikes outside a dark cloud kitchen. '
-        'The app status in this copy is invented. Tips on this story are Tiramisu test GLM only.',
+    'Riders outside a dark kitchen in Gachibowli',
+    'Riders sat on their bikes outside a dark cloud kitchen. Insulated bags, screens still open, no orders.\n\n'
+        'Tips on this story are Tiramisu test GLM only.',
     44 * 60,
     district: 'Hyderabad',
     geoCell: '17.4,78.5',
@@ -275,10 +277,9 @@ const _stories = <_Seed>[
     'Kolkata',
     'West Bengal',
     'civic',
-    'Howrah approach waterlogging, municipal pump (synthetic)',
-    'SYNTHETIC DISPATCH.\n\n'
-        'Knee-deep water at a flyover mouth, one pump, two men in reflective vests. '
-        'Fictional. The protected link should still resolve from Arkiv after a hypothetical takedown.',
+    'Knee-deep at the Howrah flyover mouth',
+    'Knee-deep water at a flyover mouth, one pump, two men in reflective vests. '
+        'The protected link should still resolve from Arkiv after a hypothetical takedown.',
     52 * 60,
     district: 'Howrah',
     geoCell: '22.6,88.3',

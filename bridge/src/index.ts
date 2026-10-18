@@ -13,18 +13,34 @@ import {
   jsonToPayload,
 } from "@arkiv-network/sdk";
 import { addr, bool, bytes32, i32, key, str, u64, u256 } from "@arkiv-network/sdk/attr";
-import { tiramisu } from "@arkiv-network/sdk/chains";
 import { eq, gte, lte } from "@arkiv-network/sdk/query";
-import { http, parseEther, webSocket, type Hex } from "viem";
+import { custom, http, parseEther, webSocket, type Hex } from "viem";
 import { generatePrivateKey, privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import { BUNDLED_TEST_QR, verifyTestAnonAadhaar } from "./anon";
 import { hashChain, hashSingleFile, type FrameSample } from "./hash";
+import { getNetwork, setNetwork, isLocal } from "./network";
+
+export { getNetwork, setNetwork, isLocal, LOCAL_DEV_KEY, LOCAL_DEV_ADDRESS } from "./network";
 
 export const APP = "swatantra";
-export const RPC = "https://rpc.tiramisu.db-chain.testnet.arkiv.network";
-export const WS = "wss://rpc.tiramisu.db-chain.testnet.arkiv.network";
-export const EXPLORER = "https://tiramisu.explorer.arkiv.network";
-export const CHAIN_ID = 7738577;
+export let RPC = getNetwork().rpc;
+export let WS = getNetwork().ws;
+export let EXPLORER = getNetwork().explorer;
+export let CHAIN_ID = getNetwork().chainId;
+
+function syncNetworkExports() {
+  const n = getNetwork();
+  RPC = n.rpc;
+  WS = n.ws;
+  EXPLORER = n.explorer;
+  CHAIN_ID = n.chainId;
+}
+
+export function applyNetwork(name?: string | null) {
+  setNetwork(name);
+  syncNetworkExports();
+  return { network: getNetwork().name, rpc: RPC, chainId: CHAIN_ID, explorer: EXPLORER };
+}
 
 const SELECT = {
   key: true,
@@ -50,22 +66,34 @@ export const EXPIRY = {
 };
 
 let account: PrivateKeyAccount | undefined;
+let injectedAddress: `0x${string}` | undefined;
+let injectedEth: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } | undefined;
 let unwatch: (() => void) | undefined;
 
 export function publicClient() {
-  return createPublicClient({ chain: tiramisu, transport: http(RPC) });
+  const n = getNetwork();
+  return createPublicClient({ chain: n.chain, transport: http(n.rpc) });
 }
 
 export function publicWs() {
-  return createPublicClient({ chain: tiramisu, transport: webSocket(WS) });
+  const n = getNetwork();
+  return createPublicClient({ chain: n.chain, transport: webSocket(n.ws) });
 }
 
 export function walletClient() {
+  const n = getNetwork();
+  if (injectedEth && injectedAddress) {
+    return createWalletClient({
+      account: injectedAddress,
+      chain: n.chain,
+      transport: custom(injectedEth),
+    });
+  }
   if (!account) throw new Error("no wallet unlocked");
   return createWalletClient({
     account,
-    chain: tiramisu,
-    transport: http(RPC),
+    chain: n.chain,
+    transport: http(n.rpc),
   });
 }
 
@@ -190,25 +218,84 @@ export async function getEntity(entityKey: string) {
 }
 
 export function createBurner() {
+  injectedEth = undefined;
+  injectedAddress = undefined;
   const pk = generatePrivateKey();
   account = privateKeyToAccount(pk);
   return { address: account.address, privateKey: pk };
 }
 
 export function unlock(privateKey: string) {
+  injectedEth = undefined;
+  injectedAddress = undefined;
   const pk = (privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`) as Hex;
   account = privateKeyToAccount(pk);
   return { address: account.address };
 }
 
 export function getAddress() {
+  if (injectedAddress) return { address: injectedAddress, injected: true };
   return account ? { address: account.address } : { address: null };
 }
 
 export async function getBalance() {
-  if (!account) return { wei: "0" };
-  const wei = await publicClient().getBalance({ address: account.address });
+  const addr = injectedAddress ?? account?.address;
+  if (!addr) return { wei: "0" };
+  const wei = await publicClient().getBalance({ address: addr });
   return { wei: wei.toString() };
+}
+
+type EthereumProvider = { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
+
+function browserEthereum(): EthereumProvider | undefined {
+  const eth = (globalThis as { ethereum?: EthereumProvider }).ethereum;
+  return eth;
+}
+
+export async function connectInjected() {
+  const eth = browserEthereum();
+  if (!eth) throw new Error("NO_INJECTED");
+  const n = getNetwork();
+  const chainHex = `0x${n.chainId.toString(16)}`;
+  try {
+    await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: chainHex }] });
+  } catch {
+    await eth.request({
+      method: "wallet_addEthereumChain",
+      params: [
+        {
+          chainId: chainHex,
+          chainName: n.name === "local" ? "Arkiv Local" : "Arkiv Tiramisu",
+          nativeCurrency: { name: n.nativeToken, symbol: n.nativeToken, decimals: 18 },
+          rpcUrls: [n.rpc],
+          blockExplorerUrls: [n.explorer],
+        },
+      ],
+    });
+  }
+  const accounts = (await eth.request({ method: "eth_requestAccounts" })) as string[];
+  if (!accounts?.[0]) throw new Error("NO_INJECTED");
+  account = undefined;
+  injectedEth = eth;
+  injectedAddress = accounts[0] as `0x${string}`;
+  return { address: injectedAddress, injected: true, chainId: n.chainId };
+}
+
+export async function connectWalletConnect(projectId?: string) {
+  const id =
+    projectId ||
+    (() => {
+      try {
+        return (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
+          ?.WALLETCONNECT_PROJECT_ID;
+      } catch {
+        return undefined;
+      }
+    })();
+  if (!id) throw new Error("NO_PROJECT_ID");
+  // Reown AppKit is optional. Without a bundled provider we refuse rather than
+  // ship a half-wired WalletConnect session. UI falls back to burner / injected.
+  throw new Error("NO_PROJECT_ID");
 }
 
 type AaGlobal = {
@@ -419,9 +506,10 @@ export async function publishStoryWithCapture(input: {
     endMs: number;
   };
 }) {
-  if (!account) throw new Error("no wallet unlocked");
+  const owner = injectedAddress ?? account?.address;
+  if (!owner) throw new Error("no wallet unlocked");
   const pub = publicClient();
-  const [capPred, storyPred] = await pub.predictEntityKeys({ owner: account.address, count: 2 as const });
+  const [capPred, storyPred] = await pub.predictEntityKeys({ owner, count: 2 as const });
   const now = Date.now();
   const result = await walletClient().executeBatch({
     creates: [
@@ -769,6 +857,8 @@ const methods: Record<string, (args: Record<string, unknown>) => Promise<unknown
   unlock: (a) => unlock(String(a.privateKey)),
   getAddress: () => getAddress(),
   getBalance: () => getBalance(),
+  connectInjected: () => connectInjected(),
+  connectWalletConnect: (a) => connectWalletConnect(a.projectId != null ? String(a.projectId) : undefined),
   verifyJournalist: (a) => verifyJournalist(String(a.qrData ?? ""), a.state as string | undefined),
   findJournalistByNullifier: (a) => findJournalistByNullifier(String(a.nullifier)),
   createJournalist: (a) => createJournalist(a as Parameters<typeof createJournalist>[0]),
@@ -797,6 +887,11 @@ const methods: Record<string, (args: Record<string, unknown>) => Promise<unknown
   createCorroboration: (a) => createCorroboration(a as Parameters<typeof createCorroboration>[0]),
   watchFeed: () => watchFeed(),
   stopWatch: () => stopWatch(),
+  setNetwork: (a) => applyNetwork(a.network != null ? String(a.network) : String(a.name ?? "")),
+  getNetwork: () => {
+    const n = getNetwork();
+    return { name: n.name, rpc: n.rpc, ws: n.ws, explorer: n.explorer, chainId: n.chainId, local: isLocal() };
+  },
 };
 
 export async function call(method: string, argsJson = "{}"): Promise<string> {
@@ -816,6 +911,8 @@ const api = {
   unlock,
   getAddress,
   getBalance,
+  connectInjected,
+  connectWalletConnect,
   verifyJournalist,
   findJournalistByNullifier,
   createJournalist,
@@ -835,9 +932,16 @@ const api = {
   createCorroboration,
   watchFeed,
   stopWatch,
+  setNetwork: applyNetwork,
+  getNetwork,
+  isLocal,
   APP,
-  RPC,
-  EXPLORER,
+  get RPC() {
+    return RPC;
+  },
+  get EXPLORER() {
+    return EXPLORER;
+  },
   BUNDLED_TEST_QR,
 };
 

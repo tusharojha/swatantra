@@ -10,7 +10,7 @@ A mobile (and web) app for independent journalism in India. Ground reporters pub
 
 Entered in **Best Indian Use Case** (also relevant to Censorship Resistance & Privacy) at [Arkiv: Global Tour Stop](https://github.com/Arkiv-Network/global-tour-stop-pre-devcon).
 
-**Brand:** launcher icon, splash, favicon and in-app header all use [`assets/logo.png`](assets/logo.png). Newspaper UI on white paper `#FFFFFF`. Accents sampled from the rangoli: magenta `#DC2460` (kickers, links, tip), teal `#089C9C`, saffron `#F47C20`. Headlines: Playfair Display; body: Source Serif 4 / Noto Serif Devanagari.
+**Brand:** launcher icon, splash, favicon and in-app header all use [`assets/logo.png`](assets/logo.png). Newspaper UI on white paper `#FFFFFF`. Accents sampled from the rangoli: magenta `#DC2460` (kickers, links, tip), teal `#089C9C`, saffron `#F47C20`. Headlines: Playfair Display (bundled); body: Source Serif 4 16.5px/1.5 + Noto Serif Devanagari; UI labels: Inter. Phone-first with a desktop newspaper front page ≥1024px.
 
 **Pre-existing work: None.** Built 18 October 2026.
 
@@ -37,7 +37,7 @@ Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a 
 ## Live demo
 
 - **Web:** https://tusharojha.github.io/swatantra/  
-  Reads need no wallet. If the live query is empty you see a labelled **SYNTHETIC DEMO** that switches off automatically once entities exist.
+  Reads need no wallet. If the live query is empty you see a small **Demo edition** line; it switches off automatically once entities exist.
   **Pages may 404** until a repo admin sets **Settings → Pages → Source: GitHub Actions**. The workflow still uploads a `swatantra-web` artifact; a Pages 404 does **not** fail the APK job or the GitHub Release.
 - **Android APK:** GitHub Release tag [`apk`](https://github.com/tusharojha/swatantra/releases/tag/apk), also committed under [`release/`](release/) if Actions did not finish in time.
 - **Protected link shape:** `https://tusharojha.github.io/swatantra/s/<entityKey>`
@@ -150,7 +150,17 @@ h_i     = sha256( h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms) || place 
 
 Independent journalists who capture in the **same district** within **±30 minutes** count as witnesses. Distinct Anon Aadhaar nullifiers (`nid` via `$creator` → journalist entity). **N ≥ 2** shows `CORROBORATED · N independent witnesses · {district} district · {time}` on the feed and article. Optionally written as a `corroboration` entity.
 
-**Fallback seed (Tiramisu seeder still 0 GLM):** there is no local Arkiv node to write to. The in-app `ProofEdition` is the demo seed — three synthetic desks on FC Road, Pune, same 0.1° cell within 20 minutes, plus one solo Mumbai story. It is labelled **SYNTHETIC DEMO** and dropped the moment `arkiv_query` returns live stories. Re-run `cd bridge && npx tsx src/seed.ts` when the seeder has ≥0.2 GLM.
+## Local fallback node
+
+Hub faucet is insolvent (see [`arkiv/friction.md`](arkiv/friction.md) §5). Seeder `0x873f5856a0967549D60442481DB5aef270044Bd7` is 0 GLM. Until Tiramisu has ≥0.2 GLM:
+
+```bash
+./scripts/local-node.sh          # official Golem Base / Arkiv op-geth --dev, :8545
+cd bridge && ARKIV_NETWORK=local npx tsx src/seed.ts   # → arkiv/seed-result.local.json
+# app: --dart-define=ARKIV_NETWORK=local  or  http://127.0.0.1:8080/?network=local
+```
+
+Default is still **Tiramisu** (`ARKIV_NETWORK=tiramisu`) so CI / Pages keep building against chain 7738577. The moment the seeder is funded, `ARKIV_NETWORK=tiramisu npx tsx src/seed.ts` writes `arkiv/seed-result.json`. Until then the in-app `ProofEdition` (3 Pune desks + Mumbai solo) stays as a labelled layout fallback.
 
 ```bash
 node scripts/verify-capture.mjs app/web/seed/s1.jpg 1700000000000

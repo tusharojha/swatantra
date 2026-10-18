@@ -36,13 +36,13 @@ Each note: expected → actual → versions → steps to reproduce → what woul
 **Repro:** Create with `fromDays(180)`, immediately `extendEntity({ expires: fromDays(30) })` — should revert (`ExpiryNotExtended`) because 30 < remaining 180.  
 **Fix:** A sentence in the Hub create dialog: "Extension replaces the remaining life if and only if the new instant is later."
 
-## 5. Faucet is a Hub UI with a cooldown (Hub / Faucet)
+## 5. Faucet is a Hub UI with a cooldown — then it went insolvent (Hub / Faucet)
 
 **Expected:** A scriptable faucet for seed wallets (`curl` an address, get GLM).  
-**Actual:** https://hub.arkiv.network/faucet is a Next.js page: wallet connect, one claim per wallet per cooldown. No public JSON faucet documented. Funding three journalist burners plus a seeder means four captcha/wallet sessions.  
-**Versions:** Hub, 18 Oct 2026.  
-**Repro:** Open the faucet URL; there is no `POST /api/faucet {address}` in the public docs.  
-**Fix:** A testnet faucet that accepts an address (rate-limited) so seed scripts can run in CI.
+**Actual:** https://hub.arkiv.network/faucet is a Next.js page: wallet connect, one claim per wallet per cooldown. No public JSON faucet documented. **On 18 Oct 2026 19:27–20:35 UTC** every `POST /api/faucet` for seeder `0x873f5856a0967549D60442481DB5aef270044Bd7` returned 202 then `status=failed phase=transferring`. Dispenser `0x815Ad950ae49102952C10ceBB18901E9e28AC712` held **9.995400999990803 GLM** and always sends **10**. Error: `insufficient funds for gas * price + value: have 9995400999990802000 want 10000000000000000000`. Seeder balance stayed `0x0`.  
+**Versions:** Hub, Tiramisu 7738577, 18 Oct 2026.  
+**Repro:** `eth_getBalance` the dispenser; `POST /api/faucet` with a SIWE session.  
+**Fix:** Drip `min(10, balance − gas)` **or** refill the dispenser by ≥0.005 GLM. Until then Swatantra seeds a **local official op-geth --dev** (`ARKIV_NETWORK=local`, `./scripts/local-node.sh`) and reseeds Tiramisu the moment the seeder has ≥0.2 GLM (`./scripts/poll-tiramisu-seed.sh`).
 
 ## 6. Public RPC is rate-limited (RPC / Access keys)
 
@@ -101,6 +101,12 @@ Each note: expected → actual → versions → steps to reproduce → what woul
 **Actual:** Arkiv has no geo type. We round to 0.1° ourselves (`geo_cell`) and reverse to a bundled district centroid offline. Browser `navigator.geolocation` is the permission prompt on web; APK uses a labelled **self-declared** district picker so we did not add another Android plugin during the compileSdk 36 fight.  
 **Repro:** Post → Use GPS (coarse) on web; Post → self-declared dropdown on APK.  
 **Fix:** A documented `geohash` / `u64` cell convention in the querying guide would have saved the 0.1° bikeshed.
+
+## 14. Published local-node images lag the SDK execute ABI (SDK / Local node)
+
+**Expected:** `docker pull` an official image, `geth --dev`, SDK 0.8.1 `createEntity` just works.  
+**Actual:** `golemnetwork/golembase-l3-op-geth:v1.101605.0-2.8-hoodi-braga-bfc8fe58` (2026-07) accepts the call but emits **zero** `EntityCreated` logs. `arkiv-op-reth` v0.1.0-pure-6 (2026-06, `just node-dev`) reverts `unknown selector 0x49650044`. Query language on those builds is `app = "swatantra"` (no `str()`). Tiramisu + SDK 0.8.1 need the current `Golem-Base/golembase-op-geth` Dockerfile build (`./scripts/local-node.sh`).  
+**Fix:** Publish a `:dev` image on Docker Hub from `main` on every merge, with the same execute ABI as Tiramisu.
 
 ## What was smooth
 
