@@ -271,17 +271,32 @@ Future<Map<String, String>> createJournalistDart({
   String? state,
   String displayName = '',
   String bio = '',
+  bool groth16 = false,
+  bool ageAbove18 = true,
+  bool stateRevealed = false,
+  String? proofHash,
 }) {
   final attrs = <_Cell>[
     str('app', Config.appAttr),
     str('type', 'journalist'),
     b32('nid', nullifier),
     boolCell('test_mode', true),
+    boolCell('groth16', groth16),
+    boolCell('age_over_18', ageAbove18),
+    boolCell('state_revealed', stateRevealed),
     u64('created_at_ms', DateTime.now().millisecondsSinceEpoch),
     if (state != null && state.isNotEmpty) str('state', state),
+    if (proofHash != null && proofHash.isNotEmpty) b32('proof_hash', proofHash),
   ];
   return createEntity(
-    payload: {'displayName': displayName, 'bio': bio, 'testMode': true},
+    payload: {
+      'displayName': displayName,
+      'bio': bio,
+      'testMode': true,
+      'groth16': groth16,
+      'proofHash': proofHash ?? '',
+      'claims': {'indianResident': true, 'ageOver18': ageAbove18, 'stateRevealed': stateRevealed},
+    },
     attributes: attrs,
     days: 365,
     readonly: true,

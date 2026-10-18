@@ -70,6 +70,21 @@ class _MeScreenState extends State<MeScreen> {
           const SizedBox(height: 8),
           Text('$balance wei GLM', style: Swa.byline),
         ],
+        if (WalletStore.aaGroth16 && WalletStore.aaNullifier != null) ...[
+          const SizedBox(height: 16),
+          const Kicker('Proof verified ✓ (TEST MODE)'),
+          const SizedBox(height: 8),
+          Text('Proof verified ✓ (TEST MODE)', style: Swa.playfair(size: 20)),
+          const SizedBox(height: 8),
+          Text('NULLIFIER', style: Swa.dateline.copyWith(color: Swa.muted)),
+          const SizedBox(height: 4),
+          Mono(WalletStore.aaNullifier!, maxLines: 4),
+        ] else if (WalletStore.aaNullifier != null) ...[
+          const SizedBox(height: 16),
+          const Kicker('Nullifier (stub)'),
+          const SizedBox(height: 8),
+          Mono(WalletStore.aaNullifier!, maxLines: 3),
+        ],
         if (WalletStore.journalistKey != null) ...[
           const SizedBox(height: 8),
           Text('Journalist entity ${shortAddr(WalletStore.journalistKey!)}', style: Swa.byline),

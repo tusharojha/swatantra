@@ -1,21 +1,12 @@
 /**
- * Anon Aadhaar TEST MODE verifier.
+ * Anon Aadhaar TEST MODE SHA-256 stub.
  *
- * Full Groth16 proving with @anon-aadhaar/core is too heavy to ship inside
- * Flutter in this hackathon window. Per the product brief we verify a
- * test-mode identity with a minimal verifier and label it everywhere.
+ * The real Groth16 path is `aa-prove.ts` (`prove()` + `verify()` from
+ * `@anon-aadhaar/core`, bundled as `app/web/aa_prove.js`). This stub remains
+ * for the Android APK, Node seed, and widget tests. The UI labels it.
  *
- * What this does:
- * - Accepts Anon Aadhaar-style test QR data (a long numeric string) OR the
- *   bundled synthetic test identity.
- * - Derives a pseudonymous nullifier = SHA-256("swatantra-aa-v1" || qr).
- * - Returns only { nullifier, indianResident, ageOver18, optional state }.
- * - NEVER stores Aadhaar numbers, names, photos, or the QR payload on Arkiv.
- *
- * One nullifier = one journalist entity. The app queries `nid` before create.
- *
+ * nid = SHA-256("swatantra-aa-v1|" || testQR). Never a real Aadhaar.
  * Test QR generator: https://documentation.anon-aadhaar.pse.dev/docs/quick-setup
- * Official project: https://github.com/anon-aadhaar/anon-aadhaar
  */
 
 import { sha256, toHex } from "./hash";

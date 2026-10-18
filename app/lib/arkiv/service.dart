@@ -107,6 +107,10 @@ class Arkiv {
           state: args['state'] as String?,
           displayName: '${args['displayName'] ?? ''}',
           bio: '${args['bio'] ?? ''}',
+          groth16: args['groth16'] == true,
+          ageAbove18: args['ageAbove18'] != false,
+          stateRevealed: args['stateRevealed'] == true,
+          proofHash: args['proofHash'] as String?,
         );
       case 'createTip':
         return w.createTipDart(

@@ -3,16 +3,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --format=iife --platform=browser --outfile=../app/web/arkiv_bridge.js --legal-comments=none",
+    "build:bridge": "esbuild src/index.ts --bundle --format=iife --platform=browser --outfile=../app/web/arkiv_bridge.js --legal-comments=none",
+    "build:aa": "node src/build-aa.mjs",
+    "build": "npm run build:bridge && npm run build:aa",
     "seed": "tsx src/seed.ts",
     "wallets": "node src/gen-wallets.mjs"
   },
   "dependencies": {
+    "@anon-aadhaar/core": "^2.4.3",
     "@arkiv-network/sdk": "0.8.1",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
+    "events": "^3.3.0",
     "viem": "^2.38.0"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",
+    "esbuild-plugin-polyfill-node": "^0.3.0",
     "tsx": "^4.20.0",
     "typescript": "^5.6.0"
   }

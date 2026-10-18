@@ -33,7 +33,11 @@ Names are snake_case, ≤ 32 chars. Types must match on write and query.
 | `app` | str | all | `swatantra` |
 | `type` | str | all | `journalist` `story` `capture` `tip` `takedown` `draft` `tip_request` |
 | `created_at_ms` | u64 | all | Unix ms. Range filters. Client-side sort. |
-| `nid` | bytes32 | journalist | Anon Aadhaar **test-mode** nullifier. One person ↔ one journalist. |
+| `nid` | bytes32 | journalist | Anon Aadhaar **test-mode** Groth16 nullifier (field element as 32-byte BE). One person ↔ one journalist. |
+| `groth16` | bool | journalist | `true` when `nid` came from `@anon-aadhaar/core` `verify()`, not the SHA-256 stub. |
+| `age_over_18` | bool | journalist | Selective-disclosure flag from the proof (`revealAgeAbove18`). |
+| `state_revealed` | bool | journalist | Whether the proof revealed state. The state *string* is not copied from the QR. |
+| `proof_hash` | bytes32 | journalist | SHA-256 of the Groth16 proof JSON. The proof itself stays off Arkiv. |
 | `state` | str | journalist, story | Indian state / UT |
 | `city` | str | story, capture | City, coarse |
 | `category` | str | story | `civic` `protest` `environment` `labour` `conflict` `other` |
@@ -55,7 +59,7 @@ Names are snake_case, ≤ 32 chars. Types must match on write and query.
 
 ### Payload (not indexed)
 
-- **journalist:** `{ displayName, bio, testMode, claims }` — synthetic display names only.
+- **journalist:** `{ displayName, bio, testMode, groth16, proofHash, claims }` — synthetic display names only. Never QR data, names, or photos from Aadhaar.
 - **story:** `{ title, body, mediaUrl, mediaHash, captureRoot, synthetic }`
 - **capture:** `{ algo, mediaUrl, deviceTime, whyOffArkiv }`
 - **tip:** `{ note, testnet, token: "GLM" }`

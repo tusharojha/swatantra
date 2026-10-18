@@ -8,15 +8,21 @@ import 'arkiv/rpc.dart';
 class WalletStore {
   static const _k = 'swatantra.burner.pk';
   static const _journalistK = 'swatantra.journalist.key';
+  static const _aaNullifierK = 'swatantra.aa.nullifier';
+  static const _aaGroth16K = 'swatantra.aa.groth16';
   static SharedPreferences? _prefs;
   static String? privateKey;
   static String? address;
   static String? journalistKey;
+  static String? aaNullifier;
+  static bool aaGroth16 = false;
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
     privateKey = _prefs!.getString(_k);
     journalistKey = _prefs!.getString(_journalistK);
+    aaNullifier = _prefs!.getString(_aaNullifierK);
+    aaGroth16 = _prefs!.getBool(_aaGroth16K) ?? false;
     if (privateKey != null) {
       await unlock(privateKey!);
     }
@@ -65,6 +71,13 @@ class WalletStore {
   static Future<void> saveJournalist(String key) async {
     journalistKey = key;
     await _prefs?.setString(_journalistK, key);
+  }
+
+  static Future<void> saveAnonProof({required String nullifier, required bool groth16}) async {
+    aaNullifier = nullifier;
+    aaGroth16 = groth16;
+    await _prefs?.setString(_aaNullifierK, nullifier);
+    await _prefs?.setBool(_aaGroth16K, groth16);
   }
 
   static Future<String> balanceWei() async {

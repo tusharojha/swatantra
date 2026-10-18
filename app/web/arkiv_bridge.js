@@ -22321,6 +22321,14 @@ ${prettyStateOverride(stateOverride)}`;
     return { wei: wei.toString() };
   }
   async function verifyJournalist(qrData, revealState) {
+    const aa = globalThis.SwatantraAA;
+    if (aa?.proveAndVerifyTestMode) {
+      const r = await aa.proveAndVerifyTestMode({
+        qrData: qrData || "",
+        revealState: Boolean(revealState)
+      });
+      return { ...r, indianResident: true, ageOver18: r.ageAbove18 !== false };
+    }
     return verifyTestAnonAadhaar(qrData || BUNDLED_TEST_QR, revealState);
   }
   async function findJournalistByNullifier(nullifier) {
@@ -22341,7 +22349,13 @@ ${prettyStateOverride(stateOverride)}`;
         displayName: input.displayName,
         bio: input.bio ?? "",
         testMode: true,
-        claims: { indianResident: true, ageOver18: true }
+        groth16: input.groth16 === true,
+        proofHash: input.proofHash ?? "",
+        claims: {
+          indianResident: true,
+          ageOver18: input.ageAbove18 !== false,
+          stateRevealed: input.stateRevealed === true
+        }
       }),
       contentType: "application/json",
       attributes: {
@@ -22350,7 +22364,11 @@ ${prettyStateOverride(stateOverride)}`;
         nid: bytes32(input.nullifier),
         created_at_ms: u64(BigInt(Date.now())),
         ...input.state ? { state: str(input.state) } : {},
-        test_mode: bool(true)
+        test_mode: bool(true),
+        groth16: bool(input.groth16 === true),
+        age_over_18: bool(input.ageAbove18 !== false),
+        state_revealed: bool(input.stateRevealed === true),
+        ...input.proofHash ? { proof_hash: bytes32(input.proofHash) } : {}
       },
       expires: EXPIRY.journalist()
     });

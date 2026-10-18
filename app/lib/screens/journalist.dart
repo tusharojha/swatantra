@@ -20,6 +20,11 @@ class _JournalistScreenState extends State<JournalistScreen> {
   String? status;
   String? nullifier;
   String? entityKey;
+  String? proofHash;
+  bool groth16 = false;
+  bool ageAbove18 = true;
+  bool stateRevealed = false;
+  bool proving = false;
 
   static const states = [
     'Maharashtra',
@@ -37,28 +42,51 @@ class _JournalistScreenState extends State<JournalistScreen> {
   ];
 
   Future<void> _verify({bool bundled = false}) async {
-    setState(() => status = 'TEST MODE verifier…');
+    setState(() {
+      proving = true;
+      status = arkivJsAvailable
+          ? 'Groth16 TEST MODE: fetching PSE artifacts then prove()+verify(). First run downloads ~612 MiB zkey.'
+          : 'APK fallback: SHA-256 stub (Groth16 runs in the web build).';
+    });
     try {
       if (arkivJsAvailable) {
         final r = await arkivJs('verifyJournalist', {
           'qrData': bundled ? '' : qr.text,
           if (state != null) 'state': state,
         });
+        final nid = r['nullifier'] as String?;
+        final isG16 = r['groth16'] == true && r['ok'] != false;
+        await WalletStore.saveAnonProof(nullifier: nid ?? '', groth16: isG16);
+        if (!mounted) return;
         setState(() {
-          nullifier = r['nullifier'] as String?;
-          status =
-              'Anon Aadhaar TEST MODE. Claims: Indian resident, 18+. Nullifier ${r['nullifier']}. No Aadhaar data is stored.';
+          nullifier = nid;
+          groth16 = isG16;
+          ageAbove18 = r['ageAbove18'] != false && r['ageOver18'] != false;
+          stateRevealed = r['stateRevealed'] == true;
+          proofHash = r['proofHash'] as String?;
+          status = isG16
+              ? (r['note'] as String? ?? 'Proof verified ✓ (TEST MODE)')
+              : 'SHA-256 stub (not Groth16). ${r['note'] ?? ''}';
+          proving = false;
         });
         return;
       }
       final nid = testNullifier(bundled ? '' : qr.text);
+      await WalletStore.saveAnonProof(nullifier: nid, groth16: false);
+      if (!mounted) return;
       setState(() {
         nullifier = nid;
+        groth16 = false;
         status =
-            'Anon Aadhaar TEST MODE (Dart). Claims: Indian resident, 18+. Nullifier $nid. No Aadhaar data is stored.';
+            'SHA-256 stub on APK. Open the web app to generate a real Groth16 TEST MODE proof. Nullifier $nid';
+        proving = false;
       });
     } catch (e) {
-      setState(() => status = '$e');
+      if (!mounted) return;
+      setState(() {
+        status = '$e';
+        proving = false;
+      });
     }
   }
 
@@ -78,6 +106,10 @@ class _JournalistScreenState extends State<JournalistScreen> {
         if (state != null) 'state': state,
         'displayName': name.text.trim(),
         'bio': bio.text.trim(),
+        'groth16': groth16,
+        'ageAbove18': ageAbove18,
+        'stateRevealed': stateRevealed,
+        if (proofHash != null) 'proofHash': proofHash,
       });
       final key = '${r['entityKey'] ?? (r['entity'] is Map ? (r['entity'] as Map)['key'] : '')}';
       if (key.startsWith('0x')) await WalletStore.saveJournalist(key);
@@ -100,12 +132,32 @@ class _JournalistScreenState extends State<JournalistScreen> {
         const SectionHead(
           kicker: 'The desk',
           title: 'Verified journalist',
+          dek:
+              'Anon Aadhaar TEST MODE via @anon-aadhaar/core: Groth16 prove() then verify(). We store only the nullifier, ageAbove18 / state-reveal booleans, and a proof hash — never QR data.',
         ),
         const SizedBox(height: 12),
         const TestModeBanner(
-          'Anon Aadhaar TEST MODE (Ethereum Foundation PSE). We do not run the full Groth16 prover in Flutter. A minimal verifier derives a SHA-256 nullifier from test QR data. Nothing from Aadhaar — not even a hash of a real ID — is written to Arkiv. Use official test QR data, never a real card.',
+          'TEST MODE only. Uses the official PSE test QR and hosted v2 artifacts (wasm + ~612 MiB zkey). Never a real Aadhaar card. First prove is slow because of the zkey download.',
         ),
         const SizedBox(height: 16),
+        if (groth16 && nullifier != null) ...[
+          const Kicker('Proof verified ✓ (TEST MODE)'),
+          const SizedBox(height: 8),
+          Text('Proof verified ✓ (TEST MODE)', style: Swa.playfair(size: 22)),
+          const SizedBox(height: 8),
+          Text('NULLIFIER', style: Swa.dateline.copyWith(color: Swa.muted)),
+          const SizedBox(height: 4),
+          Mono(nullifier!, maxLines: 4),
+          if (proofHash != null) ...[
+            const SizedBox(height: 8),
+            Text('PROOF HASH', style: Swa.dateline.copyWith(color: Swa.muted)),
+            const SizedBox(height: 4),
+            Mono(proofHash!, maxLines: 3),
+          ],
+          const SizedBox(height: 16),
+          const Hairline(),
+          const SizedBox(height: 16),
+        ],
         TextField(
           controller: name,
           decoration: const InputDecoration(labelText: 'Public byline (synthetic)'),
@@ -130,32 +182,33 @@ class _JournalistScreenState extends State<JournalistScreen> {
           maxLines: 3,
           decoration: const InputDecoration(
             labelText: 'Anon Aadhaar TEST QR (numeric) — optional',
-            hintText: 'Paste test QR, or use the bundled test identity',
+            hintText: 'Paste official TEST QR, or use the bundled PSE test identity',
           ),
         ),
         const SizedBox(height: 16),
-        OutlinedButton(
-          onPressed: () => _verify(bundled: true),
-          child: const Text('Use bundled test identity'),
+        FilledButton(
+          onPressed: proving ? null : () => _verify(bundled: true),
+          child: Text(proving ? 'PROVING…' : 'PROVE BUNDLED TEST IDENTITY'),
         ),
         const SizedBox(height: 8),
-        OutlinedButton(onPressed: () => _verify(bundled: false), child: const Text('Verify pasted TEST QR')),
+        OutlinedButton(
+          onPressed: proving ? null : () => _verify(bundled: false),
+          child: const Text('Prove pasted TEST QR'),
+        ),
         const SizedBox(height: 8),
-        FilledButton(onPressed: _register, child: const Text('CREATE JOURNALIST ENTITY')),
-        if (nullifier != null) ...[
+        FilledButton(onPressed: proving ? null : _register, child: const Text('CREATE JOURNALIST ENTITY')),
+        if (!groth16 && nullifier != null) ...[
           const SizedBox(height: 16),
           const Hairline(),
           const SizedBox(height: 16),
-          const Kicker('Nullifier'),
-          const SizedBox(height: 8),
-          Text('Pseudonymous id', style: Swa.playfair(size: 20)),
+          const Kicker('Nullifier (stub)'),
           const SizedBox(height: 8),
           Mono(nullifier!, maxLines: 3),
         ],
         if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
         const SizedBox(height: 24),
         Text(
-          'On Arkiv we store only: type=journalist, nid=nullifier, optional state, test_mode=true, and a synthetic display name in the payload. \$creator is the burner wallet.',
+          'On Arkiv: type=journalist, nid=nullifier, groth16, age_over_18, state_revealed, optional state, proof_hash, test_mode=true. No QR, no Aadhaar fields. \$creator is the burner wallet. nid uniqueness: one person = one journalist.',
           style: Swa.serif(size: 13, color: Swa.muted, height: 1.45),
         ),
       ],

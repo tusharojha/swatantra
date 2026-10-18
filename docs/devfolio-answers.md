@@ -16,7 +16,7 @@ Ground reporters in India watch their posts disappear: ~200,000 Sahyog portal re
 
 ## Challenges I ran into
 
-Bundling `@arkiv-network/sdk` 0.8.1 into Flutter; Anon Aadhaar Groth16 not fitting in the remaining window (test-mode verifier instead); Hub faucet is not scriptable **and on 18 Oct 2026 the dispenser `0x815Ad950ae49102952C10ceBB18901E9e28AC712` held 9.995 GLM while every claim tries to send 10**, so seed wallets sat at 0; public RPC rate limits on a static GitHub Pages host; no server-side orderBy so the feed sorts `created_at_ms` in the client. Details: `/arkiv/friction.md`.
+Bundling `@arkiv-network/sdk` 0.8.1 into Flutter; Anon Aadhaar `@anon-aadhaar/core` 2.4.3 `prove()`+`verify()` works in Node and the web bundle, but the official v2 zkey is **612 MiB** so the first browser prove is a large download and APK keeps a labelled SHA-256 stub; Hub faucet is not scriptable **and on 18 Oct 2026 the dispenser `0x815Ad950ae49102952C10ceBB18901E9e28AC712` held 9.995 GLM while every claim tries to send 10**, so seed wallets sat at 0; public RPC rate limits on a static GitHub Pages host; no server-side orderBy so the feed sorts `created_at_ms` in the client. Details: `/arkiv/friction.md`.
 
 ## Why Arkiv?
 
@@ -94,7 +94,7 @@ Yes.
 0:20–0:50 **Feed, no wallet.** Scroll synthetic Mumbai/Delhi/Imphal stories. Show city/category filters. Open a story. Point at `$creator`, publish time, capture-proof badge.  
 0:50–1:20 **Protected link.** Copy `/s/<entityKey>`. Paste in a new tab — it loads from Arkiv, not a platform. “This survives a takedown of the tweet.”  
 1:20–1:50 **Capture + verify.** Show in-app still → chain root. Verify screen: pick the seed JPEG, match against the capture entity. “Bytes are off Arkiv; the root is on Arkiv.”  
-1:50–2:20 **Journalist TEST MODE.** Anon Aadhaar test identity → nullifier → journalist entity. Repeat with same nullifier → rejected / already exists.  
+1:50–2:20 **Journalist TEST MODE.** Bundled PSE TEST QR → Groth16 prove/verify → “Proof verified ✓ (TEST MODE)” + nullifier. Create journalist entity (`nid` uniqueness). Repeat → already exists. APK fallback is the SHA-256 stub, labelled.  
 2:20–2:45 **Tip (testnet GLM)** and **Lifetime Extension** on a story. Takedown tracker.  
 2:45–3:00 Curl on screen, explorer address, “MIT, schema, friction in the repo.” End card with live URL and APK.
 

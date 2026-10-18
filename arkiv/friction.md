@@ -87,6 +87,14 @@ Each note: expected → actual → versions → steps to reproduce → what woul
 **Repro:** Authenticated `POST /api/faucet` then `GET /api/faucet?recipient=0x…` while the dispenser balance is below 10 GLM.  
 **Fix:** Refill the Tiramisu faucet, or send `min(10, balance - gas)` and expose a scriptable address-in faucet.
 
+## 12. Anon Aadhaar Groth16 artifacts are huge (PSE / proving)
+
+**Expected:** `@anon-aadhaar/core` `prove()` + `verify()` in the Flutter web app, using the hosted test artifacts, in a few seconds.  
+**Actual:** Official v2 artifacts at `https://anon-aadhaar-artifacts.s3.eu-central-1.amazonaws.com/v2.0.0/` are **aadhaar-verifier.wasm 10.0 MiB** and **circuit_final.zkey 583.7 MiB (612,082,146 bytes)**. `generateArgs` on the PSE dummy TEST QR + test certificate succeeds immediately. `prove()` then `verify(pcd, true)` **does work** (Node, local artifacts, 18 Oct 2026: nullifier `0x06ffb52d…361f`, `ageAbove18=true`, `stateRevealed=true`). The first browser prove has to download that zkey into memory; snarkjs `fullProve` holds the whole buffer. APK does not ship the zkey — it keeps the SHA-256 stub and labels it. We do **not** write QR bytes, names, or photos to Arkiv: only `nid`, `age_over_18`, `state_revealed`, `proof_hash`, `groth16`, `test_mode`.  
+**Versions:** `@anon-aadhaar/core` 2.4.3, artifacts v2.0.0, snarkjs 0.7.x.  
+**Repro:** `NODE_OPTIONS=--max-old-space-size=8192 npx tsx src/aa-prove-cli.mjs` after downloading wasm/zkey/vkey to `/tmp/aa-artifacts`.  
+**Fix:** A test-circuit zkey in the 10–50 MiB range, or chunked streaming that does not require 600 MiB RAM, so a phone browser can prove.
+
 ## What was smooth
 
 - `createPublicClient` + `tiramisu` + `http()` with no URL uses the public RPC. First `eth_blockNumber` returned `0xb6e37` on 18 Oct 2026, chain id `0x7614d1` = 7738577.

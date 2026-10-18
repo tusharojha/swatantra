@@ -210,7 +210,34 @@ export async function getBalance() {
   return { wei: wei.toString() };
 }
 
+type AaGlobal = {
+  proveAndVerifyTestMode?: (opts: {
+    qrData?: string;
+    revealState?: boolean;
+    onProgress?: (s: string) => void;
+    localArtifacts?: { wasm: string; zkey: string; vkey: string };
+  }) => Promise<{
+    ok: boolean;
+    groth16: boolean;
+    testMode: boolean;
+    nullifier: string;
+    ageAbove18?: boolean;
+    stateRevealed?: boolean;
+    state?: string;
+    proofHash?: string;
+    note?: string;
+  }>;
+};
+
 export async function verifyJournalist(qrData: string, revealState?: string) {
+  const aa = (globalThis as unknown as { SwatantraAA?: AaGlobal }).SwatantraAA;
+  if (aa?.proveAndVerifyTestMode) {
+    const r = await aa.proveAndVerifyTestMode({
+      qrData: qrData || "",
+      revealState: Boolean(revealState),
+    });
+    return { ...r, indianResident: true as const, ageOver18: r.ageAbove18 !== false };
+  }
   return verifyTestAnonAadhaar(qrData || BUNDLED_TEST_QR, revealState);
 }
 
@@ -228,6 +255,10 @@ export async function createJournalist(input: {
   state?: string;
   displayName: string;
   bio?: string;
+  groth16?: boolean;
+  ageAbove18?: boolean;
+  stateRevealed?: boolean;
+  proofHash?: string;
 }) {
   const existing = await findJournalistByNullifier(input.nullifier);
   if (existing) {
@@ -238,7 +269,13 @@ export async function createJournalist(input: {
       displayName: input.displayName,
       bio: input.bio ?? "",
       testMode: true,
-      claims: { indianResident: true, ageOver18: true },
+      groth16: input.groth16 === true,
+      proofHash: input.proofHash ?? "",
+      claims: {
+        indianResident: true,
+        ageOver18: input.ageAbove18 !== false,
+        stateRevealed: input.stateRevealed === true,
+      },
     }),
     contentType: "application/json",
     attributes: {
@@ -248,6 +285,10 @@ export async function createJournalist(input: {
       created_at_ms: u64(BigInt(Date.now())),
       ...(input.state ? { state: str(input.state) } : {}),
       test_mode: bool(true),
+      groth16: bool(input.groth16 === true),
+      age_over_18: bool(input.ageAbove18 !== false),
+      state_revealed: bool(input.stateRevealed === true),
+      ...(input.proofHash ? { proof_hash: bytes32(input.proofHash as Hex) } : {}),
     },
     expires: EXPIRY.journalist(),
   });

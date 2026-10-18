@@ -65,7 +65,17 @@ Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a 
 
 ## Anon Aadhaar — TEST MODE
 
-Full Groth16 proving does not run inside Flutter in this build. A **minimal test-mode verifier** in `bridge/src/anon.ts` derives `nid = SHA-256("swatantra-aa-v1" \|\| testQR)` and stores **only** that bytes32 on a `journalist` entity. UI and this README say TEST MODE. Use Anon Aadhaar [test QR / test data](https://documentation.anon-aadhaar.pse.dev/docs/quick-setup), never a real Aadhaar. One nullifier = one journalist (`nid` uniqueness check before create).
+**Web:** `@anon-aadhaar/core` 2.4.3 in TEST MODE. The bundled PSE dummy TEST QR (or a pasted official TEST QR) goes through `generateArgs` → `prove()` → `verify(pcd, true)` using [hosted v2 artifacts](https://anon-aadhaar-artifacts.s3.eu-central-1.amazonaws.com/v2.0.0/) (`artifactUrls.v2`). The UI shows **Proof verified ✓ (TEST MODE)** plus the nullifier. Arkiv stores only `nid` (nullifier as bytes32), `age_over_18`, `state_revealed`, `proof_hash`, `groth16=true`, `test_mode=true`. QR bytes are dropped.
+
+**APK:** Groth16 is not shipped (zkey is ~612 MiB). The SHA-256 stub in `app/lib/arkiv/anon.dart` remains, clearly labelled. Same `nid` uniqueness check.
+
+Use Anon Aadhaar [test QR / test data](https://documentation.anon-aadhaar.pse.dev/docs/quick-setup), never a real Aadhaar. One nullifier = one journalist.
+
+Node check (after downloading wasm/zkey/vkey to `/tmp/aa-artifacts`):
+
+```bash
+cd bridge && NODE_OPTIONS=--max-old-space-size=8192 npx tsx src/aa-prove-cli.mjs
+```
 
 ## Reproduce Arkiv usage
 
