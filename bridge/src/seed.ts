@@ -179,24 +179,31 @@ async function main() {
   console.log(`seeder/reader\t${seedAcc.address}\t${formatEther(seedBal)} GLM`);
   if (seedBal === 0n) {
     throw new Error(
-      `Seeder ${seedAcc.address} has 0 GLM. Fund it with ≥10 test GLM (one Hub faucet drop) then re-run.`,
+      `Seeder ${seedAcc.address} has 0 GLM. Hub faucet always sends 10 GLM; the dispenser is often ~9.995. A 0.2 GLM top-up of this address is enough to seed.`,
     );
   }
 
   // One funded seeder is enough: split GLM to journalist burners so $creator differs.
+  // Entity writes are cheap; 0.04 GLM each covers createJournalist + several stories.
   unlock(seedKey);
-  const topUp = parseEther("0.4");
+  const topUp = parseEther("0.04");
   for (const [role, pk] of roles.slice(1)) {
     const acc = privateKeyToAccount(pk);
     const bal = await pub.getBalance({ address: acc.address });
     console.log(`${role}\t${acc.address}\t${formatEther(bal)} GLM`);
-    if (bal < parseEther("0.2")) {
+    if (bal < parseEther("0.02")) {
+      const have = await pub.getBalance({ address: seedAcc.address });
+      if (have < topUp + parseEther("0.01")) {
+        throw new Error(
+          `Seeder has ${formatEther(have)} GLM; need ~0.04 more to top up ${acc.address}.`,
+        );
+      }
       const tx = await walletClient().sendTransaction({
         to: acc.address,
         value: topUp,
       });
       await pub.waitForTransactionReceipt({ hash: tx });
-      console.log(`  topped up ${acc.address} with 0.4 GLM  ${EXPLORER}/tx/${tx}`);
+      console.log(`  topped up ${acc.address} with 0.04 GLM  ${EXPLORER}/tx/${tx}`);
     }
   }
 

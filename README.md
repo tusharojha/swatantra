@@ -10,7 +10,7 @@ A mobile (and web) app for independent journalism in India. Ground reporters pub
 
 Entered in **Best Indian Use Case** (also relevant to Censorship Resistance & Privacy) at [Arkiv: Global Tour Stop](https://github.com/Arkiv-Network/global-tour-stop-pre-devcon).
 
-**Brand:** launcher icon, splash, favicon and in-app header all use [`assets/logo.png`](assets/logo.png). Accents sampled from the rangoli: magenta `#DC2460`, teal `#089C9C`, saffron `#F47C20`, paper `#FFFBFA`.
+**Brand:** launcher icon, splash, favicon and in-app header all use [`assets/logo.png`](assets/logo.png). Newspaper UI on white paper `#FFFFFF`. Accents sampled from the rangoli: magenta `#DC2460` (kickers, links, tip), teal `#089C9C`, saffron `#F47C20`. Headlines: Playfair Display; body: Source Serif 4 / Noto Serif Devanagari.
 
 **Pre-existing work: None.** Built 18 October 2026.
 
@@ -61,7 +61,7 @@ Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a 
 | Journalist C (Northeast, synthetic) | `0x68F0Ee5526e28e9072A9Fa398d91A5a867001645` |
 | Reader burner (unused in seed) | `0x376B04bB89b6486d7f30C7B9a2251500cfae9ffF` |
 
-**Before the deadline:** fund the first four at [Hub faucet](https://hub.arkiv.network/faucet) (10 GLM / 1 hour cooldown, Cap PoW captcha). Then `cd bridge && npx tsx src/seed.ts`. Entity keys land in [`arkiv/seed-result.json`](arkiv/seed-result.json). Private keys stay in local `.env` — never in git, never in Arkiv.
+**Before the deadline:** the Hub faucet always tries to send **10 GLM** from dispenser `0x815Ad950ae49102952C10ceBB18901E9e28AC712`. On 18 Oct 2026 it sat at **9.995 GLM**, so SIWE+captcha claims accept then fail in `transferring`. Prefer sending **≥0.2 GLM** (or one successful 10 GLM drop) to the seeder, then `cd bridge && npx tsx src/seed.ts`. Entity keys land in [`arkiv/seed-result.json`](arkiv/seed-result.json). Private keys stay in local `.env` — never in git, never in Arkiv.
 
 ## Anon Aadhaar — TEST MODE
 
@@ -132,6 +132,10 @@ h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms))
 ```
 
 Only `chain_root`, counts and timestamps go on Arkiv. Verify screen recomputes from a file.
+
+```bash
+node scripts/verify-capture.mjs app/web/seed/s1.jpg 1700000000000
+```
 
 ## Docs
 

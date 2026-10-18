@@ -50,7 +50,7 @@ https://github.com/tusharojha/swatantra/blob/main/arkiv/friction.md
 | Journalist B (Delhi, synthetic) | `0xf96c7F67F72301038Ec538E422e0d52e7Dd81cCF` |
 | Journalist C (Northeast, synthetic) | `0x68F0Ee5526e28e9072A9Fa398d91A5a867001645` |
 
-Entity keys and explorer tx links: [`arkiv/seed-result.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.json) (filled the moment the seeder has ≥10 test GLM). Fund the seeder at [Hub faucet](https://hub.arkiv.network/faucet).
+Entity keys and explorer tx links: [`arkiv/seed-result.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.json) (filled the moment the seeder has ≥0.2 test GLM). Hub faucet claims currently fail because the dispenser has 9.995 GLM and always sends 10 — send GLM directly to the seeder, or wait for a dispenser refill.
 
 ## Schema
 

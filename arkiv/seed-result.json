@@ -2,7 +2,20 @@
   "status": "pending_faucet",
   "network": "tiramisu",
   "chainId": 7738577,
-  "note": "Hub faucet dispenser 0x815Ad950ae49102952C10ceBB18901E9e28AC712 had ~9.995 GLM (needs 10) on 2026-10-18. Claims were accepted then failed in transferring. Re-run: cd bridge && npx tsx src/seed.ts after funding the four write wallets.",
+  "checkedAt": "2026-10-18T19:27:32Z",
+  "note": "Hub POST /api/faucet for seeder returned 202 accepted then GET status=failed phase=transferring. Dispenser 0x815Ad950ae49102952C10ceBB18901E9e28AC712 has 9.995400999990803 GLM and always sends 10. Need either a dispenser refill of ≥0.0046 GLM or ≥0.2 GLM sent to the seeder. Re-run: cd bridge && npx tsx src/seed.ts",
+  "dispenser": {
+    "address": "0x815Ad950ae49102952C10ceBB18901E9e28AC712",
+    "balanceGlm": "9.995400999990803",
+    "dripGlm": "10"
+  },
+  "lastClaim": {
+    "recipient": "0x873f5856a0967549D60442481DB5aef270044Bd7",
+    "http": 202,
+    "status": "failed",
+    "phase": "transferring",
+    "error": "insufficient funds for gas * price + value: have 9995400999990802000 want 10000000000000000000"
+  },
   "wallets": {
     "seeder": "0x873f5856a0967549D60442481DB5aef270044Bd7",
     "journalistA": "0x2E1733523b5704Cf431378618Cc5E74bB1248997",
