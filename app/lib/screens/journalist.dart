@@ -133,10 +133,11 @@ class _JournalistScreenState extends State<JournalistScreen> {
       child: ListView(
       padding: Swa.pagePadding,
       children: [
-        TextButton(
+        TextButton.icon(
           onPressed: () => context.go('/me'),
           style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
-          child: Text('← Me', style: Swa.kicker),
+          icon: const Icon(SwaI.back, size: 16, color: Swa.magenta),
+          label: Text('Me', style: Swa.kicker),
         ),
         const SizedBox(height: 16),
         const SectionHead(
@@ -156,7 +157,13 @@ class _JournalistScreenState extends State<JournalistScreen> {
         ),
         const SizedBox(height: 16),
         if (groth16 && nullifier != null) ...[
-          const Kicker('Proof verified ✓'),
+          const Row(
+            children: [
+              Icon(SwaI.journalist, size: 16, color: Swa.magenta),
+              SizedBox(width: 6),
+              Kicker('Proof verified ✓'),
+            ],
+          ),
           const SizedBox(height: 8),
           Text('Proof verified ✓', style: Swa.playfair(size: 22)),
           const SizedBox(height: 8),

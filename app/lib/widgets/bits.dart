@@ -5,6 +5,41 @@ import '../config.dart';
 import '../models.dart';
 import '../theme.dart';
 
+/// Outlined Material icons, Lucide-style stroke, one size.
+class SwaI {
+  static const size = 18.0;
+  static const feed = Icons.auto_stories_outlined;
+  static const feedOn = Icons.auto_stories;
+  static const verify = Icons.verified_outlined;
+  static const verifyOn = Icons.verified;
+  static const post = Icons.edit_outlined;
+  static const postOn = Icons.edit;
+  static const tracker = Icons.gavel_outlined;
+  static const trackerOn = Icons.gavel;
+  static const me = Icons.person_outline;
+  static const meOn = Icons.person;
+  static const corroborated = Icons.groups_outlined;
+  static const journalist = Icons.verified_user_outlined;
+  static const hash = Icons.link;
+  static const sealed = Icons.check_circle_outlined;
+  static const tip = Icons.payments_outlined;
+  static const takedown = Icons.report_outlined;
+  static const place = Icons.location_on_outlined;
+  static const time = Icons.schedule_outlined;
+  static const copy = Icons.content_copy_outlined;
+  static const open = Icons.open_in_new;
+  static const extend = Icons.update_outlined;
+  static const wallet = Icons.account_balance_wallet_outlined;
+  static const key = Icons.vpn_key_outlined;
+  static const camera = Icons.photo_camera_outlined;
+  static const add = Icons.add;
+  static const back = Icons.arrow_back;
+  static const close = Icons.close;
+  static const github = Icons.code;
+  static const faucet = Icons.water_drop_outlined;
+  static const rotate = Icons.sync_outlined;
+}
+
 class Kicker extends StatelessWidget {
   final String label;
   final Color color;
@@ -42,10 +77,19 @@ class CorroborationStamp extends StatelessWidget {
     final hh = t.hour.toString().padLeft(2, '0');
     final mm = t.minute.toString().padLeft(2, '0');
     final line =
-        'CORROBORATED · ${cluster.count} independent witnesses · ${cluster.district} district · ${t.day} ${months[t.month - 1]} $hh:$mm';
+        'Corroborated · ${cluster.count} independent witnesses · ${cluster.district} · ${t.day} ${months[t.month - 1]} $hh:$mm';
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),
-      child: Text(line.toUpperCase(), style: Swa.kicker),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(SwaI.corroborated, size: 16, color: Swa.magenta),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(line.toUpperCase(), style: Swa.kicker),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -134,6 +178,92 @@ class Hairline extends StatelessWidget {
   Widget build(BuildContext context) => const Divider(height: 1, thickness: 1, color: Swa.line);
 }
 
+/// Compact icon + label pill for actions (tip, verify, notice).
+class ActionPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool selected;
+  final bool accent;
+  const ActionPill({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.selected = false,
+    this.accent = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = accent
+        ? Swa.magenta
+        : (selected ? Swa.ink : Swa.muted);
+    return Padding(
+      padding: const EdgeInsets.only(right: 8, bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? (accent ? const Color(0x14DC2460) : Swa.wash) : Swa.paper,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: selected ? (accent ? Swa.magenta : Swa.ink) : Swa.line),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 16, color: color),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: Swa.ui(size: 13, weight: FontWeight.w600, color: color, spacing: 0.2),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BylineRow extends StatelessWidget {
+  final ArkivEntity story;
+  const BylineRow(this.story, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final district = story.district.isNotEmpty ? story.district : (story.city.isNotEmpty ? story.city : 'India');
+    return Wrap(
+      spacing: 12,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(deskIdFor(story.creator), style: Swa.byline),
+        _meta(SwaI.place, '$district district'),
+        _meta(SwaI.time, relativeTime(story.createdAtMs)),
+      ],
+    );
+  }
+
+  Widget _meta(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: Swa.muted),
+        const SizedBox(width: 4),
+        Text(text, style: Swa.byline),
+      ],
+    );
+  }
+}
+
 class DoubleRule extends StatelessWidget {
   const DoubleRule({super.key});
   @override
@@ -174,26 +304,33 @@ class StoryImage extends StatelessWidget {
     final url = story.mediaUrl;
     if (url.isEmpty) return const SizedBox.shrink();
     final w = width ?? double.infinity;
+    Widget image;
     if (url.startsWith('asset:')) {
-      return Image.asset(
+      image = Image.asset(
         url.substring(6),
         height: height,
         width: w,
         fit: fit,
         filterQuality: FilterQuality.medium,
       );
+    } else {
+      image = Image.network(
+        url,
+        height: height,
+        width: w,
+        fit: fit,
+        filterQuality: FilterQuality.medium,
+        errorBuilder: (_, __, ___) {
+          final asset = assetForStory(story);
+          if (asset == null) return const SizedBox.shrink();
+          return Image.asset(asset, height: height, width: w, fit: fit, filterQuality: FilterQuality.medium);
+        },
+      );
     }
-    return Image.network(
-      url,
-      height: height,
-      width: w,
-      fit: fit,
-      filterQuality: FilterQuality.medium,
-      errorBuilder: (_, __, ___) {
-        final asset = assetForStory(story);
-        if (asset == null) return const SizedBox.shrink();
-        return Image.asset(asset, height: height, width: w, fit: fit, filterQuality: FilterQuality.medium);
-      },
+    return Hero(
+      tag: 'still-${story.key}',
+      flightShuttleBuilder: (context, anim, direction, from, to) => to.widget,
+      child: Material(type: MaterialType.transparency, child: image),
     );
   }
 }

@@ -262,24 +262,17 @@ class _PostScreenState extends State<PostScreen> {
               const SizedBox(height: 16),
               SelectableText(link, style: Swa.ui(size: 13, color: Swa.ink, height: 1.4)),
               const SizedBox(height: 20),
-              Row(
+              Wrap(
                 children: [
-                  FilledButton(
-                    onPressed: () => copy(ctx, link),
-                    child: const Text('Copy link'),
-                  ),
-                  const SizedBox(width: 12),
-                  OutlinedButton(
-                    onPressed: () => openUrl(link),
-                    child: const Text('Share'),
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () {
+                  ActionPill(icon: SwaI.copy, label: 'Copy link', accent: true, onTap: () => copy(ctx, link)),
+                  ActionPill(icon: SwaI.open, label: 'Share', onTap: () => openUrl(link)),
+                  ActionPill(
+                    icon: SwaI.feed,
+                    label: 'View',
+                    onTap: () {
                       Navigator.pop(ctx);
                       context.go('/s/$key');
                     },
-                    child: const Text('View'),
                   ),
                 ],
               ),
@@ -310,7 +303,7 @@ class _PostScreenState extends State<PostScreen> {
                 children: [
                   IconButton(
                     onPressed: () => context.go('/'),
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: const Icon(SwaI.close, color: Colors.white),
                   ),
                   const Spacer(),
                   Text('Swatantra', style: Swa.ui(size: 14, weight: FontWeight.w700, color: Colors.white, spacing: 0.4)),
@@ -329,7 +322,7 @@ class _PostScreenState extends State<PostScreen> {
                     const ColoredBox(color: Color(0xFF1A1A1A), child: SizedBox.expand()),
                   if (preview == null)
                     Center(
-                      child: Icon(Icons.photo_camera_outlined, size: 72, color: Colors.white.withValues(alpha: 0.35)),
+                      child: Icon(SwaI.camera, size: 72, color: Colors.white.withValues(alpha: 0.35)),
                     ),
                   Positioned(
                     left: 20,
@@ -358,7 +351,13 @@ class _PostScreenState extends State<PostScreen> {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(stampLine, style: Swa.ui(size: 13, color: Colors.white, weight: FontWeight.w500)),
+                          Row(
+                            children: [
+                              const Icon(SwaI.place, size: 14, color: Colors.white70),
+                              const SizedBox(width: 6),
+                              Expanded(child: Text(stampLine, style: Swa.ui(size: 13, color: Colors.white, weight: FontWeight.w500))),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -419,7 +418,7 @@ class _PostScreenState extends State<PostScreen> {
                 children: [
                   IconButton(
                     onPressed: () => setState(() => phase = _PostPhase.capture),
-                    icon: const Icon(Icons.close, color: Swa.ink),
+                    icon: const Icon(SwaI.close, color: Swa.ink),
                   ),
                   const Spacer(),
                   FilledButton(
@@ -445,18 +444,12 @@ class _PostScreenState extends State<PostScreen> {
                     const SizedBox(height: 12),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: const Color(0x14089C9C),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          chain != null
-                              ? 'Hash chain sealed ✓  ·  ${chain!.frameCount} frame${chain!.frameCount == 1 ? '' : 's'}'
-                              : 'Hashing…',
-                          style: Swa.ui(size: 12, weight: FontWeight.w700, color: Swa.teal, spacing: 0.4),
-                        ),
+                      child: ActionPill(
+                        icon: SwaI.sealed,
+                        label: chain != null
+                            ? 'Hash chain sealed · ${chain!.frameCount} frame${chain!.frameCount == 1 ? '' : 's'}'
+                            : 'Hashing…',
+                        selected: chain != null,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -497,9 +490,9 @@ class _PostScreenState extends State<PostScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _chip(stamp?.district ?? declaredDistrict, onTap: _pickDistrict),
-                        _chip(state, onTap: _pickState),
-                        _chip(category, onTap: _pickCategory),
+                        ActionPill(icon: SwaI.place, label: stamp?.district ?? declaredDistrict, selected: true, onTap: _pickDistrict),
+                        ActionPill(icon: SwaI.place, label: state, onTap: _pickState),
+                        ActionPill(icon: SwaI.feed, label: category, onTap: _pickCategory),
                       ],
                     ),
                     if (status != null) ...[
@@ -517,21 +510,6 @@ class _PostScreenState extends State<PostScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _chip(String label, {required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: Swa.wash,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(label, style: Swa.ui(size: 13, weight: FontWeight.w600, color: Swa.ink)),
       ),
     );
   }

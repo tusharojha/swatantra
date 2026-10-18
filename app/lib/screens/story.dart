@@ -24,6 +24,8 @@ class _StoryScreenState extends State<StoryScreen> {
   bool proof = false;
   Corroboration? cluster;
   final amount = TextEditingController(text: '0.01');
+  String tipPreset = '0.01';
+  bool customTip = false;
   String? status;
 
   @override
@@ -150,10 +152,11 @@ class _StoryScreenState extends State<StoryScreen> {
       child: ListView(
       padding: Swa.pagePadding,
       children: [
-        TextButton(
+        TextButton.icon(
           onPressed: () => context.go('/'),
           style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
-          child: Text('← Feed', style: Swa.kicker),
+          icon: const Icon(SwaI.back, size: 16, color: Swa.magenta),
+          label: Text('Feed', style: Swa.kicker),
         ),
         const SizedBox(height: 16),
         if (loading) const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator())),
@@ -166,7 +169,7 @@ class _StoryScreenState extends State<StoryScreen> {
           const SizedBox(height: 16),
           Text(standfirst(s.body), style: Swa.serif(size: 18, height: 1.45, weight: FontWeight.w400)),
           const SizedBox(height: 12),
-          Text(journalistByline(s), style: Swa.byline),
+          BylineRow(s),
           const SizedBox(height: 24),
           if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 280),
           const SizedBox(height: 24),
@@ -180,32 +183,69 @@ class _StoryScreenState extends State<StoryScreen> {
           const SizedBox(height: 16),
           const Hairline(),
           const SizedBox(height: 16),
-          const Kicker('Support'),
-          const SizedBox(height: 8),
-          Text('Tip this desk', style: Swa.playfair(size: 22)),
-          const SizedBox(height: 8),
-          Text(
-            'Native Tiramisu test token, then a readonly tip entity. Not real money. $tipTotal wei so far.',
-            style: Swa.serif(size: 14, color: Swa.muted, height: 1.45),
+          Wrap(
+            children: [
+              ActionPill(
+                icon: SwaI.tip,
+                label: 'GLM 0.01',
+                selected: !customTip && tipPreset == '0.01',
+                onTap: () {
+                  setState(() {
+                    customTip = false;
+                    tipPreset = '0.01';
+                    amount.text = '0.01';
+                  });
+                  _tip();
+                },
+              ),
+              ActionPill(
+                icon: SwaI.tip,
+                label: 'GLM 0.05',
+                selected: !customTip && tipPreset == '0.05',
+                onTap: () {
+                  setState(() {
+                    customTip = false;
+                    tipPreset = '0.05';
+                    amount.text = '0.05';
+                  });
+                  _tip();
+                },
+              ),
+              ActionPill(
+                icon: SwaI.tip,
+                label: 'Custom',
+                selected: customTip,
+                onTap: () => setState(() => customTip = true),
+              ),
+              ActionPill(icon: SwaI.extend, label: 'Keep alive', onTap: _extend),
+            ],
           ),
-          const SizedBox(height: 12),
-          TextField(controller: amount, decoration: const InputDecoration(labelText: 'Amount (GLM, testnet)')),
-          const SizedBox(height: 12),
-          FilledButton(onPressed: _tip, child: const Text('SEND TESTNET TIP')),
-          const SizedBox(height: 24),
-          const Hairline(),
-          const SizedBox(height: 16),
-          const Kicker('Lifetime'),
-          const SizedBox(height: 8),
-          Text('Keep this story alive', style: Swa.playfair(size: 22)),
-          const SizedBox(height: 8),
-          Text(
-            'Stories expire after ~180 days. Extension sets a new 180-day life from now (it does not add). Anyone may extend because permissionlessExtension is on.',
-            style: Swa.serif(size: 14, color: Swa.muted, height: 1.45),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(onPressed: _extend, child: const Text('EXTEND ON ARKIV')),
-          if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
+          if (customTip) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: amount,
+                    decoration: const InputDecoration(
+                      hintText: 'GLM',
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                    ),
+                  ),
+                ),
+                ActionPill(icon: SwaI.tip, label: 'Send', accent: true, onTap: _tip),
+              ],
+            ),
+          ],
+          if (tipTotal != '0')
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text('$tipTotal wei tipped · testnet GLM', style: Swa.byline),
+            ),
+          if (status != null) ...[const SizedBox(height: 12), TestModeBanner(status!)],
         ],
       ],
     ),
@@ -225,60 +265,50 @@ class _VerifyBlock extends StatelessWidget {
         ? capture!.attr('chain_root')
         : (story.captureRoot.isNotEmpty ? story.captureRoot : '—');
     final entityUrl = proof ? Config.explorer : explorerEntity(story.key);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Swa.paper,
-        border: Border.all(color: Swa.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Kicker('Verification'),
-          const SizedBox(height: 8),
-          Text('Capture hash + Arkiv entity', style: Swa.playfair(size: 20)),
-          const SizedBox(height: 12),
-          Text('CAPTURE HASH', style: Swa.dateline.copyWith(color: Swa.muted)),
-          const SizedBox(height: 4),
-          Mono(hash, maxLines: 4),
-          const SizedBox(height: 12),
-          Text('ARKIV ENTITY', style: Swa.dateline.copyWith(color: Swa.muted)),
-          const SizedBox(height: 4),
-          Mono(story.key, maxLines: 3),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              TextButton(
-                onPressed: () => openUrl(entityUrl),
-                child: const Text('Open Arkiv entity'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(SwaI.hash, size: 16, color: Swa.magenta),
+            const SizedBox(width: 6),
+            Text('CAPTURE HASH', style: Swa.dateline.copyWith(color: Swa.muted)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Mono(hash, maxLines: 3),
+        const SizedBox(height: 12),
+        Wrap(
+          children: [
+            if (capture != null)
+              ActionPill(
+                icon: SwaI.verify,
+                label: 'Verify',
+                onTap: () => context.go('/verify?root=${capture!.attr('chain_root')}'),
               ),
-              TextButton(
-                onPressed: () => copy(context, protectedLink(story.key)),
-                child: const Text('Copy protected link'),
-              ),
-              TextButton(
-                onPressed: () => openUrl(explorerAddr(story.creator)),
-                child: const Text('Creator on explorer'),
-              ),
-              if (capture != null)
-                TextButton(
-                  onPressed: () => context.go('/verify?root=${capture!.attr('chain_root')}'),
-                  child: const Text('Verify this capture'),
-                ),
-            ],
-          ),
-          if (capture != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              '${capture!.attr('frame_count')} frame(s) at ${capture!.attr('fps')} fps',
-              style: Swa.serif(size: 13, color: Swa.muted),
+            ActionPill(
+              icon: SwaI.copy,
+              label: 'Copy link',
+              onTap: () => copy(context, protectedLink(story.key)),
+            ),
+            ActionPill(
+              icon: SwaI.open,
+              label: 'Entity',
+              onTap: () => openUrl(entityUrl),
+            ),
+            ActionPill(
+              icon: SwaI.me,
+              label: 'Creator',
+              onTap: () => openUrl(explorerAddr(story.creator)),
             ),
           ],
-        ],
-      ),
+        ),
+        if (capture != null)
+          Text(
+            '${capture!.attr('frame_count')} frame(s) · ${capture!.district}',
+            style: Swa.byline,
+          ),
+      ],
     );
   }
 }

@@ -135,19 +135,26 @@ class _OnboardPanelState extends State<OnboardPanel> {
               'Reading needs no login. A wallet is only for posting, tipping, and registering a desk. The default is a one-tap burner saved on this device — never on Arkiv.',
         ),
         const SizedBox(height: 24),
-        FilledButton(
-          onPressed: busy ? null : _create,
-          child: Text(busy ? 'Working…' : 'Create wallet'),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton(
-          onPressed: busy ? null : _connect,
-          child: const Text('Connect wallet'),
-        ),
-        const SizedBox(height: 12),
-        TextButton(
-          onPressed: busy ? null : () => setState(() => showImport = !showImport),
-          child: Text(showImport ? 'Hide import' : 'Import key'),
+        Wrap(
+          children: [
+            ActionPill(
+              icon: SwaI.wallet,
+              label: busy ? 'Working…' : 'Create wallet',
+              accent: true,
+              onTap: busy ? null : _create,
+            ),
+            ActionPill(
+              icon: SwaI.wallet,
+              label: 'Connect wallet',
+              onTap: busy ? null : _connect,
+            ),
+            ActionPill(
+              icon: SwaI.key,
+              label: showImport ? 'Hide import' : 'Import key',
+              selected: showImport,
+              onTap: busy ? null : () => setState(() => showImport = !showImport),
+            ),
+          ],
         ),
         if (showImport) ...[
           const SizedBox(height: 8),
@@ -163,10 +170,7 @@ class _OnboardPanelState extends State<OnboardPanel> {
             ),
           ),
           const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: busy ? null : _import,
-            child: const Text('Import on this device'),
-          ),
+          ActionPill(icon: SwaI.key, label: 'Import on this device', accent: true, onTap: busy ? null : _import),
         ],
         const SizedBox(height: 16),
         Text(
@@ -192,9 +196,11 @@ class _OnboardPanelState extends State<OnboardPanel> {
             style: Swa.serif(size: 16, color: Swa.muted, height: 1.5),
           ),
           const SizedBox(height: 16),
-          FilledButton(
-            onPressed: () => context.go('/journalist'),
-            child: const Text('Continue to Anon Aadhaar'),
+          ActionPill(
+            icon: SwaI.journalist,
+            label: 'Continue to Anon Aadhaar',
+            accent: true,
+            onTap: () => context.go('/journalist'),
           ),
         ],
       ],

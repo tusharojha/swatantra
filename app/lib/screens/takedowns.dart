@@ -88,31 +88,25 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
           const SizedBox(height: 8),
           Text('Notices journalists log. A row, not a form.', style: Swa.serif(size: 16, color: Swa.muted, height: 1.45)),
           const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: () => setState(() => composing = !composing),
-              child: Text(composing ? 'Cancel' : 'Log a notice'),
-            ),
+          Wrap(
+            children: [
+              ActionPill(
+                icon: SwaI.takedown,
+                label: composing ? 'Cancel' : 'Log a notice',
+                selected: composing,
+                onTap: () => setState(() => composing = !composing),
+              ),
+            ],
           ),
           if (composing) ...[
             Wrap(
-              spacing: 16,
               children: [
                 for (final p in const ['X', 'Instagram', 'YouTube', 'Facebook', 'WhatsApp', 'other'])
-                  InkWell(
+                  ActionPill(
+                    icon: SwaI.takedown,
+                    label: p,
+                    selected: platform == p,
                     onTap: () => setState(() => platform = p),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        p,
-                        style: Swa.ui(
-                          size: 13,
-                          weight: FontWeight.w600,
-                          color: platform == p ? Swa.magenta : Swa.ink,
-                        ),
-                      ),
-                    ),
                   ),
               ],
             ),
@@ -138,12 +132,8 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
               ),
             ),
             Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton(
-                onPressed: _submit,
-                style: FilledButton.styleFrom(minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 16)),
-                child: const Text('Log'),
-              ),
+              alignment: Alignment.centerLeft,
+              child: ActionPill(icon: SwaI.takedown, label: 'Log', accent: true, onTap: _submit),
             ),
             const SizedBox(height: 8),
           ],
@@ -164,7 +154,13 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(items[i].attr('platform'), style: Swa.ui(size: 12, weight: FontWeight.w700, color: Swa.magenta, spacing: 0.8)),
+                        Row(
+                          children: [
+                            const Icon(SwaI.takedown, size: 14, color: Swa.magenta),
+                            const SizedBox(width: 6),
+                            Text(items[i].attr('platform'), style: Swa.ui(size: 12, weight: FontWeight.w700, color: Swa.magenta, spacing: 0.8)),
+                          ],
+                        ),
                         const SizedBox(height: 6),
                         Text(items[i].attr('law_cited'), style: Swa.playfair(size: 18, height: 1.25)),
                         const SizedBox(height: 6),

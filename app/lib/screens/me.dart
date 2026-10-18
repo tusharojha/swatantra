@@ -69,14 +69,24 @@ class _MeScreenState extends State<MeScreen> {
             ],
             if (WalletStore.aaGroth16 && WalletStore.aaNullifier != null) ...[
               const SizedBox(height: 24),
-              const Kicker('Proof verified ✓'),
-              const SizedBox(height: 8),
-              Text('Proof verified ✓', style: Swa.playfair(size: 22)),
+              const Row(
+                children: [
+                  Icon(SwaI.journalist, size: 16, color: Swa.magenta),
+                  SizedBox(width: 6),
+                  Kicker('Proof verified ✓'),
+                ],
+              ),
               const SizedBox(height: 8),
               Mono(WalletStore.aaNullifier!, maxLines: 4),
             ] else if (WalletStore.aaNullifier != null) ...[
               const SizedBox(height: 24),
-              const Kicker('Nullifier'),
+              const Row(
+                children: [
+                  Icon(SwaI.hash, size: 16, color: Swa.magenta),
+                  SizedBox(width: 6),
+                  Kicker('Nullifier'),
+                ],
+              ),
               const SizedBox(height: 8),
               Mono(WalletStore.aaNullifier!, maxLines: 3),
             ],
@@ -85,27 +95,25 @@ class _MeScreenState extends State<MeScreen> {
               Text('Journalist entity ${shortAddr(WalletStore.journalistKey!)}', style: Swa.byline),
             ],
             const SizedBox(height: 24),
-            Wrap(spacing: 12, runSpacing: 12, children: [
-              OutlinedButton(onPressed: () => copy(context, addr), child: const Text('Copy address')),
-              OutlinedButton(onPressed: () => openUrl(Config.faucet), child: const Text('Open faucet')),
-              OutlinedButton(
-                onPressed: () async {
+            Wrap(children: [
+              ActionPill(icon: SwaI.copy, label: 'Copy address', onTap: () => copy(context, addr)),
+              ActionPill(icon: SwaI.faucet, label: 'Faucet', onTap: () => openUrl(Config.faucet)),
+              ActionPill(
+                icon: SwaI.rotate,
+                label: 'Rotate',
+                onTap: () async {
                   await WalletStore.generate();
                   setState(() => status = 'New burner on this device.');
                   await _refresh();
                 },
-                child: const Text('Rotate wallet'),
+              ),
+              ActionPill(
+                icon: SwaI.journalist,
+                label: WalletStore.aaNullifier == null ? 'Anon Aadhaar' : 'Journalist',
+                accent: true,
+                onTap: () => context.go('/journalist'),
               ),
             ]),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () => context.go('/journalist'),
-              child: Text(
-                WalletStore.aaNullifier == null
-                    ? 'Continue to Anon Aadhaar'
-                    : 'Journalist onboarding',
-              ),
-            ),
             const SizedBox(height: 32),
             const Hairline(),
             const SizedBox(height: 24),
