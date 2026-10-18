@@ -26,7 +26,7 @@ class _PostScreenState extends State<PostScreen> {
   String? status;
   CaptureChain? chain;
   Uint8List? preview;
-  String? journalistKey;
+  final frames = <({Uint8List bytes, int timestampMs})>[];
 
   static const states = [
     'Maharashtra',
@@ -44,11 +44,13 @@ class _PostScreenState extends State<PostScreen> {
 
   Future<void> _hashBytes(Uint8List bytes) async {
     final ts = DateTime.now().millisecondsSinceEpoch;
-    final c = hashChain([(bytes: bytes, timestampMs: ts)]);
+    frames.add((bytes: bytes, timestampMs: ts));
+    final c = hashChain(List.of(frames));
     setState(() {
       chain = c;
       preview = bytes;
-      status = 'Sampled 1 frame at capture time $ts. Chain root ${c.root}. Media stays off Arkiv.';
+      status =
+          'Sampled ${c.frameCount} frame(s), last ts $ts. Chain root ${c.root}. Media stays off Arkiv.';
     });
   }
 
@@ -85,7 +87,7 @@ class _PostScreenState extends State<PostScreen> {
           'category': category,
           'mediaUrl': mediaUrl.text.trim(),
           'mediaHash': chain!.frameHashes.first,
-          if (journalistKey != null) 'journalistKey': journalistKey,
+          if (WalletStore.journalistKey != null) 'journalistKey': WalletStore.journalistKey,
           'capture': {
             'root': chain!.root,
             'frameCount': chain!.frameCount,
@@ -121,7 +123,7 @@ class _PostScreenState extends State<PostScreen> {
         Text('Post a story', style: Theme.of(context).textTheme.headlineMedium),
         const SizedBox(height: 8),
         const Text(
-          'Writes a readonly story entity owned by your burner wallet. Optional in-app capture hashes frames and stores only the chain root on Arkiv.',
+          'Writes a readonly story entity owned by your burner wallet. Optional in-app capture hashes each still (add several for a 1 fps chain) and stores only the chain root on Arkiv.',
           style: TextStyle(color: Swa.muted, height: 1.45),
         ),
         const SizedBox(height: 16),
@@ -158,7 +160,17 @@ class _PostScreenState extends State<PostScreen> {
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
           OutlinedButton.icon(onPressed: _camera, icon: const Icon(Icons.photo_camera_outlined), label: const Text('Camera')),
-          OutlinedButton.icon(onPressed: _pickGallery, icon: const Icon(Icons.photo_outlined), label: const Text('Gallery')),
+          OutlinedButton.icon(onPressed: _pickGallery, icon: const Icon(Icons.photo_outlined), label: const Text('Add still')),
+          if (frames.isNotEmpty)
+            OutlinedButton(
+              onPressed: () => setState(() {
+                frames.clear();
+                chain = null;
+                preview = null;
+                status = 'Capture chain cleared.';
+              }),
+              child: const Text('Clear frames'),
+            ),
         ]),
         if (preview != null) ...[
           const SizedBox(height: 12),

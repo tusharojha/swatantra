@@ -16,7 +16,7 @@ Ground reporters in India watch their posts disappear: ~200,000 Sahyog portal re
 
 ## Challenges I ran into
 
-Bundling `@arkiv-network/sdk` 0.8.1 into Flutter; Anon Aadhaar Groth16 not fitting in the remaining window (test-mode verifier instead); Hub faucet is not scriptable so seed wallets need a human claim; public RPC rate limits on a static GitHub Pages host; no server-side orderBy so the feed sorts `created_at_ms` in the client. Details: `/arkiv/friction.md`.
+Bundling `@arkiv-network/sdk` 0.8.1 into Flutter; Anon Aadhaar Groth16 not fitting in the remaining window (test-mode verifier instead); Hub faucet is not scriptable **and on 18 Oct 2026 the dispenser `0x815Ad950ae49102952C10ceBB18901E9e28AC712` held 9.995 GLM while every claim tries to send 10**, so seed wallets sat at 0; public RPC rate limits on a static GitHub Pages host; no server-side orderBy so the feed sorts `created_at_ms` in the client. Details: `/arkiv/friction.md`.
 
 ## Why Arkiv?
 
@@ -43,7 +43,14 @@ https://github.com/tusharojha/swatantra/blob/main/arkiv/friction.md
 
 ## Wallet addresses that create Arkiv entities
 
-See README and `arkiv/seed-result.json` (filled after seed). Roles: seeder/tipper, journalist A/B/C (synthetic).
+| Role | Address |
+|---|---|
+| Seeder / tipper | `0x873f5856a0967549D60442481DB5aef270044Bd7` |
+| Journalist A (Maharashtra, synthetic) | `0x2E1733523b5704Cf431378618Cc5E74bB1248997` |
+| Journalist B (Delhi, synthetic) | `0xf96c7F67F72301038Ec538E422e0d52e7Dd81cCF` |
+| Journalist C (Northeast, synthetic) | `0x68F0Ee5526e28e9072A9Fa398d91A5a867001645` |
+
+Entity keys and explorer tx links: [`arkiv/seed-result.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.json) (filled the moment the seeder has ≥10 test GLM). Fund the seeder at [Hub faucet](https://hub.arkiv.network/faucet).
 
 ## Schema
 
@@ -75,7 +82,7 @@ Cursor Grok 4.6 (cloud agent) with the official Arkiv docs and `@arkiv-network/s
 
 ## What is the one thing Arkiv should improve first?
 
-A scriptable Tiramisu faucet (address in, GLM out, rate-limited) and a first-class Dart/Flutter recipe or generated client for `execute` / `arkiv_query`. The Hub faucet plus a TS-only SDK cost us the most clock time on a mobile submission.
+A scriptable Tiramisu faucet that can send `min(10, balance − gas)` instead of reverting a 10 GLM drip when the dispenser is 0.005 GLM short — plus a first-class Dart/Flutter recipe for `execute` / `arkiv_query`. The Hub faucet plus a TS-only SDK cost us the most clock time on a mobile submission.
 
 ## Open to a 20-minute feedback call?
 

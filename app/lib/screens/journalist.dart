@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../arkiv/anon.dart';
 import '../arkiv/js.dart';
 import '../theme.dart';
 import '../wallet.dart';
@@ -37,14 +38,23 @@ class _JournalistScreenState extends State<JournalistScreen> {
   Future<void> _verify({bool bundled = false}) async {
     setState(() => status = 'TEST MODE verifier…');
     try {
-      final r = await arkivJs('verifyJournalist', {
-        'qrData': bundled ? '' : qr.text,
-        if (state != null) 'state': state,
-      });
+      if (arkivJsAvailable) {
+        final r = await arkivJs('verifyJournalist', {
+          'qrData': bundled ? '' : qr.text,
+          if (state != null) 'state': state,
+        });
+        setState(() {
+          nullifier = r['nullifier'] as String?;
+          status =
+              'Anon Aadhaar TEST MODE. Claims: Indian resident, 18+. Nullifier ${r['nullifier']}. No Aadhaar data is stored.';
+        });
+        return;
+      }
+      final nid = testNullifier(bundled ? '' : qr.text);
       setState(() {
-        nullifier = r['nullifier'] as String?;
+        nullifier = nid;
         status =
-            'Anon Aadhaar TEST MODE. Claims: Indian resident, 18+. Nullifier ${r['nullifier']}. No Aadhaar data is stored.';
+            'Anon Aadhaar TEST MODE (Dart). Claims: Indian resident, 18+. Nullifier $nid. No Aadhaar data is stored.';
       });
     } catch (e) {
       setState(() => status = '$e');
@@ -68,8 +78,10 @@ class _JournalistScreenState extends State<JournalistScreen> {
         'displayName': name.text.trim(),
         'bio': bio.text.trim(),
       });
+      final key = '${r['entityKey'] ?? (r['entity'] is Map ? (r['entity'] as Map)['key'] : '')}';
+      if (key.startsWith('0x')) await WalletStore.saveJournalist(key);
       setState(() {
-        entityKey = '${r['entityKey'] ?? (r['entity'] is Map ? (r['entity'] as Map)['key'] : '')}';
+        entityKey = key;
         status = r['already'] == true
             ? 'This nullifier already has a journalist entity. One person = one identity. ${r['entity']}'
             : 'Registered. Entity $entityKey  tx ${r['txHash']}';

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../arkiv/js.dart';
 import '../arkiv/service.dart';
 import '../config.dart';
 import '../models.dart';
@@ -28,10 +27,7 @@ class _MeScreenState extends State<MeScreen> {
   Future<void> _refresh() async {
     if (WalletStore.address != null) {
       try {
-        if (arkivJsAvailable) {
-          final b = await arkivJs('getBalance');
-          balance = b['wei'] as String?;
-        }
+        balance = await WalletStore.balanceWei();
         mine = await Arkiv.feed(createdBy: WalletStore.address);
       } catch (e) {
         status = '$e';
@@ -43,7 +39,8 @@ class _MeScreenState extends State<MeScreen> {
   Future<void> _gen() async {
     try {
       await WalletStore.generate();
-      setState(() => status = 'Burner created. Fund it on the Tiramisu faucet. The key never leaves this browser.');
+      setState(() => status =
+          'Burner created. Fund it at ${Config.faucet} (10 test GLM). The key never leaves this device.');
       await _refresh();
     } catch (e) {
       setState(() => status = '$e');
@@ -68,7 +65,12 @@ class _MeScreenState extends State<MeScreen> {
             const AccentChip('Tiramisu testnet · GLM', color: Swa.saffron),
             const SizedBox(height: 12),
             Text(addr == null ? 'No wallet yet' : addr, style: const TextStyle(fontWeight: FontWeight.w600)),
-            if (balance != null) Text('$balance wei', style: const TextStyle(color: Swa.muted)),
+            if (balance != null) Text('$balance wei GLM', style: const TextStyle(color: Swa.muted)),
+            if (WalletStore.journalistKey != null) ...[
+              const SizedBox(height: 8),
+              Text('Journalist entity ${shortAddr(WalletStore.journalistKey!)}',
+                  style: const TextStyle(color: Swa.muted, fontSize: 12)),
+            ],
             const SizedBox(height: 12),
             Wrap(spacing: 8, runSpacing: 8, children: [
               FilledButton(onPressed: _gen, child: Text(addr == null ? 'Create burner' : 'Rotate burner')),

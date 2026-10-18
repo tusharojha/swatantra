@@ -126,6 +126,19 @@ class _FeedScreenState extends State<FeedScreen> {
                         if (s.city.isNotEmpty) AccentChip('${s.city}, ${s.state}'),
                         if (s.hasCapture) const ProofBadge(),
                       ]),
+                      if (s.mediaUrl.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            s.mediaUrl,
+                            height: 140,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       Text(s.title.isEmpty ? 'Untitled story' : s.title,
                           style: Theme.of(context).textTheme.titleLarge),
