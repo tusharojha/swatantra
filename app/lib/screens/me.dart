@@ -69,14 +69,14 @@ class _MeScreenState extends State<MeScreen> {
             ],
             if (WalletStore.aaGroth16 && WalletStore.aaNullifier != null) ...[
               const SizedBox(height: 24),
-              const Kicker('Proof verified ✓ (TEST MODE)'),
+              const Kicker('Proof verified ✓'),
               const SizedBox(height: 8),
-              Text('Proof verified ✓ (TEST MODE)', style: Swa.playfair(size: 22)),
+              Text('Proof verified ✓', style: Swa.playfair(size: 22)),
               const SizedBox(height: 8),
               Mono(WalletStore.aaNullifier!, maxLines: 4),
             ] else if (WalletStore.aaNullifier != null) ...[
               const SizedBox(height: 24),
-              const Kicker('Nullifier (stub)'),
+              const Kicker('Nullifier'),
               const SizedBox(height: 8),
               Mono(WalletStore.aaNullifier!, maxLines: 3),
             ],

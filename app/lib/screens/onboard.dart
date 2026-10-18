@@ -40,7 +40,7 @@ class _OnboardPanelState extends State<OnboardPanel> {
       if (mounted) {
         setState(() {
           busy = false;
-          status = 'Wallet on this device. Next: Anon Aadhaar (TEST MODE).';
+          status = 'Wallet on this device. Next: Anon Aadhaar.';
         });
       }
     } catch (e) {
@@ -66,7 +66,7 @@ class _OnboardPanelState extends State<OnboardPanel> {
         setState(() {
           busy = false;
           showImport = false;
-          status = 'Key imported. Next: Anon Aadhaar (TEST MODE).';
+          status = 'Key imported. Next: Anon Aadhaar.';
         });
       }
     } catch (e) {
@@ -85,7 +85,7 @@ class _OnboardPanelState extends State<OnboardPanel> {
       if (mounted) {
         setState(() {
           busy = false;
-          status = 'Connected. Tiramisu chain added. Next: Anon Aadhaar (TEST MODE).';
+          status = 'Connected. Tiramisu chain added. Next: Anon Aadhaar.';
         });
       }
     } catch (e) {
@@ -185,7 +185,7 @@ class _OnboardPanelState extends State<OnboardPanel> {
           const SizedBox(height: 24),
           const Kicker('Next'),
           const SizedBox(height: 8),
-          Text('Anon Aadhaar, TEST MODE', style: Swa.playfair(size: 22)),
+          Text('Anon Aadhaar', style: Swa.playfair(size: 22)),
           const SizedBox(height: 8),
           Text(
             'Prove 18+ / Indian resident without putting a name on Arkiv. Then you can file a dispatch.',

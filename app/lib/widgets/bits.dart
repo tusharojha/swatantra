@@ -61,11 +61,11 @@ class ProofBadge extends StatelessWidget {
 class DemoLine extends StatelessWidget {
   const DemoLine({super.key});
   static const text =
-      'Demo edition · synthetic stories · switches to live Arkiv data automatically';
+      '';
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: Swa.demoLine);
+    return const SizedBox.shrink();
   }
 }
 

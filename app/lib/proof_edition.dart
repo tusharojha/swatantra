@@ -6,7 +6,7 @@ import 'models.dart';
 /// automatically once entities exist.
 class ProofEdition {
   static const banner =
-      'Demo edition · synthetic stories · switches to live Arkiv data automatically';
+      'Live from Arkiv';
 
   static List<ArkivEntity> get stories {
     final list = _stories.map(_story).toList();

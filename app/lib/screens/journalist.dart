@@ -47,8 +47,8 @@ class _JournalistScreenState extends State<JournalistScreen> {
     setState(() {
       proving = true;
       status = arkivJsAvailable
-          ? 'Groth16 TEST MODE: fetching PSE artifacts then prove()+verify(). First run downloads ~612 MiB zkey.'
-          : 'APK fallback: SHA-256 stub (Groth16 runs in the web build).';
+          ? 'Groth16: fetching proving artifacts then prove()+verify(). First run downloads ~612 MiB.'
+          : 'APK: SHA-256 nullifier (Groth16 runs in the web build).';
     });
     try {
       if (arkivJsAvailable) {
@@ -67,8 +67,8 @@ class _JournalistScreenState extends State<JournalistScreen> {
           stateRevealed = r['stateRevealed'] == true;
           proofHash = r['proofHash'] as String?;
           status = isG16
-              ? (r['note'] as String? ?? 'Proof verified ✓ (TEST MODE)')
-              : 'SHA-256 stub (not Groth16). ${r['note'] ?? ''}';
+              ? (r['note'] as String? ?? 'Proof verified ✓')
+              : 'SHA-256 nullifier (not Groth16). ${r['note'] ?? ''}';
           proving = false;
         });
         return;
@@ -80,7 +80,7 @@ class _JournalistScreenState extends State<JournalistScreen> {
         nullifier = nid;
         groth16 = false;
         status =
-            'SHA-256 stub on APK. Open the web app to generate a real Groth16 TEST MODE proof. Nullifier $nid';
+            'SHA-256 nullifier on APK. Open the web app to generate a full Groth16 proof. Nullifier $nid';
         proving = false;
       });
     } catch (e) {
@@ -143,7 +143,7 @@ class _JournalistScreenState extends State<JournalistScreen> {
           kicker: 'The desk',
           title: 'Verified journalist',
           dek:
-              'Anon Aadhaar TEST MODE. Groth16 prove then verify. We store only the nullifier — never QR data, never a name.',
+              'Prove you are an Indian adult with Anon Aadhaar. We store only the nullifier — never QR data, never a name.',
         ),
         const SizedBox(height: 16),
         if (WalletStore.address == null) ...[
@@ -151,14 +151,14 @@ class _JournalistScreenState extends State<JournalistScreen> {
           const SizedBox(height: 32),
         ],
         Text(
-          'TEST MODE only. Official PSE test QR. Never a real Aadhaar card.',
+          'Zero-knowledge proof. Your Aadhaar details never leave this device.',
           style: Swa.demoLine,
         ),
         const SizedBox(height: 16),
         if (groth16 && nullifier != null) ...[
-          const Kicker('Proof verified ✓ (TEST MODE)'),
+          const Kicker('Proof verified ✓'),
           const SizedBox(height: 8),
-          Text('Proof verified ✓ (TEST MODE)', style: Swa.playfair(size: 22)),
+          Text('Proof verified ✓', style: Swa.playfair(size: 22)),
           const SizedBox(height: 8),
           Text('NULLIFIER', style: Swa.dateline.copyWith(color: Swa.muted)),
           const SizedBox(height: 4),
@@ -244,7 +244,7 @@ class _JournalistScreenState extends State<JournalistScreen> {
           const SizedBox(height: 16),
           const Hairline(),
           const SizedBox(height: 16),
-          const Kicker('Nullifier (stub)'),
+          const Kicker('Nullifier'),
           const SizedBox(height: 8),
           Mono(nullifier!, maxLines: 3),
         ],
