@@ -1,6 +1,8 @@
 import '../models.dart';
+import '../wallet.dart';
 import 'js.dart';
 import 'rpc.dart';
+import 'write.dart' as w;
 
 class Arkiv {
   static final rpc = ArkivRpc();
@@ -65,5 +67,86 @@ class Arkiv {
     final page = await rpc.query(parts.join(' AND '), limit: 100);
     page.entities.sort((a, b) => b.createdAtMs.compareTo(a.createdAtMs));
     return page.entities;
+  }
+
+  static Future<Map<String, dynamic>> callWrite(String method, Map<String, dynamic> args) async {
+    if (arkivJsAvailable) {
+      return arkivJs(method, args);
+    }
+    if (WalletStore.privateKey == null) {
+      throw StateError('Create a burner in Me first.');
+    }
+    switch (method) {
+      case 'createStory':
+        return w.createStoryDart(
+          title: '${args['title'] ?? ''}',
+          body: '${args['body'] ?? ''}',
+          city: '${args['city'] ?? ''}',
+          state: '${args['state'] ?? ''}',
+          category: '${args['category'] ?? ''}',
+          mediaUrl: '${args['mediaUrl'] ?? ''}',
+          mediaHash: '${args['mediaHash'] ?? ''}',
+          captureRoot: '${args['captureRoot'] ?? ''}',
+          captureKey: args['captureKey'] as String?,
+          journalistKey: args['journalistKey'] as String?,
+        );
+      case 'createCapture':
+        return w.createCaptureDart(
+          root: '${args['root']}',
+          frameCount: args['frameCount'] as int,
+          fps: args['fps'] as int? ?? 1,
+          startMs: args['startMs'] as int,
+          endMs: args['endMs'] as int,
+          city: '${args['city'] ?? ''}',
+          mediaUrl: '${args['mediaUrl'] ?? ''}',
+          storyKey: args['storyKey'] as String?,
+        );
+      case 'createJournalist':
+        return w.createJournalistDart(
+          nullifier: '${args['nullifier']}',
+          state: args['state'] as String?,
+          displayName: '${args['displayName'] ?? ''}',
+          bio: '${args['bio'] ?? ''}',
+        );
+      case 'createTip':
+        return w.createTipDart(
+          storyKey: '${args['storyKey']}',
+          to: '${args['to']}',
+          amountEth: '${args['amountEth']}',
+          note: '${args['note'] ?? ''}',
+        );
+      case 'extendStory':
+        return w.extendStoryDart('${args['entityKey']}');
+      case 'publishStoryWithCapture':
+        final capArgs = Map<String, dynamic>.from(args['capture'] as Map);
+        final cap = await w.createCaptureDart(
+          root: '${capArgs['root']}',
+          frameCount: capArgs['frameCount'] as int,
+          fps: capArgs['fps'] as int? ?? 1,
+          startMs: capArgs['startMs'] as int,
+          endMs: capArgs['endMs'] as int,
+          city: '${args['city'] ?? ''}',
+          mediaUrl: '${args['mediaUrl'] ?? ''}',
+        );
+        final story = await w.createStoryDart(
+          title: '${args['title'] ?? ''}',
+          body: '${args['body'] ?? ''}',
+          city: '${args['city'] ?? ''}',
+          state: '${args['state'] ?? ''}',
+          category: '${args['category'] ?? ''}',
+          mediaUrl: '${args['mediaUrl'] ?? ''}',
+          mediaHash: '${args['mediaHash'] ?? ''}',
+          captureRoot: '${capArgs['root']}',
+          captureKey: cap['entityKey'],
+          journalistKey: args['journalistKey'] as String?,
+        );
+        return {
+          'storyKey': story['entityKey'],
+          'captureKey': cap['entityKey'],
+          'txHash': story['txHash'],
+        };
+      default:
+        throw UnsupportedError('Write $method needs the JS bridge or a funded burner.');
+    }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:swatantra/arkiv/anon.dart';
 import 'package:swatantra/arkiv/hash.dart';
+import 'package:swatantra/arkiv/write.dart';
 import 'package:swatantra/main.dart';
 import 'package:swatantra/theme.dart';
 
@@ -45,5 +46,11 @@ void main() {
     expect(a, b);
     expect(a.startsWith('0x'), isTrue);
     expect(a.length, 66);
+  });
+
+  test('Ident32 is left-aligned UTF-8', () {
+    final h = ident32Hex('app');
+    expect(h.startsWith('0x617070'), isTrue);
+    expect(h.length, 66);
   });
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../arkiv/js.dart';
 import '../arkiv/service.dart';
 import '../models.dart';
 import '../theme.dart';
@@ -77,7 +76,7 @@ class _StoryScreenState extends State<StoryScreen> {
     }
     setState(() => status = 'Sending testnet GLM…');
     try {
-      final r = await arkivJs('createTip', {
+      final r = await Arkiv.callWrite('createTip', {
         'storyKey': widget.entityKey,
         'to': story!.creator,
         'amountEth': amount.text.trim(),
@@ -93,7 +92,7 @@ class _StoryScreenState extends State<StoryScreen> {
   Future<void> _extend() async {
     setState(() => status = 'Lifetime Extension…');
     try {
-      final r = await arkivJs('extendStory', {'entityKey': widget.entityKey});
+      final r = await Arkiv.callWrite('extendStory', {'entityKey': widget.entityKey});
       setState(() => status = 'Extended. New expiry block ${r['expiresAt']}. Tx ${r['txHash']}');
     } catch (e) {
       setState(() => status = 'Extension failed: $e');

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../arkiv/hash.dart';
-import '../arkiv/js.dart';
+import '../arkiv/service.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../wallet.dart';
@@ -79,7 +79,7 @@ class _PostScreenState extends State<PostScreen> {
     try {
       Map<String, dynamic> r;
       if (chain != null) {
-        r = await arkivJs('publishStoryWithCapture', {
+        r = await Arkiv.callWrite('publishStoryWithCapture', {
           'title': title.text.trim(),
           'body': '${body.text.trim()}\n\nSYNTHETIC / DEMO COPY unless you wrote otherwise.',
           'city': city.text.trim().isEmpty ? 'Mumbai' : city.text.trim(),
@@ -99,7 +99,7 @@ class _PostScreenState extends State<PostScreen> {
         setState(() => status = 'Published story ${r['storyKey']} with capture ${r['captureKey']}. Tx ${r['txHash']}');
         if (mounted && r['storyKey'] != null) context.go('/s/${r['storyKey']}');
       } else {
-        r = await arkivJs('createStory', {
+        r = await Arkiv.callWrite('createStory', {
           'title': title.text.trim(),
           'body': body.text.trim(),
           'city': city.text.trim().isEmpty ? 'Mumbai' : city.text.trim(),

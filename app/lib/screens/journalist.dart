@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../arkiv/anon.dart';
 import '../arkiv/js.dart';
+import '../arkiv/service.dart';
 import '../theme.dart';
 import '../wallet.dart';
 import '../widgets/bits.dart';
@@ -72,7 +73,7 @@ class _JournalistScreenState extends State<JournalistScreen> {
     if (nullifier == null) return;
     setState(() => status = 'Writing journalist entity…');
     try {
-      final r = await arkivJs('createJournalist', {
+      final r = await Arkiv.callWrite('createJournalist', {
         'nullifier': nullifier,
         if (state != null) 'state': state,
         'displayName': name.text.trim(),
