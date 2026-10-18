@@ -137,8 +137,8 @@ class _StoryScreenState extends State<StoryScreen> {
         if (error != null) TestModeBanner(error!),
         if (s != null) ...[
           if (proof) ...[
-            TestModeBanner(ProofEdition.banner),
-            const SizedBox(height: 16),
+            Text('PROOF EDITION · LAYOUT ONLY · NOT ON-CHAIN', style: Swa.kicker),
+            const SizedBox(height: 12),
           ],
           Kicker(s.category.isEmpty ? 'story' : s.category),
           const SizedBox(height: 8),
@@ -148,7 +148,7 @@ class _StoryScreenState extends State<StoryScreen> {
           const SizedBox(height: 8),
           Text(journalistByline(s), style: Swa.byline),
           const SizedBox(height: 16),
-          if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 240),
+          if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 200),
           const SizedBox(height: 16),
           Text(s.body, style: Swa.serif(size: 17, height: 1.6)),
           const SizedBox(height: 24),

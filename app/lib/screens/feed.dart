@@ -132,10 +132,14 @@ class _FeedScreenState extends State<FeedScreen> {
               _load();
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           if (proof) ...[
-            TestModeBanner(error != null ? 'Could not query Arkiv: $error\n\n${ProofEdition.banner}' : ProofEdition.banner),
-            const SizedBox(height: 16),
+            if (error != null) ...[
+              TestModeBanner('Could not query Arkiv: $error'),
+              const SizedBox(height: 12),
+            ],
+            Text('PROOF EDITION · LAYOUT ONLY · NOT ON-CHAIN', style: Swa.kicker),
+            const SizedBox(height: 12),
           ],
           if (loading) const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator())),
           if (!loading && items.isEmpty)
@@ -201,7 +205,7 @@ class LeadStory extends StatelessWidget {
           Text(journalistByline(story), style: Swa.byline),
           if (story.mediaUrl.isNotEmpty) ...[
             const SizedBox(height: 12),
-            StoryImage(story, height: 220),
+            StoryImage(story, height: 180),
           ],
           const SizedBox(height: 12),
           Text(
