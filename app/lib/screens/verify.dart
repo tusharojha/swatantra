@@ -115,13 +115,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
           ),
           const Hairline(),
           const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(onPressed: _pickWithStoredTs, child: const Text('Pick file and compare')),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(onPressed: _pick, child: const Text('Hash a file only')),
+          Wrap(
+            children: [
+              ActionPill(icon: SwaI.verify, label: 'Pick file and compare', onTap: _pickWithStoredTs),
+              ActionPill(icon: SwaI.hash, label: 'Hash a file', onTap: _pick),
+            ],
           ),
           if (computedRoot != null) ...[
             const SizedBox(height: 16),

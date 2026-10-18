@@ -30,27 +30,50 @@ Future<void> main() async {
   runApp(const SwatantraApp());
 }
 
+CustomTransitionPage<void> _fadeThrough(GoRouterState state, Widget child, {bool axis = true}) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: const Duration(milliseconds: 260),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final incoming = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+      final outgoing = CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeInCubic);
+      final slide = axis
+          ? SlideTransition(
+              position: Tween<Offset>(begin: const Offset(0.04, 0), end: Offset.zero).animate(incoming),
+              child: child,
+            )
+          : child;
+      return FadeTransition(
+        opacity: Tween<double>(begin: 1, end: 0).animate(outgoing),
+        child: FadeTransition(opacity: incoming, child: slide),
+      );
+    },
+  );
+}
+
 final _router = GoRouter(
   routes: [
     ShellRoute(
       builder: (context, state, child) => AppShell(location: state.uri.path, child: child),
       routes: [
-        GoRoute(path: '/', builder: (_, __) => const FeedScreen()),
+        GoRoute(path: '/', pageBuilder: (c, s) => _fadeThrough(s, const FeedScreen())),
         GoRoute(
           path: '/s/:key',
-          builder: (_, s) => StoryScreen(entityKey: s.pathParameters['key']!),
+          pageBuilder: (c, s) => _fadeThrough(s, StoryScreen(entityKey: s.pathParameters['key']!)),
         ),
         GoRoute(
           path: '/verify',
-          builder: (_, s) => VerifyScreen(root: s.uri.queryParameters['root']),
+          pageBuilder: (c, s) => _fadeThrough(s, VerifyScreen(root: s.uri.queryParameters['root'])),
         ),
         GoRoute(
           path: '/post',
-          builder: (_, s) => PostScreen(stage: s.uri.queryParameters['stage']),
+          pageBuilder: (c, s) => _fadeThrough(s, PostScreen(stage: s.uri.queryParameters['stage']), axis: false),
         ),
-        GoRoute(path: '/takedowns', builder: (_, __) => const TakedownsScreen()),
-        GoRoute(path: '/me', builder: (_, __) => const MeScreen()),
-        GoRoute(path: '/journalist', builder: (_, __) => const JournalistScreen()),
+        GoRoute(path: '/takedowns', pageBuilder: (c, s) => _fadeThrough(s, const TakedownsScreen())),
+        GoRoute(path: '/me', pageBuilder: (c, s) => _fadeThrough(s, const MeScreen())),
+        GoRoute(path: '/journalist', pageBuilder: (c, s) => _fadeThrough(s, const JournalistScreen())),
       ],
     ),
   ],
@@ -110,13 +133,21 @@ class AppShell extends StatelessWidget {
               foregroundColor: Colors.white,
               elevation: 0,
               shape: const CircleBorder(),
-              child: const Icon(Icons.add, size: 28),
+              child: const Icon(SwaI.add, size: 28),
             )
           : null,
       body: Column(
         children: [
           if (!composing) Masthead(desktop: desktop, index: index, onNav: (i) => _go(context, i)),
-          Expanded(child: child),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              layoutBuilder: (current, previous) => current ?? const SizedBox.shrink(),
+              child: KeyedSubtree(key: ValueKey(location.split('/').take(2).join('/')), child: child),
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: desktop || composing
@@ -129,11 +160,11 @@ class AppShell extends StatelessWidget {
                   selectedIndex: index,
                   onDestinationSelected: (i) => _go(context, i),
                   destinations: const [
-                    NavigationDestination(icon: Icon(Icons.auto_stories_outlined), selectedIcon: Icon(Icons.auto_stories), label: 'Feed'),
-                    NavigationDestination(icon: Icon(Icons.verified_outlined), selectedIcon: Icon(Icons.verified), label: 'Verify'),
-                    NavigationDestination(icon: Icon(Icons.edit_outlined), selectedIcon: Icon(Icons.edit), label: 'Post'),
-                    NavigationDestination(icon: Icon(Icons.policy_outlined), selectedIcon: Icon(Icons.policy), label: 'Tracker'),
-                    NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Me'),
+                    NavigationDestination(icon: Icon(SwaI.feed), selectedIcon: Icon(SwaI.feedOn), label: 'Feed'),
+                    NavigationDestination(icon: Icon(SwaI.verify), selectedIcon: Icon(SwaI.verifyOn), label: 'Verify'),
+                    NavigationDestination(icon: Icon(SwaI.post), selectedIcon: Icon(SwaI.postOn), label: 'Post'),
+                    NavigationDestination(icon: Icon(SwaI.tracker), selectedIcon: Icon(SwaI.trackerOn), label: 'Tracker'),
+                    NavigationDestination(icon: Icon(SwaI.me), selectedIcon: Icon(SwaI.meOn), label: 'Me'),
                   ],
                 ),
               ],
@@ -149,6 +180,8 @@ class Masthead extends StatelessWidget {
   const Masthead({super.key, this.desktop = false, this.index = 0, this.onNav});
 
   static const _labels = ['Feed', 'Verify', 'Post', 'Tracker', 'Me'];
+  static const _icons = [SwaI.feed, SwaI.verify, SwaI.post, SwaI.tracker, SwaI.me];
+  static const _iconsOn = [SwaI.feedOn, SwaI.verifyOn, SwaI.postOn, SwaI.trackerOn, SwaI.meOn];
 
   @override
   Widget build(BuildContext context) {
@@ -197,13 +230,20 @@ class Masthead extends StatelessWidget {
                               for (var i = 0; i < _labels.length; i++)
                                 TextButton(
                                   onPressed: () => onNav?.call(i),
-                                  child: Text(
-                                    _labels[i],
+                                  child: AnimatedDefaultTextStyle(
+                                    duration: const Duration(milliseconds: 180),
                                     style: Swa.ui(
                                       size: 13,
                                       weight: FontWeight.w600,
                                       color: index == i ? Swa.magenta : Swa.ink,
                                       spacing: 0.4,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(index == i ? _iconsOn[i] : _icons[i], size: 16, color: index == i ? Swa.magenta : Swa.ink),
+                                        const SizedBox(width: 6),
+                                        Text(_labels[i]),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -215,7 +255,7 @@ class Masthead extends StatelessWidget {
                       IconButton(
                         tooltip: 'GitHub',
                         onPressed: () => openUrl(Config.repo),
-                        icon: const Icon(Icons.code, size: 20, color: Swa.ink),
+                        icon: const Icon(SwaI.github, size: 20, color: Swa.ink),
                       ),
                   ],
                 ),

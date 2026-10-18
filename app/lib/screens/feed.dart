@@ -258,6 +258,7 @@ class _FilterRow extends StatelessWidget {
                 label: 'Corroborated',
                 selected: corroboratedOnly,
                 accent: true,
+                icon: SwaI.corroborated,
                 onTap: () => onCorr(!corroboratedOnly),
               ),
             ],
@@ -272,12 +273,14 @@ class _TextChip extends StatelessWidget {
   final String label;
   final bool selected;
   final bool accent;
+  final IconData? icon;
   final VoidCallback onTap;
   const _TextChip({
     required this.label,
     required this.selected,
     required this.onTap,
     this.accent = false,
+    this.icon,
   });
 
   @override
@@ -288,13 +291,23 @@ class _TextChip extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(right: 20),
         child: Center(
-          child: Text(
-            label,
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 180),
             style: Swa.ui(
               size: 13,
               weight: selected ? FontWeight.w700 : FontWeight.w500,
               color: color,
               spacing: 0.2,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 15, color: color),
+                  const SizedBox(width: 5),
+                ],
+                Text(label),
+              ],
             ),
           ),
         ),
@@ -387,7 +400,7 @@ class LeadStory extends StatelessWidget {
             style: Swa.playfair(size: headlineSize, weight: FontWeight.w700, height: 1.12),
           ),
           const SizedBox(height: 12),
-          Text(journalistByline(story), style: Swa.byline),
+          BylineRow(story),
           if (!photoFirst) photo,
           const SizedBox(height: 16),
           Text(
@@ -434,7 +447,7 @@ class StoryRow extends StatelessWidget {
                     style: Swa.playfair(size: compact ? 18 : 20, weight: FontWeight.w700, height: 1.22),
                   ),
                   const SizedBox(height: 8),
-                  Text(journalistByline(story), style: Swa.byline),
+                  BylineRow(story),
                 ],
               ),
             ),
