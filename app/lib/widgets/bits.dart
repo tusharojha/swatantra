@@ -42,7 +42,7 @@ class TestModeBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0x14F97316),
+        color: const Color(0x14F47C20),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Swa.saffron.withValues(alpha: 0.4)),
       ),

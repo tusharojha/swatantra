@@ -3,6 +3,7 @@ name: Build web + APK
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -17,11 +18,13 @@ concurrency:
 jobs:
   web:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pillow for favicon
+        run: pip install pillow
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -39,18 +42,39 @@ jobs:
           flutter pub get
           dart run flutter_launcher_icons || true
           dart run flutter_native_splash:create || true
+          python3 ../scripts/gen-brand-icons.py
           flutter build web --release --base-href /swatantra/
           cp build/web/index.html build/web/404.html
       - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         with:
           path: app/build/web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: swatantra-web
+          path: app/build/web
+
+  deploy-pages:
+    needs: web
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        continue-on-error: true
 
   apk:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pillow for favicon
+        run: pip install pillow
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -72,8 +96,10 @@ jobs:
           flutter pub get
           dart run flutter_launcher_icons || true
           dart run flutter_native_splash:create || true
+          python3 ../scripts/gen-brand-icons.py
           flutter build apk --release
       - name: Attach APK to GitHub Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk

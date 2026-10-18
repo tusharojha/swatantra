@@ -80,6 +80,13 @@ Each note: expected → actual → versions → steps to reproduce → what woul
 **Repro:** Compare the two pages.  
 **Fix:** Make the system-attribute table identical in TS and JSON-RPC docs.
 
+## 11. Hub faucet can accept a claim it cannot pay (Hub / Faucet)
+
+**Expected:** A 202 `accepted` means 10 test GLM will arrive.  
+**Actual:** SIWE + Cap.js PoW can succeed and Hub still records `status: failed`, `phase: transferring`, `error: insufficient funds for gas * price + value: have 9.995 GLM want 10`. The dispenser (`0x815Ad950ae49102952C10ceBB18901E9e28AC712`) was ~0.0046 GLM short on 18 Oct 2026. `amountGlm` on the POST body is ignored — it always tries to send 10. Seed entities therefore wait on a human top-up of the faucet, not on our script.  
+**Repro:** Authenticated `POST /api/faucet` then `GET /api/faucet?recipient=0x…` while the dispenser balance is below 10 GLM.  
+**Fix:** Refill the Tiramisu faucet, or send `min(10, balance - gas)` and expose a scriptable address-in faucet.
+
 ## What was smooth
 
 - `createPublicClient` + `tiramisu` + `http()` with no URL uses the public RPC. First `eth_blockNumber` returned `0xb6e37` on 18 Oct 2026, chain id `0x7614d1` = 7738577.

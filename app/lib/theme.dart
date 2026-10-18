@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Rangoli palette taken from assets/logo.png — one accent (magenta),
-/// teal for proof, saffron for support.
+/// Rangoli palette sampled from assets/logo.png (quantized non-white pixels):
+/// magenta petals #DC2460, teal leaves/aperture #089C9C, saffron petals #F47C20.
 class Swa {
-  static const magenta = Color(0xFFE11D74);
-  static const teal = Color(0xFF0D9488);
-  static const saffron = Color(0xFFF97316);
+  static const magenta = Color(0xFFDC2460);
+  static const teal = Color(0xFF089C9C);
+  static const saffron = Color(0xFFF47C20);
   static const ink = Color(0xFF1C1917);
   static const muted = Color(0xFF78716C);
   static const paper = Color(0xFFFFFBFA);
@@ -77,7 +77,7 @@ ThemeData swatantraTheme() {
     ),
     navigationBarTheme: const NavigationBarThemeData(
       backgroundColor: Swa.card,
-      indicatorColor: Color(0x1FE11D74),
+      indicatorColor: Color(0x1FDC2460),
       elevation: 0,
     ),
     dividerColor: Swa.line,
