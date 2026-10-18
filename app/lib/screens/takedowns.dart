@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../arkiv/js.dart';
 import '../arkiv/service.dart';
 import '../models.dart';
+import '../proof_edition.dart';
 import '../theme.dart';
 import '../wallet.dart';
 import '../widgets/bits.dart';
@@ -15,6 +15,7 @@ class TakedownsScreen extends StatefulWidget {
 class _TakedownsScreenState extends State<TakedownsScreen> {
   List<ArkivEntity> items = [];
   bool loading = true;
+  bool proof = false;
   String platform = 'X';
   final law = TextEditingController(text: 'IT Act s.79 (synthetic)');
   final notes = TextEditingController();
@@ -28,13 +29,41 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
     _load();
   }
 
+  @override
+  void dispose() {
+    law.dispose();
+    notes.dispose();
+    storyKey.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     setState(() => loading = true);
     try {
       final list = await Arkiv.ofType('takedown');
-      if (mounted) setState(() { items = list; loading = false; });
+      if (!mounted) return;
+      if (list.isEmpty) {
+        setState(() {
+          items = ProofEdition.takedowns;
+          proof = true;
+          loading = false;
+        });
+      } else {
+        setState(() {
+          items = list;
+          proof = false;
+          loading = false;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() { status = '$e'; loading = false; });
+      if (mounted) {
+        setState(() {
+          status = '$e';
+          items = ProofEdition.takedowns;
+          proof = true;
+          loading = false;
+        });
+      }
     }
   }
 
@@ -44,7 +73,7 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
       return;
     }
     try {
-      final r = await arkivJs('createTakedown', {
+      final r = await Arkiv.callWrite('createTakedown', {
         'platform': platform,
         'dateMs': DateTime.now().millisecondsSinceEpoch,
         'lawCited': law.text.trim(),
@@ -71,9 +100,15 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
               'A public tracker of notices journalists record. Synthetic in the demo. Attributes: platform, notice_date_ms, law_cited, authority_named.',
         ),
         const SizedBox(height: 16),
+        if (proof) ...[
+          TestModeBanner(ProofEdition.banner),
+          const SizedBox(height: 12),
+          Text('SYNTHETIC DEMO · LAYOUT ONLY · NOT ON-CHAIN', style: Swa.kicker),
+          const SizedBox(height: 12),
+        ],
         if (loading) const Center(child: CircularProgressIndicator()),
         if (!loading && items.isEmpty)
-          Text('No notices on Arkiv yet.', style: Swa.serif(size: 15, color: Swa.muted)),
+          Text('No notices on Arkiv yet. File one with a funded burner.', style: Swa.serif(size: 15, color: Swa.muted)),
         for (var i = 0; i < items.length; i++) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),

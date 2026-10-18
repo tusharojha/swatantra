@@ -349,6 +349,34 @@ Future<Map<String, String>> createTipDart({
   }
 }
 
+Future<Map<String, String>> createTakedownDart({
+  required String platform,
+  required int dateMs,
+  required String lawCited,
+  required bool authorityNamed,
+  String? storyKey,
+  String notes = '',
+}) {
+  return createEntity(
+    payload: {
+      'notes': notes,
+      'synthetic': true,
+      'disclaimer': 'Synthetic or self-reported. Not legal advice.',
+    },
+    attributes: [
+      str('app', Config.appAttr),
+      str('type', 'takedown'),
+      str('platform', platform),
+      u64('notice_date_ms', dateMs),
+      str('law_cited', lawCited.length > 120 ? lawCited.substring(0, 120) : lawCited),
+      boolCell('authority_named', authorityNamed),
+      u64('created_at_ms', DateTime.now().millisecondsSinceEpoch),
+      if (storyKey != null && storyKey.isNotEmpty) key('story_key', storyKey),
+    ],
+    days: 180,
+  );
+}
+
 Future<Map<String, String>> extendStoryDart(String entityKey) async {
   final pk = WalletStore.privateKey;
   if (pk == null) throw StateError('no burner wallet');

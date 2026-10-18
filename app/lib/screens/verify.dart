@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../arkiv/hash.dart';
 import '../arkiv/service.dart';
 import '../models.dart';
+import '../proof_edition.dart';
 import '../theme.dart';
 import '../widgets/bits.dart';
 
@@ -58,12 +59,18 @@ class _VerifyScreenState extends State<VerifyScreen> {
         cap ??= (await Arkiv.ofType('capture', eq: {'chain_root': key})).firstOrNull;
       }
       cap ??= (await Arkiv.ofType('capture', eq: {'chain_root': key})).firstOrNull;
+      cap ??= ProofEdition.captureByRoot(key);
+      if (cap == null && ProofEdition.isProof(key)) cap = ProofEdition.entity(key);
       if (cap == null) {
         setState(() {
           match = null;
-          status = 'No capture entity with that key or chain_root.';
+          status =
+              'No capture entity with that key or chain_root on Arkiv (and no synthetic-demo match). Seed stills use capture start_ms.';
         });
         return;
+      }
+      if (ProofEdition.isProof(cap.key)) {
+        setState(() => status = ProofEdition.banner);
       }
       setState(() => match = cap);
       final r = await FilePicker.platform.pickFiles(withData: true);

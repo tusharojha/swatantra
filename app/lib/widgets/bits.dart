@@ -198,6 +198,29 @@ String editionDateline([DateTime? now]) {
   return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}, ${now.year}';
 }
 
+/// Devanagari dateline so Noto Serif Devanagari is exercised on every page.
+String editionDatelineHi([DateTime? now]) {
+  now ??= DateTime.now().toUtc();
+  const days = ['सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार', 'रविवार'];
+  const months = [
+    'जनवरी',
+    'फ़रवरी',
+    'मार्च',
+    'अप्रैल',
+    'मई',
+    'जून',
+    'जुलाई',
+    'अगस्त',
+    'सितंबर',
+    'अक्तूबर',
+    'नवंबर',
+    'दिसंबर',
+  ];
+  const digits = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+  String dn(int n) => n.toString().split('').map((c) => digits[int.parse(c)]).join();
+  return '${days[now.weekday - 1]}, ${dn(now.day)} ${months[now.month - 1]} ${dn(now.year)}';
+}
+
 String relativeTime(int ms) {
   if (ms == 0) return '—';
   final d = DateTime.fromMillisecondsSinceEpoch(ms);

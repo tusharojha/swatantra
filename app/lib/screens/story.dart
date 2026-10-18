@@ -137,7 +137,9 @@ class _StoryScreenState extends State<StoryScreen> {
         if (error != null) TestModeBanner(error!),
         if (s != null) ...[
           if (proof) ...[
-            Text('PROOF EDITION · LAYOUT ONLY · NOT ON-CHAIN', style: Swa.kicker),
+            TestModeBanner(ProofEdition.banner),
+            const SizedBox(height: 12),
+            Text('SYNTHETIC DEMO · LAYOUT ONLY · NOT ON-CHAIN', style: Swa.kicker),
             const SizedBox(height: 12),
           ],
           Kicker(s.category.isEmpty ? 'story' : s.category),

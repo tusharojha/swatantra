@@ -35,7 +35,7 @@ class Swa {
       color: color,
       height: height,
       fontStyle: style,
-    );
+    ).copyWith(fontFamilyFallback: [_serifFallback]);
   }
 
   static TextStyle serif({

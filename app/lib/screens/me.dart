@@ -17,6 +17,7 @@ class _MeScreenState extends State<MeScreen> {
   String? balance;
   String? status;
   List<ArkivEntity> mine = [];
+  bool loading = true;
 
   @override
   void initState() {
@@ -25,6 +26,7 @@ class _MeScreenState extends State<MeScreen> {
   }
 
   Future<void> _refresh() async {
+    setState(() => loading = true);
     if (WalletStore.address != null) {
       try {
         balance = await WalletStore.balanceWei();
@@ -33,7 +35,7 @@ class _MeScreenState extends State<MeScreen> {
         status = '$e';
       }
     }
-    if (mounted) setState(() {});
+    if (mounted) setState(() => loading = false);
   }
 
   Future<void> _gen() async {
@@ -108,7 +110,14 @@ class _MeScreenState extends State<MeScreen> {
         const SizedBox(height: 8),
         Text('Stories I created', style: Swa.playfair(size: 22)),
         const SizedBox(height: 8),
-        if (mine.isEmpty) Text('None yet.', style: Swa.serif(size: 15, color: Swa.muted)),
+        if (loading) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
+        if (!loading && mine.isEmpty)
+          Text(
+            WalletStore.address == null
+                ? 'Create a burner to query stories by \$creator.'
+                : 'None yet. Publish from Post — writes go to Arkiv from this burner.',
+            style: Swa.serif(size: 15, color: Swa.muted),
+          ),
         for (var i = 0; i < mine.length; i++) ...[
           InkWell(
             onTap: () => context.go('/s/${mine[i].key}'),

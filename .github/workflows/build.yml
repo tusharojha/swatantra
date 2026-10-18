@@ -11,8 +11,10 @@ permissions:
   pages: write
   id-token: write
 
+# Pages deploys must not cancel each other. APK is a sibling job — a Pages
+# failure must not fail or skip the APK (see continue-on-error on deploy).
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -47,6 +49,7 @@ jobs:
           cp build/web/index.html build/web/404.html
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        continue-on-error: true
         with:
           path: app/build/web
       - uses: actions/upload-artifact@v4
@@ -57,11 +60,21 @@ jobs:
   deploy-pages:
     needs: web
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    continue-on-error: true
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Enable GitHub Pages (Actions source)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api -X POST "repos/${{ github.repository }}/pages" -f build_type=workflow \
+            || echo "Pages already enabled, or this token cannot flip Settings → Pages."
+      - uses: actions/configure-pages@v5
+        continue-on-error: true
       - id: deployment
         uses: actions/deploy-pages@v4
         continue-on-error: true
@@ -100,6 +113,7 @@ jobs:
           flutter build apk --release
       - name: Attach APK to GitHub Release
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk

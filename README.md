@@ -36,7 +36,8 @@ Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a 
 ## Live demo
 
 - **Web:** https://tusharojha.github.io/swatantra/  
-  If that 404s: **Settings → Pages → Source: GitHub Actions**, then re-run **Build web + APK**. The workflow also uploads a `swatantra-web` artifact.
+  Reads need no wallet. If the live query is empty you see a labelled **SYNTHETIC DEMO** that switches off automatically once entities exist.
+  **Pages is currently off** (`has_pages: false`) — a repo admin must click **Settings → Pages → Source: GitHub Actions** once. Until then the workflow still uploads a `swatantra-web` artifact; a Pages 404 does **not** fail the APK job or the GitHub Release.
 - **Android APK:** GitHub Release tag [`apk`](https://github.com/tusharojha/swatantra/releases/tag/apk), also committed under [`release/`](release/) if Actions did not finish in time.
 - **Protected link shape:** `https://tusharojha.github.io/swatantra/s/<entityKey>`
 

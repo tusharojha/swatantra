@@ -2,9 +2,11 @@ import 'models.dart';
 
 /// Labeled layout preview used when the live Tiramisu feed is empty.
 /// Copy matches the synthetic seed dispatches. Not on-chain.
+/// The live `arkiv_query` path is always tried first; this list is dropped
+/// automatically once entities exist.
 class ProofEdition {
   static const banner =
-      'PROOF EDITION — live Arkiv feed is empty until the Tiramisu seeder is funded. Layout only; these stories are not on-chain.';
+      'SYNTHETIC DEMO — live Arkiv query returned no entities. These cards are layout-only and disappear automatically once Tiramisu has stories.';
 
   static List<ArkivEntity> get stories => _stories.map(_story).toList();
 
@@ -45,6 +47,38 @@ class ProofEdition {
   }
 
   static bool isProof(String key) => key.startsWith('proof-');
+
+  static ArkivEntity? captureByRoot(String root) {
+    final want = root.toLowerCase();
+    for (final s in stories) {
+      final cap = captureFor(s.key);
+      if (cap != null && cap.attr('chain_root').toLowerCase() == want) return cap;
+    }
+    return null;
+  }
+
+  static List<ArkivEntity> get takedowns => [
+        ArkivEntity(
+          key: 'proof-td-1',
+          owner: _creators['B']!,
+          creator: _creators['B']!,
+          createdAt: '${DateTime.now().millisecondsSinceEpoch - 8 * 3600 * 1000}',
+          expiresAt: '0',
+          payload: {
+            'notes': 'Synthetic takedown log for the demo tracker. Not a real notice.',
+            'synthetic': true,
+            'disclaimer': 'Synthetic or self-reported. Not legal advice.',
+          },
+          attributes: {
+            'type': Attr('str', 'takedown'),
+            'platform': Attr('str', 'X'),
+            'law_cited': Attr('str', 'IT Act s.79 (synthetic citation)'),
+            'authority_named': Attr('str', 'false'),
+            'notice_date_ms': Attr('uint', DateTime.utc(2026, 9, 15).millisecondsSinceEpoch),
+            'created_at_ms': Attr('uint', DateTime.now().millisecondsSinceEpoch - 8 * 3600 * 1000),
+          },
+        ),
+      ];
 }
 
 const _hashes = {

@@ -69,9 +69,9 @@ class AppShell extends StatelessWidget {
 
   int get index {
     if (location.startsWith('/verify')) return 1;
-    if (location.startsWith('/post') || location.startsWith('/journalist')) return 2;
+    if (location.startsWith('/post')) return 2;
     if (location.startsWith('/takedowns')) return 3;
-    if (location.startsWith('/me')) return 4;
+    if (location.startsWith('/me') || location.startsWith('/journalist')) return 4;
     return 0;
   }
 
@@ -156,9 +156,18 @@ class Masthead extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          'Swatantra',
-                          style: Swa.playfair(size: 30, weight: FontWeight.w700, height: 1.05),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Swatantra',
+                              style: Swa.playfair(size: 30, weight: FontWeight.w700, height: 1.05),
+                            ),
+                            Text(
+                              'स्वतंत्र',
+                              style: Swa.serif(size: 15, height: 1.2, color: Swa.muted),
+                            ),
+                          ],
                         ),
                       ),
                       IconButton(
@@ -175,9 +184,19 @@ class Masthead extends StatelessWidget {
                     child: Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            '${editionDateline()}  ·  INDIA',
-                            style: Swa.dateline,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${editionDateline()}  ·  INDIA',
+                                style: Swa.dateline,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${editionDatelineHi()}  ·  भारत',
+                                style: Swa.serif(size: 12, color: Swa.muted, height: 1.2),
+                              ),
+                            ],
                           ),
                         ),
                         Text(Config.tagline, style: Swa.byline),

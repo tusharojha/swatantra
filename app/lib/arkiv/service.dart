@@ -119,6 +119,15 @@ class Arkiv {
           amountEth: '${args['amountEth']}',
           note: '${args['note'] ?? ''}',
         );
+      case 'createTakedown':
+        return w.createTakedownDart(
+          platform: '${args['platform'] ?? 'other'}',
+          dateMs: args['dateMs'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+          lawCited: '${args['lawCited'] ?? ''}',
+          authorityNamed: args['authorityNamed'] == true,
+          storyKey: args['storyKey'] as String?,
+          notes: '${args['notes'] ?? ''}',
+        );
       case 'extendStory':
         return w.extendStoryDart('${args['entityKey']}');
       case 'publishStoryWithCapture':

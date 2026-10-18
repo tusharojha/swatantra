@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../arkiv/anon.dart';
 import '../arkiv/js.dart';
 import '../arkiv/service.dart';
@@ -129,6 +130,12 @@ class _JournalistScreenState extends State<JournalistScreen> {
     return ListView(
       padding: Swa.pagePadding,
       children: [
+        TextButton(
+          onPressed: () => context.go('/me'),
+          style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
+          child: Text('← ME', style: Swa.kicker),
+        ),
+        const SizedBox(height: 12),
         const SectionHead(
           kicker: 'The desk',
           title: 'Verified journalist',
