@@ -34,6 +34,10 @@ class ArkivEntity {
   String get captureKey => attr('capture_key');
   String get captureRoot => '${payload['captureRoot'] ?? ''}';
   bool get hasCapture => captureKey.isNotEmpty || captureRoot.isNotEmpty;
+  String get district => attr('district');
+  String get geoCell => attr('geo_cell');
+  int get captureTsMs =>
+      int.tryParse(attr('capture_ts_ms', attr('start_ms', '0'))) ?? createdAtMs;
 
   factory ArkivEntity.fromJson(Map<String, dynamic> j) {
     final attrs = <String, Attr>{};
@@ -83,6 +87,8 @@ class CaptureChain {
   final int startMs;
   final int endMs;
   final List<String> frameHashes;
+  final String district;
+  final String geoCell;
   CaptureChain({
     required this.root,
     required this.frameCount,
@@ -90,5 +96,53 @@ class CaptureChain {
     required this.startMs,
     required this.endMs,
     required this.frameHashes,
+    this.district = '',
+    this.geoCell = '',
   });
+}
+
+class Witness {
+  final String creator;
+  final String nid;
+  final int captureTs;
+  final String chainRoot;
+  final String entityKey;
+  final String district;
+  const Witness({
+    required this.creator,
+    required this.nid,
+    required this.captureTs,
+    required this.chainRoot,
+    required this.entityKey,
+    required this.district,
+  });
+
+  String get anonId {
+    final id = nid.isNotEmpty ? nid : creator;
+    if (id.length < 12) return id;
+    return '${id.substring(0, 8)}…${id.substring(id.length - 4)}';
+  }
+}
+
+class Corroboration {
+  final String district;
+  final String geoCell;
+  final int windowStart;
+  final int windowEnd;
+  final List<Witness> witnesses;
+  final bool synthetic;
+  const Corroboration({
+    required this.district,
+    required this.geoCell,
+    required this.windowStart,
+    required this.windowEnd,
+    required this.witnesses,
+    this.synthetic = false,
+  });
+
+  Set<String> get distinctIds =>
+      witnesses.map((w) => w.nid.isNotEmpty ? w.nid.toLowerCase() : w.creator.toLowerCase()).toSet();
+
+  int get count => distinctIds.length;
+  bool get ok => count >= 2;
 }

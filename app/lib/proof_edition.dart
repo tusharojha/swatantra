@@ -8,7 +8,11 @@ class ProofEdition {
   static const banner =
       'SYNTHETIC DEMO — live Arkiv query returned no entities. These cards are layout-only and disappear automatically once Tiramisu has stories.';
 
-  static List<ArkivEntity> get stories => _stories.map(_story).toList();
+  static List<ArkivEntity> get stories {
+    final list = _stories.map(_story).toList();
+    list.sort((a, b) => b.createdAtMs.compareTo(a.createdAtMs));
+    return list;
+  }
 
   static ArkivEntity? entity(String key) {
     if (key.startsWith('proof-cap-')) {
@@ -41,12 +45,45 @@ class ProofEdition {
         'frame_count': Attr('uint', 1),
         'fps': Attr('uint', 1),
         'start_ms': Attr('uint', s.createdAtMs),
+        'capture_ts_ms': Attr('uint', s.createdAtMs),
         'city': Attr('str', s.city),
+        'district': Attr('str', s.district),
+        'geo_cell': Attr('str', s.geoCell),
       },
     );
   }
 
   static bool isProof(String key) => key.startsWith('proof-');
+
+  static const puneCell = '18.5,73.9';
+
+  static Corroboration? corroborationFor(ArkivEntity story) {
+    final cluster = stories.where((s) => s.district == 'Pune').toList();
+    if (story.district != 'Pune' || cluster.length < 2) return null;
+    final ts = story.captureTsMs;
+    final window = 30 * 60 * 1000;
+    final inWindow = cluster.where((s) => (s.captureTsMs - ts).abs() <= window).toList();
+    if (inWindow.length < 2) return null;
+    final witnesses = inWindow.map((s) {
+      final cap = captureFor(s.key)!;
+      return Witness(
+        creator: s.creator,
+        nid: _nids[_creators.entries.firstWhere((e) => e.value.toLowerCase() == s.creator.toLowerCase(), orElse: () => const MapEntry('A', '')).key] ?? s.creator,
+        captureTs: s.captureTsMs,
+        chainRoot: cap.attr('chain_root'),
+        entityKey: cap.key,
+        district: 'Pune',
+      );
+    }).toList();
+    return Corroboration(
+      district: 'Pune',
+      geoCell: puneCell,
+      windowStart: ts - window,
+      windowEnd: ts + window,
+      witnesses: witnesses,
+      synthetic: true,
+    );
+  }
 
   static ArkivEntity? captureByRoot(String root) {
     final want = root.toLowerCase();
@@ -98,6 +135,12 @@ const _creators = {
   'C': '0x68F0Ee5526e28e9072A9Fa398d91A5a867001645',
 };
 
+const _nids = {
+  'A': '0x06ffb52d39bcf94137fd80cd418163a22c52ec478b54e83c66fccb3ee9b7361f',
+  'B': '0x11aa0000000000000000000000000000000000000000000000000000000000b2',
+  'C': '0x22bb0000000000000000000000000000000000000000000000000000000000c3',
+};
+
 class _Seed {
   final String id;
   final String journalist;
@@ -106,8 +149,21 @@ class _Seed {
   final String category;
   final String title;
   final String body;
-  final int hoursAgo;
-  const _Seed(this.id, this.journalist, this.city, this.state, this.category, this.title, this.body, this.hoursAgo);
+  final int minutesAgo;
+  final String district;
+  final String geoCell;
+  const _Seed(
+    this.id,
+    this.journalist,
+    this.city,
+    this.state,
+    this.category,
+    this.title,
+    this.body,
+    this.minutesAgo, {
+    this.district = '',
+    this.geoCell = '',
+  });
 }
 
 const _stories = <_Seed>[
@@ -124,45 +180,52 @@ const _stories = <_Seed>[
         'A municipal pump truck arrived, then left: the driver said the outfall was blocked with plastic.\n\n'
         'This is a fictional ground report written for the Swatantra demo. '
         'It stands in for the kind of civic footage that is routinely taken down as \'out of context\'.',
-    3,
+    180,
+    district: 'Mumbai',
+    geoCell: '19.1,72.9',
   ),
   _Seed(
     's2',
     'B',
-    'Delhi',
-    'Delhi',
-    'protest',
-    'Phones on SOS after 9pm near ITO, 10 Oct 2026 (synthetic)',
+    'Pune',
+    'Maharashtra',
+    'civic',
+    'FC Road after a burst main, from the south kerb (synthetic)',
     'SYNTHETIC DISPATCH — fictional names, composite scene.\n\n'
-        'Around 21:10, four of five handsets in a small press huddle showed SOS-only. '
-        'A printed order was not produced. A traffic constable shrugged and pointed at the sky.\n\n'
-        'This story exists so a reader can still open a protected Arkiv link if a platform later removes a similar post.',
-    8,
+        'Water over the tramlines of memory: a burst main, bikes pushed onto the divider. '
+        'Three desks sampled the same Pune junction within twenty minutes — that is the corroboration.\n\n'
+        'Not a report of a specific pipe. The point is independent witnesses on Arkiv.',
+    15,
+    district: 'Pune',
+    geoCell: '18.5,73.9',
   ),
   _Seed(
     's3',
     'A',
-    'Chennai',
-    'Tamil Nadu',
-    'environment',
-    'Ennore creek after overnight rain — sludge line (synthetic)',
+    'Pune',
+    'Maharashtra',
+    'civic',
+    'Same FC Road flood, west flyover (synthetic)',
     'SYNTHETIC DISPATCH.\n\n'
-        'A grey line of sludge sat on the mangrove edge at first light. '
-        'Fisherfolk (composite, unnamed) said the smell was diesel and tannery, not tide.\n\n'
-        'Capture proof is a SHA-256 chain of the demo still, not a claim about a real creek that morning.',
-    14,
+        'From the flyover the water made a sheet as far as the bus depot. '
+        'A second capture, a second nullifier, the same district cell, twelve minutes from the first still.',
+    22,
+    district: 'Pune',
+    geoCell: '18.5,73.9',
   ),
   _Seed(
     's4',
     'C',
-    'Guwahati',
-    'Assam',
-    'environment',
-    'Sandbags on a Brahmaputra ghat, October 2026 (synthetic)',
+    'Pune',
+    'Maharashtra',
+    'civic',
+    'Third desk, same Pune junction, eight minutes on (synthetic)',
     'SYNTHETIC DISPATCH.\n\n'
-        'Sandbags two-high along a ghat that is usually a tea stall. '
-        'The stall owner in this copy is fictional. The point is the hash: the still can be checked against Arkiv.',
-    20,
+        'A third journalist, a third chain root, still Pune district, still the same 0.1° cell. '
+        'Corroborated by 3 independent witnesses — none of them named.',
+    8,
+    district: 'Pune',
+    geoCell: '18.5,73.9',
   ),
   _Seed(
     's5',
@@ -174,7 +237,9 @@ const _stories = <_Seed>[
     'SYNTHETIC DISPATCH.\n\n'
         'Headlamps, a whistle, a wagon that did not move for forty minutes. '
         'No real worker is identified. The journalist entity is a test-mode Anon Aadhaar nullifier.',
-    28,
+    28 * 60,
+    district: 'Ranchi',
+    geoCell: '23.3,85.3',
   ),
   _Seed(
     's6',
@@ -186,7 +251,9 @@ const _stories = <_Seed>[
     'SYNTHETIC DISPATCH.\n\n'
         'A line of trucks on the shoulder, engines off to save fuel. '
         'This is not a report of a specific day\'s blockade. It is a placeholder for ground copy that platforms bury.',
-    36,
+    36 * 60,
+    district: 'Imphal West',
+    geoCell: '24.8,93.9',
   ),
   _Seed(
     's7',
@@ -198,7 +265,9 @@ const _stories = <_Seed>[
     'SYNTHETIC DISPATCH.\n\n'
         'Riders sat on their bikes outside a dark cloud kitchen. '
         'The app status in this copy is invented. Tips on this story are Tiramisu test GLM only.',
-    44,
+    44 * 60,
+    district: 'Hyderabad',
+    geoCell: '17.4,78.5',
   ),
   _Seed(
     's8',
@@ -210,12 +279,14 @@ const _stories = <_Seed>[
     'SYNTHETIC DISPATCH.\n\n'
         'Knee-deep water at a flyover mouth, one pump, two men in reflective vests. '
         'Fictional. The protected link should still resolve from Arkiv after a hypothetical takedown.',
-    52,
+    52 * 60,
+    district: 'Howrah',
+    geoCell: '22.6,88.3',
   ),
 ];
 
 ArkivEntity _story(_Seed s) {
-  final ms = DateTime.now().millisecondsSinceEpoch - s.hoursAgo * 3600 * 1000;
+  final ms = DateTime.now().millisecondsSinceEpoch - s.minutesAgo * 60 * 1000;
   final creator = _creators[s.journalist]!;
   return ArkivEntity(
     key: 'proof-${s.id}',
@@ -235,6 +306,9 @@ ArkivEntity _story(_Seed s) {
       'state': Attr('str', s.state),
       'category': Attr('str', s.category),
       'created_at_ms': Attr('uint', ms),
+      'capture_ts_ms': Attr('uint', ms),
+      'district': Attr('str', s.district),
+      'geo_cell': Attr('str', s.geoCell),
       'capture_key': Attr('key', 'proof-cap-${s.id}'),
     },
   );

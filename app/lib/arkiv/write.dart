@@ -207,6 +207,9 @@ Future<Map<String, String>> createStoryDart({
   String captureRoot = '',
   String? captureKey,
   String? journalistKey,
+  String district = '',
+  String geoCell = '',
+  int? captureTsMs,
 }) {
   final now = DateTime.now().millisecondsSinceEpoch;
   final attrs = <_Cell>[
@@ -216,6 +219,9 @@ Future<Map<String, String>> createStoryDart({
     str('state', state),
     str('category', category),
     u64('created_at_ms', now),
+    if (district.isNotEmpty) str('district', district),
+    if (geoCell.isNotEmpty) str('geo_cell', geoCell),
+    if (captureTsMs != null && captureTsMs > 0) u64('capture_ts_ms', captureTsMs),
     if (captureKey != null && captureKey.isNotEmpty) key('capture_key', captureKey),
     if (journalistKey != null && journalistKey.isNotEmpty) key('journalist_key', journalistKey),
   ];
@@ -242,6 +248,8 @@ Future<Map<String, String>> createCaptureDart({
   required String city,
   String mediaUrl = '',
   String? storyKey,
+  String district = '',
+  String geoCell = '',
 }) {
   final attrs = <_Cell>[
     str('app', Config.appAttr),
@@ -251,18 +259,49 @@ Future<Map<String, String>> createCaptureDart({
     i32('fps', fps),
     u64('start_ms', startMs),
     u64('end_ms', endMs),
+    u64('capture_ts_ms', startMs),
     u64('created_at_ms', DateTime.now().millisecondsSinceEpoch),
     str('city', city),
+    if (district.isNotEmpty) str('district', district),
+    if (geoCell.isNotEmpty) str('geo_cell', geoCell),
     if (storyKey != null && storyKey.isNotEmpty) key('story_key', storyKey),
   ];
   return createEntity(
     payload: {
-      'algo': 'h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(ts_ms)); h_0 = 32 zero bytes',
+      'algo':
+          'h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(ts_ms) || place); place = sha256(district || 0x00 || geo_cell); h_0 = 32 zero bytes',
       'mediaUrl': mediaUrl,
+      'district': district,
+      'geoCell': geoCell,
       'whyOffArkiv': 'Media files stay off Arkiv because of size and cost (payload cap 128 KiB).',
     },
     attributes: attrs,
     days: 365,
+  );
+}
+
+Future<Map<String, String>> createCorroborationDart({
+  required String district,
+  required int windowStartMs,
+  required int windowEndMs,
+  required int witnessCount,
+  String geoCell = '',
+  String? storyKey,
+}) {
+  return createEntity(
+    payload: {'synthetic': true},
+    attributes: [
+      str('app', Config.appAttr),
+      str('type', 'corroboration'),
+      str('district', district),
+      if (geoCell.isNotEmpty) str('geo_cell', geoCell),
+      u64('window_start_ms', windowStartMs),
+      u64('window_end_ms', windowEndMs),
+      i32('witness_count', witnessCount),
+      u64('created_at_ms', DateTime.now().millisecondsSinceEpoch),
+      if (storyKey != null && storyKey.isNotEmpty) key('story_key', storyKey),
+    ],
+    days: 180,
   );
 }
 

@@ -75,7 +75,7 @@ Arkiv is the only stack that gives, in one place:
 
 **What breaks today:** Sahyog-scale takedowns, account blocks, unpublished local internet shutdowns, and “out of context” notices. The reporter loses the URL **and** any proof that the still was captured when they said it was.
 
-**What changes from day one:** open https://tusharojha.github.io/swatantra/ with no wallet. The feed is an Arkiv query. Open `/s/<entityKey>` — that link is the entity. Camera stills hash in-app; only the chain root is on chain. Hindi/Devanagari renders in the masthead (`स्वतंत्र`) so a desk that writes in Hindi is not locked to Latin type.
+**What changes from day one:** two phones, same district, twenty minutes. Query `district` + `capture_ts_ms` ±30 min, count distinct `nid`s — the magenta stamp **CORROBORATED · N independent witnesses** is the headline. Open https://tusharojha.github.io/swatantra/ with no wallet. The feed is an Arkiv query. Open `/s/<entityKey>` — that link is the entity. Camera stills hash in-app (district-bound); only the chain root, `district`, and 0.1° `geo_cell` go on chain. Hindi/Devanagari renders in the masthead (`स्वतंत्र`) so a desk that writes in Hindi is not locked to Latin type.
 
 The seed copy is synthetic on purpose (hackathon rule: no real personal data on Arkiv). The **mechanism** is real: queryable entities, `$creator`, expiration, permissionless extension.
 
@@ -91,12 +91,13 @@ We judge how and why, not how many. Every row below is in the running app.
 
 | Feature | How / why | Code |
 |---|---|---|
-| Attributes vs payload | Filters live in typed attributes (`type`, `state`, `city`, `category`, `created_at_ms`, `nid`, `chain_root`, `amount_wei`). Titles, bodies, URLs, hash-algo notes live in payload. | `bridge/src/index.ts` `createStory` / `queryStories`; `arkiv/schema.md` |
+| **Headline: corroboration** | Killer feature. `district` + `geo_cell` (0.1°) + `capture_ts_ms` on the capture. Query `app=swatantra AND type=capture AND district=str(X) AND capture_ts_ms` ±30 min, count distinct journalist `nid` via `$creator`. **N≥2** ⇒ magenta stamp `CORROBORATED · N independent witnesses`. Optional `corroboration` entity (180d). Precise GPS never stored. | `queryCapturesInWindow`, `createCorroboration`, `app/lib/geo/districts.dart` |
+| Attributes vs payload | Filters live in typed attributes (`type`, `state`, `city`, `category`, `district`, `geo_cell`, `created_at_ms`, `capture_ts_ms`, `nid`, `chain_root`, `amount_wei`). Titles, bodies, URLs, hash-algo notes live in payload. | `bridge/src/index.ts` `createStory` / `queryStories`; `arkiv/schema.md` |
 | Queries | `select().where(eq app, eq type, optional eq/gte).ownedBy().createdBy().limit().cursor().fetch()` then sort `created_at_ms` client-side. Feed, story, verify, tracker, Me all hit this. | `queryStories`, `app/lib/arkiv/rpc.dart` |
-| Entity Expiration | 365d journalist / capture / tip; 180d story / takedown; 2d draft; 7d tip_request. Product logic: identity lasts longer than a dispatch; drafts are cheap and short. | `EXPIRY` in `bridge/src/index.ts` |
+| Entity Expiration | 365d journalist / capture / tip; 180d story / takedown / corroboration; 2d draft; 7d tip_request. Product logic: identity lasts longer than a dispatch; drafts are cheap and short. | `EXPIRY` in `bridge/src/index.ts` |
 | Lifetime Extension | `extendEntity(fromDays(180))` on stories. Sets a new 180-day life from now (does not add). UI: “Keep this story alive”. | `extendStory` / `extendStoryDart` |
-| Creation flags | Stories, captures, takedowns: `readonly` + `permissionlessExtension`. Journalist: `readonly` without permissionless (identity should not be silently extended by strangers). | `createStory`, `publishStoryWithCapture` |
-| `$creator` / `$owner` | Byline is `$creator`. Me-screen “Stories I created” is `createdBy`. Journalist uniqueness is `nid`, not a spoofable name. | story screen, `findJournalistByNullifier` |
+| Creation flags | Stories, captures, takedowns, corroboration: `readonly` + `permissionlessExtension`. Journalist: `readonly` without permissionless (identity should not be silently extended by strangers). | `createStory`, `publishStoryWithCapture` |
+| `$creator` / `$owner` | Byline is `$creator`. Me-screen “Stories I created” is `createdBy`. Journalist uniqueness is `nid`, not a spoofable name. Distinct `nid`s are how corroboration counts witnesses. | story screen, `findJournalistByNullifier` |
 | WebSocket events | `watchEntityEvents` on `webSocket()` with **no** `fromBlock`. | `watchFeed` in `bridge/src/index.ts`, started from `main.dart` |
 | Batch writes | Capture + story in one `executeBatch` with `predictEntityKeys` so each can point at the other. | `publishStoryWithCapture` |
 
@@ -210,10 +211,11 @@ Record 1080p, spoken English, **no music bed**. Keep **SYNTHETIC DEMO** / **TEST
 | 0:28–0:50 | Feed. Scroll lead + list. Filter State = Delhi, Category = protest. | “City and category are typed attributes. If the chain is empty you see a labelled synthetic demo — it switches off the moment entities exist.” |
 | 0:50–1:10 | Open lead story. Standfirst, byline `$creator`, verification block. | “Byline is `$creator`, not a field anyone can type.” |
 | 1:10–1:28 | Copy protected link `/s/<key>`. New tab. | “This survives a takedown of the tweet. It is the entity key.” |
-| 1:28–1:50 | Post: camera or gallery still → chain root. Publish (or show the hash if unfunded). | “In-app capture. Bytes stay off Arkiv; the SHA-256 chain root is on Arkiv.” |
-| 1:50–2:10 | Verify: paste `chain_root`, pick the seed JPEG with stored `start_ms`. MATCH. | “Anyone can recompute. No media on chain — 128 KiB payload cap.” |
-| 2:10–2:32 | Me → journalist. Bundled PSE TEST QR. **Proof verified ✓ (TEST MODE)** + nullifier. Create entity. Repeat → already exists. | “Groth16 in TEST MODE. We store nid, age, state-reveal, proof hash — never the QR. APK is a labelled stub because the zkey is 612 MiB.” |
-| 2:32–2:48 | Article: tip 0.01 GLM; Extend on Arkiv. Tracker list. | “Testnet tip is a transfer plus a tip entity. Lifetime Extension is permissionless on readonly stories. Tracker is `type=takedown`.” |
-| 2:48–3:00 | Terminal curl `arkiv_query`. Explorer address. End card: live URL, repo, APK, MIT. | “Schema and friction in the repo. Thank you.” |
+| 1:28–1:52 | Post: coarse GPS or self-declared **Pune**. Camera still → chain root bound to district+cell. Second phone (or the seed’s three desks). | “Precise GPS never hits Arkiv. District + 0.1° cell go in the hash and as queryable attributes.” |
+| 1:52–2:12 | Feed / article: magenta stamp **CORROBORATED · 3 independent witnesses · Pune district**. Witness list: anon id, time, chain root, entity link. Mini district cell. | “Two or more distinct nullifiers in the same district ±30 minutes. That is the killer feature.” |
+| 2:12–2:24 | Verify: paste `chain_root`, pick the seed JPEG with stored `start_ms`. MATCH. | “Anyone can recompute. No media on chain — 128 KiB payload cap.” |
+| 2:24–2:40 | Me → journalist. Bundled PSE TEST QR. **Proof verified ✓ (TEST MODE)** + nullifier. Create entity. Repeat → already exists. | “Groth16 in TEST MODE. We store nid, age, state-reveal, proof hash — never the QR. APK is a labelled stub because the zkey is 612 MiB.” |
+| 2:40–2:52 | Article: tip 0.01 GLM; Extend on Arkiv. Tracker list. | “Testnet tip is a transfer plus a tip entity. Lifetime Extension is permissionless on readonly stories. Tracker is `type=takedown`.” |
+| 2:52–3:00 | Terminal curl `arkiv_query`. Explorer address. End card: live URL, repo, APK, MIT. | “Schema and friction in the repo. Thank you.” |
 
 If the seeder is still unfunded, **do not hide the SYNTHETIC DEMO banner** — show it, then Post one live story from a funded burner so at least one real entity is on camera. **[FILL AFTER SEED]** swap the feed shot to live keys and flash `seed-result.json` explorer links for 3 seconds at 2:50.

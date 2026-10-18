@@ -22,6 +22,7 @@ class _StoryScreenState extends State<StoryScreen> {
   String? error;
   bool loading = true;
   bool proof = false;
+  Corroboration? cluster;
   final amount = TextEditingController(text: '0.01');
   String? status;
 
@@ -43,6 +44,7 @@ class _StoryScreenState extends State<StoryScreen> {
       setState(() {
         story = e;
         capture = e == null ? null : ProofEdition.captureFor(e.key);
+        cluster = e == null ? null : ProofEdition.corroborationFor(e);
         proof = true;
         loading = false;
         if (e == null) error = 'No proof-edition story for this key.';
@@ -65,9 +67,28 @@ class _StoryScreenState extends State<StoryScreen> {
         total += BigInt.tryParse(t.attr('amount_wei', '0')) ?? BigInt.zero;
       }
       if (mounted) {
+        Corroboration? c;
+        if (e != null) {
+          final district = e.district.isNotEmpty ? e.district : (cap?.district ?? e.city);
+          final ts = cap?.captureTsMs ?? e.captureTsMs;
+          c = await Arkiv.corroborationFor(district: district, captureTsMs: ts, geoCell: cap?.geoCell ?? e.geoCell);
+          if (c != null && c.ok && WalletStore.address != null) {
+            try {
+              await Arkiv.callWrite('createCorroboration', {
+                'district': c.district,
+                'geoCell': c.geoCell,
+                'windowStartMs': c.windowStart,
+                'windowEndMs': c.windowEnd,
+                'witnessCount': c.count,
+                'storyKey': e.key,
+              });
+            } catch (_) {}
+          }
+        }
         setState(() {
           story = e;
           capture = cap;
+          cluster = c != null && c.ok ? c : null;
           tipTotal = total.toString();
           loading = false;
           if (e == null) error = 'No live entity for this key. It may have expired.';
@@ -143,6 +164,7 @@ class _StoryScreenState extends State<StoryScreen> {
             const SizedBox(height: 12),
           ],
           Kicker(s.category.isEmpty ? 'story' : s.category),
+          if (cluster != null) CorroborationStamp(cluster!),
           const SizedBox(height: 8),
           Text(s.title, style: Swa.playfair(size: 34, weight: FontWeight.w700, height: 1.12)),
           const SizedBox(height: 12),
@@ -155,6 +177,10 @@ class _StoryScreenState extends State<StoryScreen> {
           Text(s.body, style: Swa.serif(size: 17, height: 1.6)),
           const SizedBox(height: 24),
           _VerifyBlock(story: s, capture: capture, proof: proof),
+          if (cluster != null && cluster!.ok) ...[
+            const SizedBox(height: 16),
+            _WitnessList(cluster: cluster!, proof: proof),
+          ],
           const SizedBox(height: 16),
           const Hairline(),
           const SizedBox(height: 16),
@@ -254,6 +280,113 @@ class _VerifyBlock extends StatelessWidget {
               style: Swa.serif(size: 13, color: Swa.muted),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _WitnessList extends StatelessWidget {
+  final Corroboration cluster;
+  final bool proof;
+  const _WitnessList({required this.cluster, required this.proof});
+
+  @override
+  Widget build(BuildContext context) {
+    final witnesses = [...cluster.witnesses]..sort((a, b) => a.captureTs.compareTo(b.captureTs));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Hairline(),
+        const SizedBox(height: 16),
+        const Kicker('Witnesses'),
+        const SizedBox(height: 8),
+        Text('${cluster.district} district', style: Swa.playfair(size: 22)),
+        const SizedBox(height: 8),
+        Text(
+          'Independent captures in the same district ±30 minutes. Identity is a nullifier or \$creator, never a name. Precise GPS is never stored.',
+          style: Swa.serif(size: 14, color: Swa.muted, height: 1.45),
+        ),
+        const SizedBox(height: 12),
+        _DistrictCell(district: cluster.district, geoCell: cluster.geoCell, n: cluster.count),
+        const SizedBox(height: 12),
+        for (var i = 0; i < witnesses.length; i++) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(witnesses[i].anonId, style: Swa.playfair(size: 16, height: 1.3)),
+                const SizedBox(height: 4),
+                Text(
+                  '${relativeTime(witnesses[i].captureTs)} · root ${shortAddr(witnesses[i].chainRoot)}',
+                  style: Swa.byline,
+                ),
+                TextButton(
+                  onPressed: proof
+                      ? null
+                      : () => openUrl(explorerEntity(witnesses[i].entityKey)),
+                  child: Text(proof ? 'Synthetic demo capture' : 'Open capture entity'),
+                ),
+              ],
+            ),
+          ),
+          if (i != witnesses.length - 1) const Hairline(),
+        ],
+      ],
+    );
+  }
+}
+
+/// Coarse 0.1° cell as a labelled mini-map — never a pin.
+class _DistrictCell extends StatelessWidget {
+  final String district;
+  final String geoCell;
+  final int n;
+  const _DistrictCell({required this.district, required this.geoCell, required this.n});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(border: Border.all(color: Swa.line)),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 88,
+            height: 88,
+            child: Column(
+              children: List.generate(3, (r) {
+                return Expanded(
+                  child: Row(
+                    children: List.generate(3, (c) {
+                      final centre = r == 1 && c == 1;
+                      return Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.all(2),
+                          color: centre ? Swa.magenta : Swa.wash,
+                        ),
+                      );
+                    }),
+                  ),
+                );
+              }),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(district.toUpperCase(), style: Swa.kicker),
+                const SizedBox(height: 6),
+                Text('0.1° cell ${geoCell.isEmpty ? '—' : geoCell}', style: Swa.playfair(size: 18, height: 1.2)),
+                const SizedBox(height: 6),
+                Text('$n independent desks · ±30 min window', style: Swa.serif(size: 13, color: Swa.muted)),
+              ],
+            ),
+          ),
         ],
       ),
     );

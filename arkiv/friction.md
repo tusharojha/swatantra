@@ -95,6 +95,13 @@ Each note: expected → actual → versions → steps to reproduce → what woul
 **Repro:** `NODE_OPTIONS=--max-old-space-size=8192 npx tsx src/aa-prove-cli.mjs` after downloading wasm/zkey/vkey to `/tmp/aa-artifacts`.  
 **Fix:** A test-circuit zkey in the 10–50 MiB range, or chunked streaming that does not require 600 MiB RAM, so a phone browser can prove.
 
+## 13. No first-party reverse-geocode (SDK / product)
+
+**Expected:** A coarse “where was this captured” attribute without doxxing a reporter.  
+**Actual:** Arkiv has no geo type. We round to 0.1° ourselves (`geo_cell`) and reverse to a bundled district centroid offline. Browser `navigator.geolocation` is the permission prompt on web; APK uses a labelled **self-declared** district picker so we did not add another Android plugin during the compileSdk 36 fight.  
+**Repro:** Post → Use GPS (coarse) on web; Post → self-declared dropdown on APK.  
+**Fix:** A documented `geohash` / `u64` cell convention in the querying guide would have saved the 0.1° bikeshed.
+
 ## What was smooth
 
 - `createPublicClient` + `tiramisu` + `http()` with no URL uses the public RPC. First `eth_blockNumber` returned `0xb6e37` on 18 Oct 2026, chain id `0x7614d1` = 7738577.

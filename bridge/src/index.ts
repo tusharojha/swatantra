@@ -46,6 +46,7 @@ export const EXPIRY = {
   takedown: () => ExpirationTime.fromDays(180),
   draft: () => ExpirationTime.fromDays(2),
   tip_request: () => ExpirationTime.fromDays(7),
+  corroboration: () => ExpirationTime.fromDays(180),
 };
 
 let account: PrivateKeyAccount | undefined;
@@ -311,6 +312,9 @@ export async function createStory(input: {
   captureKey?: string;
   captureRoot?: string;
   journalistKey?: string;
+  district?: string;
+  geoCell?: string;
+  captureTsMs?: number;
 }) {
   const now = Date.now();
   const created = await walletClient().createEntity({
@@ -330,6 +334,9 @@ export async function createStory(input: {
       state: str(input.state),
       category: str(input.category),
       created_at_ms: u64(BigInt(now)),
+      ...(input.district ? { district: str(input.district) } : {}),
+      ...(input.geoCell ? { geo_cell: str(input.geoCell) } : {}),
+      ...(input.captureTsMs ? { capture_ts_ms: u64(BigInt(input.captureTsMs)) } : {}),
       ...(input.captureKey ? { capture_key: key(input.captureKey as Hex) } : {}),
       ...(input.journalistKey ? { journalist_key: key(input.journalistKey as Hex) } : {}),
     },
@@ -352,13 +359,19 @@ export async function createCapture(input: {
   city: string;
   mediaUrl?: string;
   storyKey?: string;
+  district?: string;
+  geoCell?: string;
 }) {
+  const district = input.district ?? "";
+  const geoCell = input.geoCell ?? "";
   const created = await walletClient().createEntity({
     payload: jsonToPayload({
-      algo: "h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(ts_ms)); h_0 = 32 zero bytes",
+      algo: "h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(ts_ms) || place); place = sha256(district || 0x00 || geo_cell); h_0 = 32 zero bytes",
       mediaUrl: input.mediaUrl ?? "",
       deviceTime: new Date(input.startMs).toISOString(),
       whyOffArkiv: "Media files stay off Arkiv because of size and cost (payload cap 128 KiB).",
+      district,
+      geoCell,
     }),
     contentType: "application/json",
     attributes: {
@@ -369,8 +382,11 @@ export async function createCapture(input: {
       fps: i32(input.fps),
       start_ms: u64(BigInt(input.startMs)),
       end_ms: u64(BigInt(input.endMs)),
+      capture_ts_ms: u64(BigInt(input.startMs)),
       created_at_ms: u64(BigInt(Date.now())),
       city: str(input.city),
+      ...(district ? { district: str(district) } : {}),
+      ...(geoCell ? { geo_cell: str(geoCell) } : {}),
       ...(input.storyKey ? { story_key: key(input.storyKey as Hex) } : {}),
     },
     expires: EXPIRY.capture(),
@@ -393,6 +409,8 @@ export async function publishStoryWithCapture(input: {
   mediaUrl?: string;
   mediaHash?: string;
   journalistKey?: string;
+  district?: string;
+  geoCell?: string;
   capture: {
     root: string;
     frameCount: number;
@@ -409,10 +427,12 @@ export async function publishStoryWithCapture(input: {
     creates: [
       {
         payload: jsonToPayload({
-          algo: "h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(ts_ms)); h_0 = 32 zero bytes",
+          algo: "h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(ts_ms) || place); place = sha256(district || 0x00 || geo_cell); h_0 = 32 zero bytes",
           mediaUrl: input.mediaUrl ?? "",
           deviceTime: new Date(input.capture.startMs).toISOString(),
           whyOffArkiv: "Media files stay off Arkiv because of size and cost (payload cap 128 KiB).",
+          district: input.district ?? "",
+          geoCell: input.geoCell ?? "",
         }),
         contentType: "application/json",
         attributes: {
@@ -423,8 +443,11 @@ export async function publishStoryWithCapture(input: {
           fps: i32(input.capture.fps),
           start_ms: u64(BigInt(input.capture.startMs)),
           end_ms: u64(BigInt(input.capture.endMs)),
+          capture_ts_ms: u64(BigInt(input.capture.startMs)),
           created_at_ms: u64(BigInt(now)),
           city: str(input.city),
+          ...(input.district ? { district: str(input.district) } : {}),
+          ...(input.geoCell ? { geo_cell: str(input.geoCell) } : {}),
           story_key: key(storyPred.key),
         },
         expires: EXPIRY.capture(),
@@ -449,6 +472,9 @@ export async function publishStoryWithCapture(input: {
           category: str(input.category),
           created_at_ms: u64(BigInt(now)),
           capture_key: key(capPred.key),
+          ...(input.district ? { district: str(input.district) } : {}),
+          ...(input.geoCell ? { geo_cell: str(input.geoCell) } : {}),
+          capture_ts_ms: u64(BigInt(input.capture.startMs)),
           ...(input.journalistKey ? { journalist_key: key(input.journalistKey as Hex) } : {}),
         },
         expires: EXPIRY.story(),
@@ -574,20 +600,134 @@ export async function findCaptureByRoot(root: string) {
   return page.entities[0] ?? null;
 }
 
-export async function hashFile(bytesB64: string, timestampMs: number) {
+export async function hashFile(
+  bytesB64: string,
+  timestampMs: number,
+  district = "",
+  geoCell = "",
+) {
   const bin = Uint8Array.from(atob(bytesB64), (c) => c.charCodeAt(0));
-  return hashSingleFile(bin, timestampMs);
+  return hashSingleFile(bin, timestampMs, district, geoCell);
 }
 
 export async function hashFrames(
   frames: { bytesB64: string; timestampMs: number }[],
   fps: number,
+  district = "",
+  geoCell = "",
 ) {
   const samples: FrameSample[] = frames.map((f) => ({
     bytes: Uint8Array.from(atob(f.bytesB64), (c) => c.charCodeAt(0)),
     timestampMs: f.timestampMs,
   }));
-  return hashChain(samples, fps);
+  return hashChain(samples, fps, district, geoCell);
+}
+
+/** Coarse district + 0.1° cell. Never returns raw lat/lng. */
+export async function geoStamp(): Promise<{
+  district: string;
+  state: string;
+  geo_cell: string;
+  selfDeclared: boolean;
+  source: string;
+}> {
+  const nav = (globalThis as { navigator?: { geolocation?: Geolocation } }).navigator;
+  if (!nav?.geolocation) {
+    return { district: "", state: "", geo_cell: "", selfDeclared: true, source: "unavailable" };
+  }
+  const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+    nav.geolocation!.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: false,
+      timeout: 8000,
+      maximumAge: 60_000,
+    });
+  });
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+  const cell = `${(Math.round(lat * 10) / 10).toFixed(1)},${(Math.round(lng * 10) / 10).toFixed(1)}`;
+  const districts: Array<{ name: string; state: string; lat: number; lng: number }> = [
+    { name: "Pune", state: "Maharashtra", lat: 18.5204, lng: 73.8567 },
+    { name: "Mumbai", state: "Maharashtra", lat: 19.076, lng: 72.8777 },
+    { name: "Central Delhi", state: "Delhi", lat: 28.6448, lng: 77.2167 },
+    { name: "Chennai", state: "Tamil Nadu", lat: 13.0827, lng: 80.2707 },
+    { name: "Bengaluru Urban", state: "Karnataka", lat: 12.9716, lng: 77.5946 },
+    { name: "Hyderabad", state: "Telangana", lat: 17.385, lng: 78.4867 },
+    { name: "Kolkata", state: "West Bengal", lat: 22.5726, lng: 88.3639 },
+    { name: "Guwahati", state: "Assam", lat: 26.1445, lng: 91.7362 },
+    { name: "Imphal West", state: "Manipur", lat: 24.817, lng: 93.9368 },
+    { name: "Ranchi", state: "Jharkhand", lat: 23.3441, lng: 85.3096 },
+    { name: "Ahmedabad", state: "Gujarat", lat: 23.0225, lng: 72.5714 },
+  ];
+  let best = districts[0];
+  let bestD = Infinity;
+  for (const d of districts) {
+    const dy = d.lat - lat;
+    const dx = (d.lng - lng) * 0.8;
+    const dist = dy * dy + dx * dx;
+    if (dist < bestD) {
+      bestD = dist;
+      best = d;
+    }
+  }
+  return {
+    district: best.name,
+    state: best.state,
+    geo_cell: cell,
+    selfDeclared: false,
+    source: "gps-coarse",
+  };
+}
+
+const WINDOW_MS = 30 * 60 * 1000;
+
+export async function queryCapturesInWindow(district: string, tsMs: number) {
+  const from = tsMs - WINDOW_MS;
+  const to = tsMs + WINDOW_MS;
+  return queryEntities({
+    type: "capture",
+    extra: [
+      { op: "eq", name: "district", kind: "str", value: district },
+      { op: "gte", name: "capture_ts_ms", kind: "u64", value: from },
+      { op: "lte", name: "capture_ts_ms", kind: "u64", value: to },
+    ],
+    limit: 100,
+  });
+}
+
+export async function createCorroboration(input: {
+  district: string;
+  geoCell?: string;
+  windowStartMs: number;
+  windowEndMs: number;
+  witnessCount: number;
+  storyKey?: string;
+  storyKeys?: string[];
+  captureKeys?: string[];
+  nids?: string[];
+}) {
+  const created = await walletClient().createEntity({
+    payload: jsonToPayload({
+      story_keys: input.storyKeys ?? [],
+      capture_keys: input.captureKeys ?? [],
+      nids: input.nids ?? [],
+      synthetic: true,
+    }),
+    contentType: "application/json",
+    attributes: {
+      app: str(APP),
+      type: str("corroboration"),
+      district: str(input.district),
+      ...(input.geoCell ? { geo_cell: str(input.geoCell) } : {}),
+      window_start_ms: u64(BigInt(input.windowStartMs)),
+      window_end_ms: u64(BigInt(input.windowEndMs)),
+      witness_count: i32(input.witnessCount),
+      created_at_ms: u64(BigInt(Date.now())),
+      ...(input.storyKey ? { story_key: key(input.storyKey as Hex) } : {}),
+    },
+    expires: EXPIRY.corroboration(),
+    flags: { readonly: true, permissionlessExtension: true },
+  });
+  return { entityKey: created.entityKey, txHash: created.txHash };
 }
 
 export function watchFeed(callbackName?: string) {
@@ -642,9 +782,19 @@ const methods: Record<string, (args: Record<string, unknown>) => Promise<unknown
   extendStory: (a) => extendStory(String(a.entityKey)),
   queryTips: (a) => queryTips(String(a.storyKey)),
   findCaptureByRoot: (a) => findCaptureByRoot(String(a.root)),
-  hashFile: (a) => hashFile(String(a.bytesB64), Number(a.timestampMs)),
+  hashFile: (a) =>
+    hashFile(String(a.bytesB64), Number(a.timestampMs), String(a.district ?? ""), String(a.geoCell ?? a.geo_cell ?? "")),
   hashFrames: (a) =>
-    hashFrames(a.frames as { bytesB64: string; timestampMs: number }[], Number(a.fps ?? 1)),
+    hashFrames(
+      a.frames as { bytesB64: string; timestampMs: number }[],
+      Number(a.fps ?? 1),
+      String(a.district ?? ""),
+      String(a.geoCell ?? a.geo_cell ?? ""),
+    ),
+  geoStamp: () => geoStamp(),
+  queryCapturesInWindow: (a) =>
+    queryCapturesInWindow(String(a.district), Number(a.tsMs ?? a.capture_ts_ms)),
+  createCorroboration: (a) => createCorroboration(a as Parameters<typeof createCorroboration>[0]),
   watchFeed: () => watchFeed(),
   stopWatch: () => stopWatch(),
 };
@@ -680,6 +830,9 @@ const api = {
   findCaptureByRoot,
   hashFile,
   hashFrames,
+  geoStamp,
+  queryCapturesInWindow,
+  createCorroboration,
   watchFeed,
   stopWatch,
   APP,

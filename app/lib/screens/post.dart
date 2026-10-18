@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../arkiv/hash.dart';
+import '../arkiv/js.dart';
 import '../arkiv/service.dart';
+import '../geo/districts.dart';
 import '../models.dart';
 import '../theme.dart';
 import '../wallet.dart';
@@ -26,6 +28,8 @@ class _PostScreenState extends State<PostScreen> {
   String? status;
   CaptureChain? chain;
   Uint8List? preview;
+  GeoStamp? stamp = stampDeclared('Pune');
+  String declaredDistrict = 'Pune';
   final frames = <({Uint8List bytes, int timestampMs})>[];
 
   static const states = [
@@ -45,7 +49,11 @@ class _PostScreenState extends State<PostScreen> {
   Future<void> _hashBytes(Uint8List bytes) async {
     final ts = DateTime.now().millisecondsSinceEpoch;
     frames.add((bytes: bytes, timestampMs: ts));
-    final c = hashChain(List.of(frames));
+    final c = hashChain(
+      List.of(frames),
+      district: stamp?.district ?? '',
+      geoCell: stamp?.geoCell ?? '',
+    );
     setState(() {
       chain = c;
       preview = bytes;
@@ -88,6 +96,8 @@ class _PostScreenState extends State<PostScreen> {
           'mediaUrl': mediaUrl.text.trim(),
           'mediaHash': chain!.frameHashes.first,
           if (WalletStore.journalistKey != null) 'journalistKey': WalletStore.journalistKey,
+          if (stamp != null) 'district': stamp!.district,
+          if (stamp != null) 'geoCell': stamp!.geoCell,
           'capture': {
             'root': chain!.root,
             'frameCount': chain!.frameCount,
@@ -106,6 +116,8 @@ class _PostScreenState extends State<PostScreen> {
           'state': state,
           'category': category,
           'mediaUrl': mediaUrl.text.trim(),
+          if (stamp != null) 'district': stamp!.district,
+          if (stamp != null) 'geoCell': stamp!.geoCell,
         });
         setState(() => status = 'Published ${r['entityKey']}');
         if (mounted) context.go('/s/${r['entityKey']}');
@@ -155,6 +167,86 @@ class _PostScreenState extends State<PostScreen> {
             labelText: 'Public media URL (optional, stays off Arkiv)',
           ),
         ),
+        const SizedBox(height: 16),
+        const Hairline(),
+        const SizedBox(height: 16),
+        const Kicker('District stamp'),
+        const SizedBox(height: 8),
+        Text('Coarse location', style: Swa.playfair(size: 20)),
+        const SizedBox(height: 8),
+        Text(
+          'GPS is reverse-looked-up to a district centroid and a 0.1° cell. Precise coordinates are never stored or hashed.',
+          style: Swa.serif(size: 13, color: Swa.muted, height: 1.4),
+        ),
+        const SizedBox(height: 12),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          OutlinedButton.icon(
+            onPressed: () async {
+              setState(() => status = 'Requesting coarse location…');
+              try {
+                if (arkivJsAvailable) {
+                  final r = await arkivJs('geoStamp');
+                  final d = '${r['district'] ?? ''}';
+                  if (d.isEmpty) throw StateError('no fix');
+                  setState(() {
+                    stamp = GeoStamp(
+                      district: d,
+                      state: '${r['state'] ?? ''}',
+                      geoCell: '${r['geo_cell'] ?? r['geoCell'] ?? ''}',
+                      selfDeclared: r['selfDeclared'] == true,
+                      source: '${r['source'] ?? 'gps-coarse'}',
+                    );
+                    if (frames.isNotEmpty) {
+                      chain = hashChain(List.of(frames), district: stamp!.district, geoCell: stamp!.geoCell);
+                    }
+                    status = 'Stamped ${stamp!.district} · cell ${stamp!.geoCell}';
+                  });
+                } else {
+                  setState(() {
+                    stamp = stampDeclared(declaredDistrict);
+                    status = 'APK: use the self-declared picker (no GPS plugin). ${stamp!.district}';
+                  });
+                }
+              } catch (e) {
+                setState(() {
+                  stamp = stampDeclared(declaredDistrict);
+                  status = 'GPS unavailable — self-declared ${stamp!.district}. $e';
+                });
+              }
+            },
+            icon: const Icon(Icons.my_location_outlined),
+            label: const Text('Use GPS (coarse)'),
+          ),
+        ]),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          // ignore: deprecated_member_use
+          value: declaredDistrict,
+          items: indiaDistricts
+              .map((d) => DropdownMenuItem(value: d.name, child: Text('${d.name}, ${d.state}')))
+              .toList(),
+          onChanged: (v) {
+            declaredDistrict = v ?? declaredDistrict;
+            stamp = stampDeclared(declaredDistrict);
+            if (frames.isNotEmpty) {
+              final c = hashChain(List.of(frames), district: stamp!.district, geoCell: stamp!.geoCell);
+              setState(() {
+                chain = c;
+                status = 'Self-declared ${stamp!.district}. Chain re-bound to district+cell.';
+              });
+            } else {
+              setState(() {});
+            }
+          },
+          decoration: const InputDecoration(
+            labelText: 'Self-declared district',
+            helperText: 'Labelled self-declared — not a GPS fix',
+          ),
+        ),
+        if (stamp != null) ...[
+          const SizedBox(height: 8),
+          Mono('${stamp!.district} · ${stamp!.geoCell} · ${stamp!.selfDeclared ? 'self-declared' : stamp!.source}', maxLines: 2),
+        ],
         const SizedBox(height: 16),
         const Hairline(),
         const SizedBox(height: 16),

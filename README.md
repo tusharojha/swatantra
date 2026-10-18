@@ -20,10 +20,11 @@ India issued about **200,000 social-media removal orders** via the Sahyog portal
 
 Ground reporters lose the post **and** the ability to show that the footage was captured when they said it was. Swatantra gives them:
 
-1. A public feed queried from Arkiv (not our servers).
-2. A **protected link** `/s/<entityKey>` that resolves the entity from Arkiv.
-3. An in-app capture hash chain so a still or sampled video can be checked against a readonly `capture` entity.
-4. Testnet tips in GLM, recorded as `tip` entities.
+1. **Corroboration** — two or more independent desks in the same district ±30 minutes (`CORROBORATED · N independent witnesses`). Precise GPS never hits Arkiv; only `district` + a 0.1° `geo_cell`.
+2. A public feed queried from Arkiv (not our servers).
+3. A **protected link** `/s/<entityKey>` that resolves the entity from Arkiv.
+4. An in-app capture hash chain, district-bound, stored as a readonly `capture` entity.
+5. Testnet tips in GLM, recorded as `tip` entities.
 
 All people, bylines and dispatches in the seed are **synthetic / fictional**.
 
@@ -135,14 +136,19 @@ npx tsx src/seed.ts
 
 ## Capture chain
 
-In-app stills (and sampled video frames at 1 fps when available):
+In-app stills (and sampled video frames at 1 fps when available). The chain is **district-bound**:
 
 ```
-h_0 = 32 zero bytes
-h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms))
+h_0     = 32 zero bytes
+place   = sha256( utf8(district) || 0x00 || utf8(geo_cell) )
+h_i     = sha256( h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms) || place )
 ```
 
-Only `chain_root`, counts and timestamps go on Arkiv. Verify screen recomputes from a file.
+`geo_cell` is lat,lng rounded to **0.1°**. Precise GPS is never stored. Only `chain_root`, `district`, `geo_cell`, `capture_ts_ms`, counts go on Arkiv.
+
+## Corroboration
+
+Independent journalists who capture in the **same district** within **±30 minutes** count as witnesses. Distinct Anon Aadhaar nullifiers (`nid` via `$creator` → journalist entity). **N ≥ 2** shows `CORROBORATED · N independent witnesses · {district} district · {time}` on the feed and article. Optionally written as a `corroboration` entity. Seed: three synthetic desks on FC Road, Pune, plus one solo Mumbai story.
 
 ```bash
 node scripts/verify-capture.mjs app/web/seed/s1.jpg 1700000000000

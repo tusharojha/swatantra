@@ -19,6 +19,7 @@ There is **no server-side orderBy**. The app sorts on the client, usually by `cr
 | `capture` | 365 days | `readonly`, `permissionlessExtension` | Integrity record outlives a single news cycle. Immutable once written. |
 | `tip` | 365 days | `readonly` | Support history. Only the tipper's wallet (`$creator`) is evidence of who sent it. |
 | `takedown` | 180 days | `readonly`, `permissionlessExtension` | Public tracker. Community can extend. |
+| `corroboration` | 180 days | `readonly`, `permissionlessExtension` | Snapshot of a witness cluster so the badge is queryable without a live join. |
 | `draft` | 2 days | — | Scratch copy. Cheap and short so abandoned drafts expire. |
 | `tip_request` | 7 days | — | Short-lived ask. Not used in the first seed. |
 
@@ -31,7 +32,7 @@ Names are snake_case, ≤ 32 chars. Types must match on write and query.
 | name | type | on | purpose |
 |---|---|---|---|
 | `app` | str | all | `swatantra` |
-| `type` | str | all | `journalist` `story` `capture` `tip` `takedown` `draft` `tip_request` |
+| `type` | str | all | `journalist` `story` `capture` `tip` `takedown` `draft` `tip_request` `corroboration` |
 | `created_at_ms` | u64 | all | Unix ms. Range filters. Client-side sort. |
 | `nid` | bytes32 | journalist | Anon Aadhaar **test-mode** Groth16 nullifier (field element as 32-byte BE). One person ↔ one journalist. |
 | `groth16` | bool | journalist | `true` when `nid` came from `@anon-aadhaar/core` `verify()`, not the SHA-256 stub. |
@@ -56,12 +57,19 @@ Names are snake_case, ≤ 32 chars. Types must match on write and query.
 | `notice_date_ms` | u64 | takedown | When the notice was dated |
 | `law_cited` | str | takedown | Short citation (synthetic in demo) |
 | `authority_named` | bool | takedown | Whether an authority was named on the notice |
+| `district` | str | capture, story, corroboration | Coarse Indian district. Never a lat/lng. |
+| `geo_cell` | str | capture, story, corroboration | `lat,lng` rounded to **0.1°** (~11 km). |
+| `capture_ts_ms` | u64 | capture, story | Sample time used for the ±30 min corroboration window. |
+| `window_start_ms` | u64 | corroboration | Inclusive window start |
+| `window_end_ms` | u64 | corroboration | Inclusive window end |
+| `witness_count` | i32 | corroboration | Distinct journalist nullifiers (`nid`) in the window |
 
 ### Payload (not indexed)
 
 - **journalist:** `{ displayName, bio, testMode, groth16, proofHash, claims }` — synthetic display names only. Never QR data, names, or photos from Aadhaar.
 - **story:** `{ title, body, mediaUrl, mediaHash, captureRoot, synthetic }`
-- **capture:** `{ algo, mediaUrl, deviceTime, whyOffArkiv }`
+- **capture:** `{ algo, mediaUrl, deviceTime, whyOffArkiv, district, geoCell }`
+- **corroboration:** `{ story_keys, capture_keys, nids, synthetic }`
 - **tip:** `{ note, testnet, token: "GLM" }`
 - **takedown:** `{ notes, synthetic, disclaimer }`
 
@@ -69,14 +77,32 @@ Never: private keys, Aadhaar data, real names of living private individuals, ema
 
 ## Capture chain
 
+District-bound. Precise GPS is **never** hashed or stored.
+
 ```
 h_0      = 32 zero bytes
+place    = SHA-256( utf8(district) || 0x00 || utf8(geo_cell) )
 frame_i  = SHA-256(frame bytes)
-h_i      = SHA-256(h_{i-1} || frame_i || uint64be(timestamp_ms))
+h_i      = SHA-256( h_{i-1} || frame_i || uint64be(timestamp_ms) || place )
 root     = h_n
 ```
 
-Photos are a 1-frame chain. Video samples JPEG frames at 1 fps in-app.
+`geo_cell` is lat,lng rounded to 0.1°. Photos are a 1-frame chain. Video samples JPEG frames at 1 fps in-app.
+
+## Corroboration
+
+For a capture at time `t` in district `X`:
+
+```
+app = str('swatantra') AND type = str('capture')
+  AND district = str('X')
+  AND capture_ts_ms >= u64(t - 30min)
+  AND capture_ts_ms <= u64(t + 30min)
+```
+
+Then count **distinct** journalist `nid` values by looking up `type=journalist` createdBy each capture `$creator`. **N ≥ 2** ⇒ badge `CORROBORATED · N independent witnesses · {district} district · {time}`.
+
+Optionally write `type=corroboration` with `district`, `geo_cell`, `window_*`, `witness_count`, `story_key` so the cluster is itself an Arkiv entity.
 
 ## Queries the app runs
 
@@ -121,6 +147,8 @@ Other queries:
 | Tips for a story | `app = str('swatantra') AND type = str('tip') AND story_key = key(0x…)` |
 | Capture by chain root | `app = str('swatantra') AND type = str('capture') AND chain_root = bytes32(0x…)` |
 | Takedown tracker | `app = str('swatantra') AND type = str('takedown')` |
+| Witnesses in a district window | `app = str('swatantra') AND type = str('capture') AND district = str('Pune') AND capture_ts_ms >= u64(…) AND capture_ts_ms <= u64(…)` |
+| Stored cluster | `app = str('swatantra') AND type = str('corroboration') AND district = str('Pune')` |
 | Stories by a wallet | same story query + `.createdBy(0x…)` |
 | Protected link | `getEntity(entityKey)` |
 

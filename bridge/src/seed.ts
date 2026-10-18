@@ -22,6 +22,7 @@ import {
   createCapture,
   createTip,
   createTakedown,
+  createCorroboration,
   verifyJournalist,
   queryStories,
 } from "./index";
@@ -39,6 +40,9 @@ type StorySeed = {
   state: string;
   category: string;
   journalist: "A" | "B" | "C";
+  district: string;
+  geoCell: string;
+  minutesAgo: number;
 };
 
 const STORIES: StorySeed[] = [
@@ -47,6 +51,9 @@ const STORIES: StorySeed[] = [
     journalist: "A",
     city: "Mumbai",
     state: "Maharashtra",
+    district: "Mumbai",
+    geoCell: "19.1,72.9",
+    minutesAgo: 180,
     category: "civic",
     title: "King tide at a western suburb jetty, 12 Oct 2026 (synthetic)",
     body:
@@ -60,46 +67,57 @@ const STORIES: StorySeed[] = [
   {
     file: "s2.jpg",
     journalist: "B",
-    city: "Delhi",
-    state: "Delhi",
-    category: "protest",
-    title: "Phones on SOS after 9pm near ITO, 10 Oct 2026 (synthetic)",
+    city: "Pune",
+    state: "Maharashtra",
+    district: "Pune",
+    geoCell: "18.5,73.9",
+    minutesAgo: 15,
+    category: "civic",
+    title: "FC Road after a burst main, from the south kerb (synthetic)",
     body:
       "SYNTHETIC DISPATCH — fictional names, composite scene.\n\n" +
-      "Around 21:10, four of five handsets in a small press huddle showed SOS-only. " +
-      "A printed order was not produced. A traffic constable shrugged and pointed at the sky.\n\n" +
-      "This story exists so a reader can still open a protected Arkiv link if a platform later removes a similar post.",
+      "Water over the tramlines of memory: a burst main, bikes pushed onto the divider. " +
+      "Three desks sampled the same Pune junction within twenty minutes — that is the corroboration.\n\n" +
+      "Not a report of a specific pipe. The point is independent witnesses on Arkiv.",
   },
   {
     file: "s3.jpg",
     journalist: "A",
-    city: "Chennai",
-    state: "Tamil Nadu",
-    category: "environment",
-    title: "Ennore creek after overnight rain — sludge line (synthetic)",
+    city: "Pune",
+    state: "Maharashtra",
+    district: "Pune",
+    geoCell: "18.5,73.9",
+    minutesAgo: 22,
+    category: "civic",
+    title: "Same FC Road flood, west flyover (synthetic)",
     body:
       "SYNTHETIC DISPATCH.\n\n" +
-      "A grey line of sludge sat on the mangrove edge at first light. " +
-      "Fisherfolk (composite, unnamed) said the smell was diesel and tannery, not tide.\n\n" +
-      "Capture proof is a SHA-256 chain of the demo still, not a claim about a real creek that morning.",
+      "From the flyover the water made a sheet as far as the bus depot. " +
+      "A second capture, a second nullifier, the same district cell, twelve minutes from the first still.",
   },
   {
     file: "s4.jpg",
     journalist: "C",
-    city: "Guwahati",
-    state: "Assam",
-    category: "environment",
-    title: "Sandbags on a Brahmaputra ghat, October 2026 (synthetic)",
+    city: "Pune",
+    state: "Maharashtra",
+    district: "Pune",
+    geoCell: "18.5,73.9",
+    minutesAgo: 8,
+    category: "civic",
+    title: "Third desk, same Pune junction, eight minutes on (synthetic)",
     body:
       "SYNTHETIC DISPATCH.\n\n" +
-      "Sandbags two-high along a ghat that is usually a tea stall. " +
-      "The stall owner in this copy is fictional. The point is the hash: the still can be checked against Arkiv.",
+      "A third journalist, a third chain root, still Pune district, still the same 0.1° cell. " +
+      "Corroborated by 3 independent witnesses — none of them named.",
   },
   {
     file: "s5.jpg",
     journalist: "A",
     city: "Ranchi",
     state: "Jharkhand",
+    district: "Ranchi",
+    geoCell: "23.3,85.3",
+    minutesAgo: 28 * 60,
     category: "labour",
     title: "Night shift at a coal siding off Hazaribagh road (synthetic)",
     body:
@@ -112,6 +130,9 @@ const STORIES: StorySeed[] = [
     journalist: "C",
     city: "Imphal",
     state: "Manipur",
+    district: "Imphal West",
+    geoCell: "24.8,93.9",
+    minutesAgo: 36 * 60,
     category: "civic",
     title: "NH-2 convoy wait, none of the names are real (synthetic)",
     body:
@@ -124,6 +145,9 @@ const STORIES: StorySeed[] = [
     journalist: "B",
     city: "Hyderabad",
     state: "Telangana",
+    district: "Hyderabad",
+    geoCell: "17.4,78.5",
+    minutesAgo: 44 * 60,
     category: "labour",
     title: "Gig kitchen riders after a platform outage, Gachibowli (synthetic)",
     body:
@@ -136,6 +160,9 @@ const STORIES: StorySeed[] = [
     journalist: "B",
     city: "Kolkata",
     state: "West Bengal",
+    district: "Howrah",
+    geoCell: "22.6,88.3",
+    minutesAgo: 52 * 60,
     category: "civic",
     title: "Howrah approach waterlogging, municipal pump (synthetic)",
     body:
@@ -236,8 +263,8 @@ async function main() {
   for (const s of STORIES) {
     unlock(keys[s.journalist]);
     const bytes = new Uint8Array(readFileSync(resolve(SEED_DIR, s.file)));
-    const ts = Date.now() - Math.floor(Math.random() * 86_400_000);
-    const chain = await hashSingleFile(bytes, ts);
+    const ts = Date.now() - s.minutesAgo * 60_000;
+    const chain = await hashSingleFile(bytes, ts, s.district, s.geoCell);
     const cap = await createCapture({
       root: chain.root,
       frameCount: chain.frameCount,
@@ -246,6 +273,8 @@ async function main() {
       endMs: chain.endMs,
       city: s.city,
       mediaUrl: `${pagesBase}/${s.file}`,
+      district: s.district,
+      geoCell: s.geoCell,
     });
     const story = await createStory({
       title: s.title,
@@ -258,9 +287,31 @@ async function main() {
       captureKey: cap.entityKey,
       captureRoot: chain.root,
       journalistKey: journalists[s.journalist].key,
+      district: s.district,
+      geoCell: s.geoCell,
+      captureTsMs: ts,
     });
     storyKeys.push({ title: s.title, key: story.entityKey, capture: cap.entityKey, city: s.city });
     console.log("story", s.city, story.entityKey, story.txHash);
+  }
+
+  const pune = storyKeys.filter((s) => s.city === "Pune");
+  let corroborationKey = "";
+  if (pune.length >= 2) {
+    unlock(keys.A);
+    const now = Date.now();
+    const cr = await createCorroboration({
+      district: "Pune",
+      geoCell: "18.5,73.9",
+      windowStartMs: now - 30 * 60_000,
+      windowEndMs: now + 5 * 60_000,
+      witnessCount: 3,
+      storyKey: pune[0].key,
+      storyKeys: pune.map((s) => s.key),
+      captureKeys: pune.map((s) => s.capture ?? ""),
+    });
+    corroborationKey = cr.entityKey;
+    console.log("corroboration", cr);
   }
 
   // A couple of tips from the seeder (testnet GLM).
@@ -307,6 +358,7 @@ async function main() {
     stories: storyKeys,
     feedCount: feed.entities.length,
     takedown: td.entityKey,
+    corroboration: corroborationKey,
   };
   writeFileSync(resolve(import.meta.dirname, "../../arkiv/seed-result.json"), JSON.stringify(out, null, 2));
   console.log("wrote arkiv/seed-result.json");

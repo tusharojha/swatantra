@@ -29,6 +29,27 @@ class AccentChip extends StatelessWidget {
   Widget build(BuildContext context) => Kicker(label, color: color);
 }
 
+class CorroborationStamp extends StatelessWidget {
+  final Corroboration cluster;
+  const CorroborationStamp(this.cluster, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!cluster.ok) return const SizedBox.shrink();
+    final times = cluster.witnesses.map((w) => w.captureTs).toList()..sort();
+    final t = DateTime.fromMillisecondsSinceEpoch(times.isEmpty ? 0 : times.first).toUtc();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final hh = t.hour.toString().padLeft(2, '0');
+    final mm = t.minute.toString().padLeft(2, '0');
+    final line =
+        'CORROBORATED · ${cluster.count} independent witnesses · ${cluster.district} district · ${t.day} ${months[t.month - 1]} $hh:$mm';
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Text(line.toUpperCase(), style: Swa.kicker),
+    );
+  }
+}
+
 class ProofBadge extends StatelessWidget {
   const ProofBadge({super.key});
   @override

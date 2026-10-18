@@ -1,12 +1,13 @@
 /**
- * In-app capture integrity chain.
+ * In-app capture integrity chain (district-bound).
  *
  * h_0     = 32 zero bytes
- * frame_i = SHA-256(frame bytes)          // 32 bytes
- * h_i     = SHA-256(h_{i-1} || frame_i || timestamp_ms as 8-byte big-endian)
+ * place   = SHA-256( utf8(district) || 0x00 || utf8(geo_cell) )
+ * frame_i = SHA-256(frame bytes)
+ * h_i     = SHA-256( h_{i-1} || frame_i || uint64be(ts_ms) || place )
+ * root    = h_n
  *
- * The chain root is h_n. Media bytes stay off Arkiv; only the root,
- * frame count, fps and timestamps are stored as a `capture` entity.
+ * Precise GPS is never hashed or stored — only a district name and a 0.1° cell.
  */
 
 export function toHex(bytes: Uint8Array): `0x${string}` {
@@ -36,6 +37,17 @@ export async function sha256(data: Uint8Array): Promise<Uint8Array> {
   return new Uint8Array(digest);
 }
 
+export async function placeHash(district: string, geoCell: string): Promise<Uint8Array> {
+  const enc = new TextEncoder();
+  const a = enc.encode(district);
+  const b = enc.encode(geoCell);
+  const cat = new Uint8Array(a.length + 1 + b.length);
+  cat.set(a, 0);
+  cat[a.length] = 0;
+  cat.set(b, a.length + 1);
+  return sha256(cat);
+}
+
 export type FrameSample = { bytes: Uint8Array; timestampMs: number };
 
 export type CaptureChain = {
@@ -45,19 +57,28 @@ export type CaptureChain = {
   startMs: number;
   endMs: number;
   frameHashes: `0x${string}`[];
+  district: string;
+  geoCell: string;
 };
 
-export async function hashChain(frames: FrameSample[], fps: number): Promise<CaptureChain> {
+export async function hashChain(
+  frames: FrameSample[],
+  fps: number,
+  district = "",
+  geoCell = "",
+): Promise<CaptureChain> {
   if (frames.length === 0) throw new Error("need at least one sampled frame");
+  const place = await placeHash(district, geoCell);
   let h = new Uint8Array(32);
   const frameHashes: `0x${string}`[] = [];
   for (const frame of frames) {
     const fh = await sha256(frame.bytes);
     frameHashes.push(toHex(fh));
-    const cat = new Uint8Array(32 + 32 + 8);
+    const cat = new Uint8Array(104);
     cat.set(h, 0);
     cat.set(fh, 32);
     cat.set(u64be(frame.timestampMs), 64);
+    cat.set(place, 72);
     h = await sha256(cat);
   }
   return {
@@ -67,9 +88,16 @@ export async function hashChain(frames: FrameSample[], fps: number): Promise<Cap
     startMs: frames[0].timestampMs,
     endMs: frames[frames.length - 1].timestampMs,
     frameHashes,
+    district,
+    geoCell,
   };
 }
 
-export async function hashSingleFile(bytes: Uint8Array, timestampMs: number): Promise<CaptureChain> {
-  return hashChain([{ bytes, timestampMs }], 1);
+export async function hashSingleFile(
+  bytes: Uint8Array,
+  timestampMs: number,
+  district = "",
+  geoCell = "",
+): Promise<CaptureChain> {
+  return hashChain([{ bytes, timestampMs }], 1, district, geoCell);
 }

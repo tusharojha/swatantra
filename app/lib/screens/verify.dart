@@ -77,7 +77,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
       if (r == null || r.files.first.bytes == null) return;
       final bytes = r.files.first.bytes!;
       final ts = int.tryParse(cap.attr('start_ms', '0')) ?? 0;
-      final chain = hashChain([(bytes: bytes, timestampMs: ts)]);
+      final chain = hashChain(
+        [(bytes: bytes, timestampMs: ts)],
+        district: cap.district,
+        geoCell: cap.geoCell,
+      );
       final expected = cap.attr('chain_root');
       final ok = chain.root.toLowerCase() == expected.toLowerCase();
       setState(() {

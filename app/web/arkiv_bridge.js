@@ -22134,17 +22134,29 @@ ${prettyStateOverride(stateOverride)}`;
     const digest = await globalThis.crypto.subtle.digest("SHA-256", data);
     return new Uint8Array(digest);
   }
-  async function hashChain(frames, fps) {
+  async function placeHash(district, geoCell) {
+    const enc = new TextEncoder();
+    const a = enc.encode(district);
+    const b = enc.encode(geoCell);
+    const cat = new Uint8Array(a.length + 1 + b.length);
+    cat.set(a, 0);
+    cat[a.length] = 0;
+    cat.set(b, a.length + 1);
+    return sha2564(cat);
+  }
+  async function hashChain(frames, fps, district = "", geoCell = "") {
     if (frames.length === 0) throw new Error("need at least one sampled frame");
+    const place = await placeHash(district, geoCell);
     let h = new Uint8Array(32);
     const frameHashes = [];
     for (const frame of frames) {
       const fh = await sha2564(frame.bytes);
       frameHashes.push(toHex3(fh));
-      const cat = new Uint8Array(32 + 32 + 8);
+      const cat = new Uint8Array(104);
       cat.set(h, 0);
       cat.set(fh, 32);
       cat.set(u64be(frame.timestampMs), 64);
+      cat.set(place, 72);
       h = await sha2564(cat);
     }
     return {
@@ -22153,11 +22165,13 @@ ${prettyStateOverride(stateOverride)}`;
       fps,
       startMs: frames[0].timestampMs,
       endMs: frames[frames.length - 1].timestampMs,
-      frameHashes
+      frameHashes,
+      district,
+      geoCell
     };
   }
-  async function hashSingleFile(bytes, timestampMs) {
-    return hashChain([{ bytes, timestampMs }], 1);
+  async function hashSingleFile(bytes, timestampMs, district = "", geoCell = "") {
+    return hashChain([{ bytes, timestampMs }], 1, district, geoCell);
   }
 
   // src/anon.ts
@@ -22206,7 +22220,8 @@ ${prettyStateOverride(stateOverride)}`;
     tip: () => ExpirationTime.fromDays(365),
     takedown: () => ExpirationTime.fromDays(180),
     draft: () => ExpirationTime.fromDays(2),
-    tip_request: () => ExpirationTime.fromDays(7)
+    tip_request: () => ExpirationTime.fromDays(7),
+    corroboration: () => ExpirationTime.fromDays(180)
   };
   var account;
   var unwatch;
@@ -22398,6 +22413,9 @@ ${prettyStateOverride(stateOverride)}`;
         state: str(input.state),
         category: str(input.category),
         created_at_ms: u64(BigInt(now)),
+        ...input.district ? { district: str(input.district) } : {},
+        ...input.geoCell ? { geo_cell: str(input.geoCell) } : {},
+        ...input.captureTsMs ? { capture_ts_ms: u64(BigInt(input.captureTsMs)) } : {},
         ...input.captureKey ? { capture_key: key(input.captureKey) } : {},
         ...input.journalistKey ? { journalist_key: key(input.journalistKey) } : {}
       },
@@ -22411,12 +22429,16 @@ ${prettyStateOverride(stateOverride)}`;
     };
   }
   async function createCapture(input) {
+    const district = input.district ?? "";
+    const geoCell = input.geoCell ?? "";
     const created = await walletClient().createEntity({
       payload: jsonToPayload({
-        algo: "h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(ts_ms)); h_0 = 32 zero bytes",
+        algo: "h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(ts_ms) || place); place = sha256(district || 0x00 || geo_cell); h_0 = 32 zero bytes",
         mediaUrl: input.mediaUrl ?? "",
         deviceTime: new Date(input.startMs).toISOString(),
-        whyOffArkiv: "Media files stay off Arkiv because of size and cost (payload cap 128 KiB)."
+        whyOffArkiv: "Media files stay off Arkiv because of size and cost (payload cap 128 KiB).",
+        district,
+        geoCell
       }),
       contentType: "application/json",
       attributes: {
@@ -22427,8 +22449,11 @@ ${prettyStateOverride(stateOverride)}`;
         fps: i32(input.fps),
         start_ms: u64(BigInt(input.startMs)),
         end_ms: u64(BigInt(input.endMs)),
+        capture_ts_ms: u64(BigInt(input.startMs)),
         created_at_ms: u64(BigInt(Date.now())),
         city: str(input.city),
+        ...district ? { district: str(district) } : {},
+        ...geoCell ? { geo_cell: str(geoCell) } : {},
         ...input.storyKey ? { story_key: key(input.storyKey) } : {}
       },
       expires: EXPIRY.capture(),
@@ -22449,10 +22474,12 @@ ${prettyStateOverride(stateOverride)}`;
       creates: [
         {
           payload: jsonToPayload({
-            algo: "h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(ts_ms)); h_0 = 32 zero bytes",
+            algo: "h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(ts_ms) || place); place = sha256(district || 0x00 || geo_cell); h_0 = 32 zero bytes",
             mediaUrl: input.mediaUrl ?? "",
             deviceTime: new Date(input.capture.startMs).toISOString(),
-            whyOffArkiv: "Media files stay off Arkiv because of size and cost (payload cap 128 KiB)."
+            whyOffArkiv: "Media files stay off Arkiv because of size and cost (payload cap 128 KiB).",
+            district: input.district ?? "",
+            geoCell: input.geoCell ?? ""
           }),
           contentType: "application/json",
           attributes: {
@@ -22463,8 +22490,11 @@ ${prettyStateOverride(stateOverride)}`;
             fps: i32(input.capture.fps),
             start_ms: u64(BigInt(input.capture.startMs)),
             end_ms: u64(BigInt(input.capture.endMs)),
+            capture_ts_ms: u64(BigInt(input.capture.startMs)),
             created_at_ms: u64(BigInt(now)),
             city: str(input.city),
+            ...input.district ? { district: str(input.district) } : {},
+            ...input.geoCell ? { geo_cell: str(input.geoCell) } : {},
             story_key: key(storyPred.key)
           },
           expires: EXPIRY.capture(),
@@ -22489,6 +22519,9 @@ ${prettyStateOverride(stateOverride)}`;
             category: str(input.category),
             created_at_ms: u64(BigInt(now)),
             capture_key: key(capPred.key),
+            ...input.district ? { district: str(input.district) } : {},
+            ...input.geoCell ? { geo_cell: str(input.geoCell) } : {},
+            capture_ts_ms: u64(BigInt(input.capture.startMs)),
             ...input.journalistKey ? { journalist_key: key(input.journalistKey) } : {}
           },
           expires: EXPIRY.story(),
@@ -22595,16 +22628,102 @@ ${prettyStateOverride(stateOverride)}`;
     });
     return page.entities[0] ?? null;
   }
-  async function hashFile(bytesB64, timestampMs) {
+  async function hashFile(bytesB64, timestampMs, district = "", geoCell = "") {
     const bin = Uint8Array.from(atob(bytesB64), (c) => c.charCodeAt(0));
-    return hashSingleFile(bin, timestampMs);
+    return hashSingleFile(bin, timestampMs, district, geoCell);
   }
-  async function hashFrames(frames, fps) {
+  async function hashFrames(frames, fps, district = "", geoCell = "") {
     const samples = frames.map((f) => ({
       bytes: Uint8Array.from(atob(f.bytesB64), (c) => c.charCodeAt(0)),
       timestampMs: f.timestampMs
     }));
-    return hashChain(samples, fps);
+    return hashChain(samples, fps, district, geoCell);
+  }
+  async function geoStamp() {
+    const nav = globalThis.navigator;
+    if (!nav?.geolocation) {
+      return { district: "", state: "", geo_cell: "", selfDeclared: true, source: "unavailable" };
+    }
+    const pos = await new Promise((resolve, reject) => {
+      nav.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: false,
+        timeout: 8e3,
+        maximumAge: 6e4
+      });
+    });
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const cell = `${(Math.round(lat * 10) / 10).toFixed(1)},${(Math.round(lng * 10) / 10).toFixed(1)}`;
+    const districts = [
+      { name: "Pune", state: "Maharashtra", lat: 18.5204, lng: 73.8567 },
+      { name: "Mumbai", state: "Maharashtra", lat: 19.076, lng: 72.8777 },
+      { name: "Central Delhi", state: "Delhi", lat: 28.6448, lng: 77.2167 },
+      { name: "Chennai", state: "Tamil Nadu", lat: 13.0827, lng: 80.2707 },
+      { name: "Bengaluru Urban", state: "Karnataka", lat: 12.9716, lng: 77.5946 },
+      { name: "Hyderabad", state: "Telangana", lat: 17.385, lng: 78.4867 },
+      { name: "Kolkata", state: "West Bengal", lat: 22.5726, lng: 88.3639 },
+      { name: "Guwahati", state: "Assam", lat: 26.1445, lng: 91.7362 },
+      { name: "Imphal West", state: "Manipur", lat: 24.817, lng: 93.9368 },
+      { name: "Ranchi", state: "Jharkhand", lat: 23.3441, lng: 85.3096 },
+      { name: "Ahmedabad", state: "Gujarat", lat: 23.0225, lng: 72.5714 }
+    ];
+    let best = districts[0];
+    let bestD = Infinity;
+    for (const d of districts) {
+      const dy = d.lat - lat;
+      const dx = (d.lng - lng) * 0.8;
+      const dist = dy * dy + dx * dx;
+      if (dist < bestD) {
+        bestD = dist;
+        best = d;
+      }
+    }
+    return {
+      district: best.name,
+      state: best.state,
+      geo_cell: cell,
+      selfDeclared: false,
+      source: "gps-coarse"
+    };
+  }
+  var WINDOW_MS = 30 * 60 * 1e3;
+  async function queryCapturesInWindow(district, tsMs) {
+    const from16 = tsMs - WINDOW_MS;
+    const to = tsMs + WINDOW_MS;
+    return queryEntities({
+      type: "capture",
+      extra: [
+        { op: "eq", name: "district", kind: "str", value: district },
+        { op: "gte", name: "capture_ts_ms", kind: "u64", value: from16 },
+        { op: "lte", name: "capture_ts_ms", kind: "u64", value: to }
+      ],
+      limit: 100
+    });
+  }
+  async function createCorroboration(input) {
+    const created = await walletClient().createEntity({
+      payload: jsonToPayload({
+        story_keys: input.storyKeys ?? [],
+        capture_keys: input.captureKeys ?? [],
+        nids: input.nids ?? [],
+        synthetic: true
+      }),
+      contentType: "application/json",
+      attributes: {
+        app: str(APP),
+        type: str("corroboration"),
+        district: str(input.district),
+        ...input.geoCell ? { geo_cell: str(input.geoCell) } : {},
+        window_start_ms: u64(BigInt(input.windowStartMs)),
+        window_end_ms: u64(BigInt(input.windowEndMs)),
+        witness_count: i32(input.witnessCount),
+        created_at_ms: u64(BigInt(Date.now())),
+        ...input.storyKey ? { story_key: key(input.storyKey) } : {}
+      },
+      expires: EXPIRY.corroboration(),
+      flags: { readonly: true, permissionlessExtension: true }
+    });
+    return { entityKey: created.entityKey, txHash: created.txHash };
   }
   function watchFeed(callbackName) {
     unwatch?.();
@@ -22652,8 +22771,16 @@ ${prettyStateOverride(stateOverride)}`;
     extendStory: (a) => extendStory(String(a.entityKey)),
     queryTips: (a) => queryTips(String(a.storyKey)),
     findCaptureByRoot: (a) => findCaptureByRoot(String(a.root)),
-    hashFile: (a) => hashFile(String(a.bytesB64), Number(a.timestampMs)),
-    hashFrames: (a) => hashFrames(a.frames, Number(a.fps ?? 1)),
+    hashFile: (a) => hashFile(String(a.bytesB64), Number(a.timestampMs), String(a.district ?? ""), String(a.geoCell ?? a.geo_cell ?? "")),
+    hashFrames: (a) => hashFrames(
+      a.frames,
+      Number(a.fps ?? 1),
+      String(a.district ?? ""),
+      String(a.geoCell ?? a.geo_cell ?? "")
+    ),
+    geoStamp: () => geoStamp(),
+    queryCapturesInWindow: (a) => queryCapturesInWindow(String(a.district), Number(a.tsMs ?? a.capture_ts_ms)),
+    createCorroboration: (a) => createCorroboration(a),
     watchFeed: () => watchFeed(),
     stopWatch: () => stopWatch()
   };
@@ -22687,6 +22814,9 @@ ${prettyStateOverride(stateOverride)}`;
     findCaptureByRoot,
     hashFile,
     hashFrames,
+    geoStamp,
+    queryCapturesInWindow,
+    createCorroboration,
     watchFeed,
     stopWatch,
     APP,

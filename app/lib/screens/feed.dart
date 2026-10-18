@@ -17,9 +17,11 @@ class _FeedScreenState extends State<FeedScreen> {
   String? error;
   bool loading = true;
   bool proof = false;
+  bool corroboratedOnly = false;
   String? state;
   String? city;
   String? category;
+  final clusters = <String, Corroboration>{};
 
   static const states = [
     '',
@@ -64,23 +66,50 @@ class _FeedScreenState extends State<FeedScreen> {
         if (city != null && city!.isNotEmpty) {
           edition = edition.where((s) => s.city.toLowerCase() == city!.toLowerCase()).toList();
         }
+        final map = <String, Corroboration>{};
+        for (final s in edition) {
+          final c = ProofEdition.corroborationFor(s);
+          if (c != null && c.ok) map[s.key] = c;
+        }
         setState(() {
           items = edition;
+          clusters
+            ..clear()
+            ..addAll(map);
           proof = true;
           loading = false;
         });
       } else {
+        final map = <String, Corroboration>{};
+        for (final s in list) {
+          final district = s.district.isNotEmpty ? s.district : s.city;
+          final ts = s.captureTsMs == 0 ? s.createdAtMs : s.captureTsMs;
+          final c = await Arkiv.corroborationFor(district: district, captureTsMs: ts, geoCell: s.geoCell);
+          if (c != null && c.ok) map[s.key] = c;
+        }
         setState(() {
           items = list;
+          clusters
+            ..clear()
+            ..addAll(map);
           proof = false;
           loading = false;
         });
       }
     } catch (e) {
       if (!mounted) return;
+      final edition = ProofEdition.stories;
+      final map = <String, Corroboration>{};
+      for (final s in edition) {
+        final c = ProofEdition.corroborationFor(s);
+        if (c != null && c.ok) map[s.key] = c;
+      }
       setState(() {
         error = '$e';
-        items = ProofEdition.stories;
+        items = edition;
+        clusters
+          ..clear()
+          ..addAll(map);
         proof = true;
         loading = false;
       });
@@ -89,8 +118,12 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final lead = items.isEmpty ? null : items.first;
-    final rest = items.length > 1 ? items.sublist(1) : const <ArkivEntity>[];
+    var shown = items;
+    if (corroboratedOnly) {
+      shown = items.where((s) => clusters[s.key]?.ok == true).toList();
+    }
+    final lead = shown.isEmpty ? null : shown.first;
+    final rest = shown.length > 1 ? shown.sublist(1) : const <ArkivEntity>[];
 
     return RefreshIndicator(
       onRefresh: _load,
@@ -121,6 +154,14 @@ class _FeedScreenState extends State<FeedScreen> {
                 setState(() => category = v);
                 _load();
               }),
+              FilterChip(
+                label: Text('Corroborated', style: Swa.condensed(size: 12, color: corroboratedOnly ? Swa.magenta : Swa.ink)),
+                selected: corroboratedOnly,
+                selectedColor: Swa.paper,
+                side: BorderSide(color: corroboratedOnly ? Swa.magenta : Swa.line),
+                checkmarkColor: Swa.magenta,
+                onSelected: (v) => setState(() => corroboratedOnly = v),
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -154,10 +195,11 @@ class _FeedScreenState extends State<FeedScreen> {
                 style: Swa.serif(size: 15, color: Swa.muted),
               ),
             ),
-          if (lead != null) LeadStory(story: lead, onTap: () => context.go('/s/${lead.key}')),
+          if (lead != null)
+            LeadStory(story: lead, cluster: clusters[lead.key], onTap: () => context.go('/s/${lead.key}')),
           if (rest.isNotEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Hairline()),
           for (var i = 0; i < rest.length; i++) ...[
-            StoryRow(story: rest[i], onTap: () => context.go('/s/${rest[i].key}')),
+            StoryRow(story: rest[i], cluster: clusters[rest[i].key], onTap: () => context.go('/s/${rest[i].key}')),
             if (i != rest.length - 1) const Hairline(),
           ],
         ],
@@ -189,8 +231,9 @@ class _FeedScreenState extends State<FeedScreen> {
 
 class LeadStory extends StatelessWidget {
   final ArkivEntity story;
+  final Corroboration? cluster;
   final VoidCallback onTap;
-  const LeadStory({super.key, required this.story, required this.onTap});
+  const LeadStory({super.key, required this.story, required this.onTap, this.cluster});
 
   @override
   Widget build(BuildContext context) {
@@ -200,6 +243,7 @@ class LeadStory extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Kicker(story.category.isEmpty ? 'story' : story.category),
+          if (cluster != null) CorroborationStamp(cluster!),
           const SizedBox(height: 8),
           Text(
             story.title.isEmpty ? 'Untitled story' : story.title,
@@ -224,8 +268,9 @@ class LeadStory extends StatelessWidget {
 
 class StoryRow extends StatelessWidget {
   final ArkivEntity story;
+  final Corroboration? cluster;
   final VoidCallback onTap;
-  const StoryRow({super.key, required this.story, required this.onTap});
+  const StoryRow({super.key, required this.story, required this.onTap, this.cluster});
 
   @override
   Widget build(BuildContext context) {
@@ -241,6 +286,7 @@ class StoryRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Kicker(story.category.isEmpty ? 'story' : story.category),
+                  if (cluster != null) CorroborationStamp(cluster!),
                   const SizedBox(height: 8),
                   Text(
                     story.title.isEmpty ? 'Untitled story' : story.title,
