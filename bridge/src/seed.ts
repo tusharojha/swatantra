@@ -9,13 +9,14 @@
 import { writeFileSync } from "node:fs";
 import { createPublicClient } from "@arkiv-network/sdk";
 import { tiramisu } from "@arkiv-network/sdk/chains";
-import { http, formatEther } from "viem";
+import { http, formatEther, parseEther } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import {
   APP,
   RPC,
   EXPLORER,
   unlock,
+  walletClient,
   createJournalist,
   createStory,
   createCapture,
@@ -173,12 +174,29 @@ async function main() {
   ] as const;
 
   console.log("=== wallets (addresses only) ===");
-  for (const [role, pk] of roles) {
+  const seedAcc = privateKeyToAccount(seedKey);
+  const seedBal = await pub.getBalance({ address: seedAcc.address });
+  console.log(`seeder/reader\t${seedAcc.address}\t${formatEther(seedBal)} GLM`);
+  if (seedBal === 0n) {
+    throw new Error(
+      `Seeder ${seedAcc.address} has 0 GLM. Fund it with ≥10 test GLM (one Hub faucet drop) then re-run.`,
+    );
+  }
+
+  // One funded seeder is enough: split GLM to journalist burners so $creator differs.
+  unlock(seedKey);
+  const topUp = parseEther("0.4");
+  for (const [role, pk] of roles.slice(1)) {
     const acc = privateKeyToAccount(pk);
     const bal = await pub.getBalance({ address: acc.address });
     console.log(`${role}\t${acc.address}\t${formatEther(bal)} GLM`);
-    if (bal === 0n) {
-      console.warn(`  UNFUNDED — claim at https://hub.arkiv.network/faucet for ${acc.address}`);
+    if (bal < parseEther("0.2")) {
+      const tx = await walletClient().sendTransaction({
+        to: acc.address,
+        value: topUp,
+      });
+      await pub.waitForTransactionReceipt({ hash: tx });
+      console.log(`  topped up ${acc.address} with 0.4 GLM  ${EXPLORER}/tx/${tx}`);
     }
   }
 
