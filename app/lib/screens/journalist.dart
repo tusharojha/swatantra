@@ -95,10 +95,13 @@ class _JournalistScreenState extends State<JournalistScreen> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+      padding: Swa.pagePadding,
       children: [
-        Text('Verified journalist', style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 8),
+        const SectionHead(
+          kicker: 'The desk',
+          title: 'Verified journalist',
+        ),
+        const SizedBox(height: 12),
         const TestModeBanner(
           'Anon Aadhaar TEST MODE (Ethereum Foundation PSE). We do not run the full Groth16 prover in Flutter. A minimal verifier derives a SHA-256 nullifier from test QR data. Nothing from Aadhaar — not even a hash of a real ID — is written to Arkiv. Use official test QR data, never a real card.',
         ),
@@ -138,17 +141,22 @@ class _JournalistScreenState extends State<JournalistScreen> {
         const SizedBox(height: 8),
         OutlinedButton(onPressed: () => _verify(bundled: false), child: const Text('Verify pasted TEST QR')),
         const SizedBox(height: 8),
-        FilledButton(onPressed: _register, child: const Text('Create journalist entity')),
+        FilledButton(onPressed: _register, child: const Text('CREATE JOURNALIST ENTITY')),
         if (nullifier != null) ...[
           const SizedBox(height: 16),
-          const Text('Nullifier (pseudonymous id)', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Hairline(),
+          const SizedBox(height: 16),
+          const Kicker('Nullifier'),
+          const SizedBox(height: 8),
+          Text('Pseudonymous id', style: Swa.playfair(size: 20)),
+          const SizedBox(height: 8),
           Mono(nullifier!, maxLines: 3),
         ],
         if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
         const SizedBox(height: 24),
-        const Text(
+        Text(
           'On Arkiv we store only: type=journalist, nid=nullifier, optional state, test_mode=true, and a synthetic display name in the payload. \$creator is the burner wallet.',
-          style: TextStyle(color: Swa.muted, height: 1.45),
+          style: Swa.serif(size: 13, color: Swa.muted, height: 1.45),
         ),
       ],
     );

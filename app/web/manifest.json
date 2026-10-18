@@ -3,7 +3,7 @@
     "short_name": "Swatantra",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FFFBFA",
+    "background_color": "#FFFFFF",
     "theme_color": "#DC2460",
     "description": "Swatantra — ground truth, unerasable. Independent journalism on Arkiv.",
     "orientation": "portrait-primary",

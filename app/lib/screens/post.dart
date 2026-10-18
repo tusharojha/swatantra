@@ -118,16 +118,16 @@ class _PostScreenState extends State<PostScreen> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+      padding: Swa.pagePadding,
       children: [
-        Text('Post a story', style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 8),
-        const Text(
-          'Writes a readonly story entity owned by your burner wallet. Optional in-app capture hashes each still (add several for a 1 fps chain) and stores only the chain root on Arkiv.',
-          style: TextStyle(color: Swa.muted, height: 1.45),
+        const SectionHead(
+          kicker: 'File a dispatch',
+          title: 'Post a story',
+          dek:
+              'Writes a readonly story entity owned by your burner wallet. Optional in-app capture hashes each still (add several for a 1 fps chain) and stores only the chain root on Arkiv.',
         ),
         const SizedBox(height: 16),
-        TextField(controller: title, decoration: const InputDecoration(labelText: 'Title')),
+        TextField(controller: title, decoration: const InputDecoration(labelText: 'Headline')),
         const SizedBox(height: 12),
         TextField(controller: body, maxLines: 8, decoration: const InputDecoration(labelText: 'Body')),
         const SizedBox(height: 12),
@@ -156,7 +156,11 @@ class _PostScreenState extends State<PostScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        const Text('In-app camera / still', style: TextStyle(fontWeight: FontWeight.w600)),
+        const Hairline(),
+        const SizedBox(height: 16),
+        const Kicker('In-app still'),
+        const SizedBox(height: 8),
+        Text('Camera / gallery', style: Swa.playfair(size: 20)),
         const SizedBox(height: 8),
         Wrap(spacing: 8, runSpacing: 8, children: [
           OutlinedButton.icon(onPressed: _camera, icon: const Icon(Icons.photo_camera_outlined), label: const Text('Camera')),
@@ -174,22 +178,19 @@ class _PostScreenState extends State<PostScreen> {
         ]),
         if (preview != null) ...[
           const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.memory(preview!, height: 180, fit: BoxFit.cover),
-          ),
+          Image.memory(preview!, height: 180, fit: BoxFit.cover),
         ],
         if (chain != null) ...[
           const SizedBox(height: 8),
           Mono('root ${chain!.root}', maxLines: 3),
         ],
-        const SizedBox(height: 20),
-        FilledButton(onPressed: _publish, child: const Text('Publish to Arkiv')),
+        const SizedBox(height: 16),
+        FilledButton(onPressed: _publish, child: const Text('PUBLISH TO ARKIV')),
         if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
         const SizedBox(height: 16),
-        const Text(
+        Text(
           'Use only synthetic people and events unless you are the journalist who captured the scene. Never put secrets or real ID data in the payload.',
-          style: TextStyle(color: Swa.muted, height: 1.4),
+          style: Swa.serif(size: 13, color: Swa.muted, height: 1.4),
         ),
       ],
     );

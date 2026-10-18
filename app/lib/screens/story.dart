@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../arkiv/service.dart';
+import '../config.dart';
 import '../models.dart';
+import '../proof_edition.dart';
 import '../theme.dart';
 import '../wallet.dart';
 import '../widgets/bits.dart';
@@ -19,6 +21,7 @@ class _StoryScreenState extends State<StoryScreen> {
   String tipTotal = '0';
   String? error;
   bool loading = true;
+  bool proof = false;
   final amount = TextEditingController(text: '0.01');
   String? status;
 
@@ -35,6 +38,17 @@ class _StoryScreenState extends State<StoryScreen> {
   }
 
   Future<void> _load() async {
+    if (ProofEdition.isProof(widget.entityKey)) {
+      final e = ProofEdition.entity(widget.entityKey);
+      setState(() {
+        story = e;
+        capture = e == null ? null : ProofEdition.captureFor(e.key);
+        proof = true;
+        loading = false;
+        if (e == null) error = 'No proof-edition story for this key.';
+      });
+      return;
+    }
     setState(() {
       loading = true;
       error = null;
@@ -70,6 +84,10 @@ class _StoryScreenState extends State<StoryScreen> {
   }
 
   Future<void> _tip() async {
+    if (proof) {
+      setState(() => status = 'Proof edition — tips write to Arkiv once the seeder is funded.');
+      return;
+    }
     if (WalletStore.address == null) {
       setState(() => status = 'Create a burner wallet in Me first, then fund it on the Tiramisu faucet.');
       return;
@@ -90,6 +108,10 @@ class _StoryScreenState extends State<StoryScreen> {
   }
 
   Future<void> _extend() async {
+    if (proof) {
+      setState(() => status = 'Proof edition — Lifetime Extension runs against a live entity.');
+      return;
+    }
     setState(() => status = 'Lifetime Extension…');
     try {
       final r = await Arkiv.callWrite('extendStory', {'entityKey': widget.entityKey});
@@ -103,121 +125,135 @@ class _StoryScreenState extends State<StoryScreen> {
   Widget build(BuildContext context) {
     final s = story;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+      padding: Swa.pagePadding,
       children: [
-        TextButton.icon(
+        TextButton(
           onPressed: () => context.go('/'),
-          icon: const Icon(Icons.arrow_back),
-          label: const Text('Feed'),
+          style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
+          child: Text('← FEED', style: Swa.kicker),
         ),
+        const SizedBox(height: 12),
         if (loading) const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator())),
         if (error != null) TestModeBanner(error!),
         if (s != null) ...[
-          Wrap(spacing: 8, runSpacing: 6, children: [
-            AccentChip(s.category.isEmpty ? 'story' : s.category, color: Swa.magenta),
-            if (s.city.isNotEmpty) AccentChip('${s.city}, ${s.state}'),
-            if (s.hasCapture) const ProofBadge(),
-            const AccentChip('Tiramisu testnet', color: Swa.saffron),
-          ]),
+          if (proof) ...[
+            TestModeBanner(ProofEdition.banner),
+            const SizedBox(height: 16),
+          ],
+          Kicker(s.category.isEmpty ? 'story' : s.category),
+          const SizedBox(height: 8),
+          Text(s.title, style: Swa.playfair(size: 34, weight: FontWeight.w700, height: 1.12)),
+          const SizedBox(height: 12),
+          Text(standfirst(s.body), style: Swa.serif(size: 18, height: 1.4, weight: FontWeight.w400)),
+          const SizedBox(height: 8),
+          Text(journalistByline(s), style: Swa.byline),
           const SizedBox(height: 16),
-          Text(s.title, style: Theme.of(context).textTheme.headlineMedium),
+          if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 240),
+          const SizedBox(height: 16),
+          Text(s.body, style: Swa.serif(size: 17, height: 1.6)),
+          const SizedBox(height: 24),
+          _VerifyBlock(story: s, capture: capture, proof: proof),
+          const SizedBox(height: 16),
+          const Hairline(),
+          const SizedBox(height: 16),
+          const Kicker('Support'),
+          const SizedBox(height: 8),
+          Text('Tip this desk', style: Swa.playfair(size: 22)),
           const SizedBox(height: 8),
           Text(
-            'Published ${s.createdAtMs == 0 ? '—' : DateTime.fromMillisecondsSinceEpoch(s.createdAtMs).toUtc().toIso8601String()}  ·  '
-            '\$creator ${shortAddr(s.creator)}',
-            style: const TextStyle(color: Swa.muted),
+            'Native Tiramisu test token, then a readonly tip entity. Not real money. $tipTotal wei so far.',
+            style: Swa.serif(size: 14, color: Swa.muted, height: 1.45),
           ),
-          const SizedBox(height: 20),
-          if (s.mediaUrl.isNotEmpty)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                s.mediaUrl,
-                height: 220,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
-          const SizedBox(height: 20),
-          Text(s.body, style: const TextStyle(height: 1.55, fontSize: 17)),
+          const SizedBox(height: 12),
+          TextField(controller: amount, decoration: const InputDecoration(labelText: 'Amount (GLM, testnet)')),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: _tip, child: const Text('SEND TESTNET TIP')),
           const SizedBox(height: 24),
-          SoftCard(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Protected link', style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 6),
-              const Text(
-                'This URL reads the entity straight from Arkiv. A platform takedown does not delete it.',
-                style: TextStyle(color: Swa.muted, height: 1.4),
-              ),
-              const SizedBox(height: 8),
-              Mono(protectedLink(s.key), maxLines: 4),
-              const SizedBox(height: 8),
-              Wrap(spacing: 8, children: [
-                OutlinedButton(onPressed: () => copy(context, protectedLink(s.key)), child: const Text('Copy link')),
-                OutlinedButton(
-                  onPressed: () => openUrl(explorerAddr(s.creator)),
-                  child: const Text('Creator on explorer'),
-                ),
-              ]),
-              const SizedBox(height: 8),
-              Mono('entity ${s.key}', maxLines: 3),
-              Mono('creator ${s.creator} · owner ${s.owner}', maxLines: 3),
-            ]),
+          const Hairline(),
+          const SizedBox(height: 16),
+          const Kicker('Lifetime'),
+          const SizedBox(height: 8),
+          Text('Keep this story alive', style: Swa.playfair(size: 22)),
+          const SizedBox(height: 8),
+          Text(
+            'Stories expire after ~180 days. Extension sets a new 180-day life from now (it does not add). Anyone may extend because permissionlessExtension is on.',
+            style: Swa.serif(size: 14, color: Swa.muted, height: 1.45),
           ),
-          if (capture != null) ...[
-            const SizedBox(height: 14),
-            SoftCard(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Row(children: [
-                  ProofBadge(),
-                  SizedBox(width: 8),
-                  Text('In-app capture chain', style: TextStyle(fontWeight: FontWeight.w600)),
-                ]),
-                const SizedBox(height: 8),
-                Text(
-                  'Root ${capture!.attr('chain_root')}  ·  ${capture!.attr('frame_count')} frame(s) at ${capture!.attr('fps')} fps',
-                  style: const TextStyle(color: Swa.muted, height: 1.4),
-                ),
-                const SizedBox(height: 8),
-                FilledButton.tonal(
+          const SizedBox(height: 12),
+          OutlinedButton(onPressed: _extend, child: const Text('EXTEND ON ARKIV')),
+          if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
+        ],
+      ],
+    );
+  }
+}
+
+class _VerifyBlock extends StatelessWidget {
+  final ArkivEntity story;
+  final ArkivEntity? capture;
+  final bool proof;
+  const _VerifyBlock({required this.story, required this.capture, required this.proof});
+
+  @override
+  Widget build(BuildContext context) {
+    final hash = capture?.attr('chain_root').isNotEmpty == true
+        ? capture!.attr('chain_root')
+        : (story.captureRoot.isNotEmpty ? story.captureRoot : '—');
+    final entityUrl = proof ? Config.explorer : explorerEntity(story.key);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Swa.paper,
+        border: Border.all(color: Swa.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Kicker('Verification'),
+          const SizedBox(height: 8),
+          Text('Capture hash + Arkiv entity', style: Swa.playfair(size: 20)),
+          const SizedBox(height: 12),
+          Text('CAPTURE HASH', style: Swa.dateline.copyWith(color: Swa.muted)),
+          const SizedBox(height: 4),
+          Mono(hash, maxLines: 4),
+          const SizedBox(height: 12),
+          Text('ARKIV ENTITY', style: Swa.dateline.copyWith(color: Swa.muted)),
+          const SizedBox(height: 4),
+          Mono(story.key, maxLines: 3),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              TextButton(
+                onPressed: () => openUrl(entityUrl),
+                child: const Text('Open Arkiv entity'),
+              ),
+              TextButton(
+                onPressed: () => copy(context, protectedLink(story.key)),
+                child: const Text('Copy protected link'),
+              ),
+              TextButton(
+                onPressed: () => openUrl(explorerAddr(story.creator)),
+                child: const Text('Creator on explorer'),
+              ),
+              if (capture != null)
+                TextButton(
                   onPressed: () => context.go('/verify?root=${capture!.attr('chain_root')}'),
                   child: const Text('Verify this capture'),
                 ),
-              ]),
+            ],
+          ),
+          if (capture != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              '${capture!.attr('frame_count')} frame(s) at ${capture!.attr('fps')} fps',
+              style: Swa.serif(size: 13, color: Swa.muted),
             ),
           ],
-          const SizedBox(height: 14),
-          SoftCard(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Tips  ·  $tipTotal wei test GLM', style: const TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 6),
-              const Text(
-                'Native Tiramisu test token, then a readonly tip entity. Not real money.',
-                style: TextStyle(color: Swa.muted),
-              ),
-              const SizedBox(height: 12),
-              TextField(controller: amount, decoration: const InputDecoration(labelText: 'Amount (GLM, testnet)')),
-              const SizedBox(height: 12),
-              FilledButton(onPressed: _tip, child: const Text('Send testnet tip')),
-            ]),
-          ),
-          const SizedBox(height: 14),
-          SoftCard(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Lifetime Extension', style: TextStyle(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 6),
-              const Text(
-                'Stories expire after ~180 days. Extension sets a new 180-day life from now (it does not add). Anyone may extend because permissionlessExtension is on.',
-                style: TextStyle(color: Swa.muted, height: 1.4),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton(onPressed: _extend, child: const Text('Keep this story alive')),
-            ]),
-          ),
-          if (status != null) ...[const SizedBox(height: 12), TestModeBanner(status!)],
         ],
-      ],
+      ),
     );
   }
 }

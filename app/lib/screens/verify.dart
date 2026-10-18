@@ -87,13 +87,13 @@ class _VerifyScreenState extends State<VerifyScreen> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+      padding: Swa.pagePadding,
       children: [
-        Text('Verify a capture', style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 8),
-        const Text(
-          'Recompute the SHA-256 chain from a media file and compare it to a capture entity on Arkiv. Video/photos stay off Arkiv because of size and cost (128 KiB payload cap).',
-          style: TextStyle(color: Swa.muted, height: 1.45),
+        const SectionHead(
+          kicker: 'Newsroom',
+          title: 'Verify a capture',
+          dek:
+              'Recompute the SHA-256 chain from a media file and compare it to a capture entity on Arkiv. Video/photos stay off Arkiv because of size and cost (128 KiB payload cap).',
         ),
         const SizedBox(height: 16),
         const TestModeBanner(
@@ -107,26 +107,30 @@ class _VerifyScreenState extends State<VerifyScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        FilledButton(onPressed: _pickWithStoredTs, child: const Text('Pick file and compare to Arkiv')),
+        FilledButton(onPressed: _pickWithStoredTs, child: const Text('PICK FILE AND COMPARE')),
         const SizedBox(height: 8),
         OutlinedButton(onPressed: _pick, child: const Text('Hash a file only (uses current time)')),
         if (computedRoot != null) ...[
           const SizedBox(height: 16),
-          SoftCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Computed root', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            Mono(computedRoot!, maxLines: 4),
-          ])),
+          const Hairline(),
+          const SizedBox(height: 16),
+          const Kicker('Computed root'),
+          const SizedBox(height: 8),
+          Mono(computedRoot!, maxLines: 4),
         ],
         if (match != null) ...[
-          const SizedBox(height: 12),
-          SoftCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Arkiv capture entity', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 6),
-            Mono(match!.key, maxLines: 3),
-            Text('frames ${match!.attr('frame_count')} · fps ${match!.attr('fps')} · city ${match!.attr('city')}'),
-            Text('\$creator ${match!.creator}', style: const TextStyle(color: Swa.muted, fontSize: 12)),
-          ])),
+          const SizedBox(height: 16),
+          const Hairline(),
+          const SizedBox(height: 16),
+          const Kicker('Arkiv capture entity'),
+          const SizedBox(height: 8),
+          Mono(match!.key, maxLines: 3),
+          const SizedBox(height: 8),
+          Text(
+            'frames ${match!.attr('frame_count')} · fps ${match!.attr('fps')} · city ${match!.attr('city')}',
+            style: Swa.serif(size: 14, color: Swa.muted),
+          ),
+          Text('\$creator ${match!.creator}', style: Swa.byline),
         ],
         if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
       ],

@@ -62,35 +62,49 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+      padding: Swa.pagePadding,
       children: [
-        Text('Takedown log', style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 8),
-        const Text(
-          'A public tracker of notices journalists record. Synthetic in the demo. Attributes: platform, notice_date_ms, law_cited, authority_named.',
-          style: TextStyle(color: Swa.muted, height: 1.45),
+        const SectionHead(
+          kicker: 'The record',
+          title: 'Takedown log',
+          dek:
+              'A public tracker of notices journalists record. Synthetic in the demo. Attributes: platform, notice_date_ms, law_cited, authority_named.',
         ),
         const SizedBox(height: 16),
         if (loading) const Center(child: CircularProgressIndicator()),
-        ...items.map((t) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: SoftCard(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Wrap(spacing: 8, children: [
-                    AccentChip(t.attr('platform'), color: Swa.magenta),
-                    AccentChip(t.attr('authority_named') == 'true' ? 'authority named' : 'authority unnamed'),
-                  ]),
+        if (!loading && items.isEmpty)
+          Text('No notices on Arkiv yet.', style: Swa.serif(size: 15, color: Swa.muted)),
+        for (var i = 0; i < items.length; i++) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Kicker(items[i].attr('platform')),
+                const SizedBox(height: 8),
+                Text(items[i].attr('law_cited'), style: Swa.playfair(size: 18, height: 1.25)),
+                const SizedBox(height: 8),
+                Text(
+                  items[i].attr('authority_named') == 'true' ? 'Authority named' : 'Authority unnamed',
+                  style: Swa.byline,
+                ),
+                if ('${items[i].payload['notes'] ?? ''}'.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(t.attr('law_cited')),
-                  const SizedBox(height: 4),
-                  Text('${t.payload['notes'] ?? ''}', style: const TextStyle(color: Swa.muted)),
-                  Mono('by ${shortAddr(t.creator)}', maxLines: 1),
-                ]),
-              ),
-            )),
-        const SizedBox(height: 20),
-        const Text('Record a notice', style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text('${items[i].payload['notes']}', style: Swa.serif(size: 14, color: Swa.muted, height: 1.4)),
+                ],
+                Mono('by ${shortAddr(items[i].creator)}', maxLines: 1),
+              ],
+            ),
+          ),
+          if (i != items.length - 1) const Hairline(),
+        ],
+        const SizedBox(height: 24),
+        const Hairline(),
+        const SizedBox(height: 16),
+        const Kicker('File a notice'),
         const SizedBox(height: 8),
+        Text('Record a notice', style: Swa.playfair(size: 22)),
+        const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           // ignore: deprecated_member_use
           value: platform,
@@ -107,11 +121,13 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
         const SizedBox(height: 12),
         TextField(controller: notes, maxLines: 3, decoration: const InputDecoration(labelText: 'Notes')),
         SwitchListTile(
-          title: const Text('Authority named on the notice?'),
+          contentPadding: EdgeInsets.zero,
+          title: Text('Authority named on the notice?', style: Swa.serif(size: 15)),
           value: authorityNamed,
+          activeThumbColor: Swa.magenta,
           onChanged: (v) => setState(() => authorityNamed = v),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Write takedown entity')),
+        FilledButton(onPressed: _submit, child: const Text('WRITE TAKEDOWN ENTITY')),
         if (status != null) ...[const SizedBox(height: 12), TestModeBanner(status!)],
       ],
     );
