@@ -127,9 +127,9 @@ class _PostScreenState extends State<PostScreen> {
     frames.add((bytes: bytes, timestampMs: ts));
     _rehash();
     if (fillCopy && title.text.isEmpty) {
-      title.text = 'Water still over the kerb at FC Road';
+      title.text = 'Sinhagad Road underpass still chest-deep after the rain';
       body.text =
-          'Autos had given up the inner lane. The pump had not arrived. Hash chain sealed at capture — Pune district, 0.1° cell.';
+          'Autos turned back at the mouth. A motorcycle was already half under. Pune district, 0.1° cell. Hash chain sealed at capture.';
     }
     setState(() {
       preview = bytes;

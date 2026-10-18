@@ -19,7 +19,7 @@ const district = process.argv[4] ?? "";
 const geoCell = process.argv[5] ?? "";
 if (!file || !ts) {
   console.error("usage: node scripts/verify-capture.mjs <jpeg> <start_ms> <district> <geo_cell>");
-  console.error(" e.g.: node scripts/verify-capture.mjs app/web/seed/s1.jpg 1700000000000 Mumbai 19.1,72.9");
+  console.error(" e.g.: node scripts/verify-capture.mjs app/web/seed/s4.jpg 1700000000000 Pune 18.5,73.9");
   process.exit(1);
 }
 

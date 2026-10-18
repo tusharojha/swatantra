@@ -295,6 +295,13 @@ String articleBody(String body) {
   return clean;
 }
 
+/// Paragraphs after the standfirst, so the article does not repeat the dek.
+String articleRest(String body) {
+  final parts = articleBody(body).split(RegExp(r'\n\s*\n'));
+  if (parts.length < 2) return '';
+  return parts.skip(1).join('\n\n');
+}
+
 Future<void> copy(BuildContext context, String text) async {
   await Clipboard.setData(ClipboardData(text: text));
   if (context.mounted) {

@@ -170,7 +170,7 @@ class _StoryScreenState extends State<StoryScreen> {
           const SizedBox(height: 24),
           if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 280),
           const SizedBox(height: 24),
-          Text(articleBody(s.body), style: Swa.serif(size: 17, height: 1.5)),
+          Text(articleRest(s.body), style: Swa.serif(size: 17, height: 1.5)),
           const SizedBox(height: 24),
           _VerifyBlock(story: s, capture: capture, proof: proof),
           if (cluster != null && cluster!.ok) ...[

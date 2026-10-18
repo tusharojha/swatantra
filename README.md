@@ -147,7 +147,7 @@ h_i     = sha256( h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms) || place 
 `geo_cell` is lat,lng rounded to **0.1°**. Precise GPS is never stored. Only `chain_root`, `district`, `geo_cell`, `capture_ts_ms`, counts go on Arkiv.
 
 ```bash
-node scripts/verify-capture.mjs app/web/seed/s1.jpg 1700000000000 Mumbai 19.1,72.9
+node scripts/verify-capture.mjs app/web/seed/s4.jpg 1700000000000 Pune 18.5,73.9
 ```
 
 ## Corroboration

@@ -81,6 +81,8 @@ void main() {
     expect(ProofEdition.captureByRoot(ProofEdition.stories.first.captureRoot), isNotNull);
     final pune = ProofEdition.stories.where((s) => s.district == 'Pune').toList();
     expect(pune.length, 3);
+    expect(ProofEdition.stories.any((s) => s.title.contains('Sinhagad')), isTrue);
+    expect(ProofEdition.stories.any((s) => s.title.toLowerCase().contains('synthetic')), isFalse);
     final c = ProofEdition.corroborationFor(pune.first);
     expect(c, isNotNull);
     expect(c!.ok, isTrue);

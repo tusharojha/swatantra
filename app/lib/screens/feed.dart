@@ -26,13 +26,11 @@ class _FeedScreenState extends State<FeedScreen> {
     '',
     'Maharashtra',
     'Delhi',
-    'Tamil Nadu',
+    'Karnataka',
+    'Himachal Pradesh',
     'Assam',
-    'Jharkhand',
-    'Manipur',
     'Telangana',
-    'West Bengal',
-    'Meghalaya',
+    'Tamil Nadu',
   ];
   static const cats = ['', 'civic', 'labour', 'environment', 'protest', 'conflict', 'other'];
 

@@ -52,20 +52,19 @@ type StorySeed = {
 const STORIES: StorySeed[] = [
   {
     file: "s1.jpg",
-    journalist: "A",
-    city: "Mumbai",
-    state: "Maharashtra",
-    district: "Mumbai",
-    geoCell: "19.1,72.9",
-    minutesAgo: 180,
-    category: "civic",
-    title: "King tide over the jetty steps, western suburbs",
+    journalist: "B",
+    city: "New Delhi",
+    state: "Delhi",
+    district: "New Delhi",
+    geoCell: "28.6,77.2",
+    minutesAgo: 90,
+    category: "protest",
+    title: "Crowd held at the ITO barricades after the network dropped",
     body:
-      "By 6:40am the water was already over the first step of the jetty. " +
-      "Shopkeepers on the approach road had moved generators onto crates. " +
-      "A municipal pump truck arrived, then left: the driver said the outfall was blocked with plastic.\n\n" +
-      "This is the kind of civic footage that is routinely taken down as “out of context”. " +
-      "The still is hashed in-app; only the chain root sits on Arkiv.",
+      "Phones fell to 2G around 11:20. The yellow police barricades were already across the carriageway; the sit-in behind them had been there for days.\n\n" +
+      "Autorickshaws still ran on the open side. On the closed side, a tarpaulin line and a power-pylon. Nobody on this desk is named. The still is hashed on the phone; only the chain root is written.\n\n" +
+      "Shop shutters on the far pavement were down. A few people stood well back of the fence. Data did not come back while this desk was there.\n\n" +
+      "Platforms bury this as “unverified crowd footage”. The protected link is a query, not a tweet.",
   },
   {
     file: "s2.jpg",
@@ -76,12 +75,12 @@ const STORIES: StorySeed[] = [
     geoCell: "18.5,73.9",
     minutesAgo: 15,
     category: "civic",
-    title: "Burst main, south kerb of FC Road",
+    title: "Same underpass, from the shop-row — water at the lintel",
     body:
-      "Water over the road in a sheet. Bikes had been pushed onto the divider. " +
-      "Shop awnings dripped onto a lane that was no longer a lane.\n\n" +
-      "Three desks sampled the same Pune junction within twenty minutes — that is the corroboration. " +
-      "Independent witnesses, same district, same 0.1° cell.",
+      "From the first-floor terrace the water was a sheet down the shop-row. Shutters stayed down. Wires hung in the brown water.\n\n" +
+      "This is the second independent capture of the Sinhagad Road underpass this morning, same 0.1° cell, a different nullifier. No pump had arrived on this side either.\n\n" +
+      "A parked two-wheeler was already gone under. The bus-stand roof was the only dry edge.\n\n" +
+      "Three desks in one window is the corroboration. None of them named.",
   },
   {
     file: "s3.jpg",
@@ -92,11 +91,12 @@ const STORIES: StorySeed[] = [
     geoCell: "18.5,73.9",
     minutesAgo: 22,
     category: "civic",
-    title: "Same flood, from the west flyover",
+    title: "Water through the gate at the underpass mouth",
     body:
-      "From the flyover the water made a sheet as far as the bus depot. " +
-      "A second capture, a second nullifier, the same district cell, twelve minutes from the first still.\n\n" +
-      "No one on this desk is named. The byline is a verified journalist entity.",
+      "The compound gate was a weir. Water came through at chest height and turned in the road. No one was in the frame on purpose.\n\n" +
+      "A second desk, a second chain root, twelve minutes from the first still, still Pune district, still 18.5,73.9. The municipal tanker that residents said was “on the way” had not shown.\n\n" +
+      "Palm and mango over the wall. The span of the underpass itself was not visible from this mouth — only the outflow.\n\n" +
+      "Ground copy like this is the first thing that disappears from a feed. The hash stays on the device.",
   },
   {
     file: "s4.jpg",
@@ -107,69 +107,108 @@ const STORIES: StorySeed[] = [
     geoCell: "18.5,73.9",
     minutesAgo: 8,
     category: "civic",
-    title: "Water still over the kerb at FC Road",
+    title: "Sinhagad Road underpass still chest-deep after the rain",
     body:
-      "A third journalist, a third chain root, still Pune district, still the same 0.1° cell. " +
-      "Autos had given up the inner lane. The pump had not arrived.\n\n" +
-      "Corroborated by 3 independent witnesses — none of them named.",
+      "Autos turned back at the mouth. A motorcycle was already half under. Overnight rain had nowhere to go but the underpass.\n\n" +
+      "This is the third independent capture within twenty minutes — Pune district, same 0.1° cell, a third nullifier. The pump had not arrived. Hazard lights on a stalled four-wheeler sat under the span, out of this frame.\n\n" +
+      "Two-wheelers that tried the service road threw a wake and came back. Shopkeepers on the approach had put generators on crates.\n\n" +
+      "Corroborated by three desks. None of them named. Media stays off Arkiv; the chain root does not.",
   },
   {
     file: "s5.jpg",
     journalist: "A",
-    city: "Ranchi",
-    state: "Jharkhand",
-    district: "Ranchi",
-    geoCell: "23.3,85.3",
-    minutesAgo: 28 * 60,
-    category: "labour",
-    title: "Night shift waiting on a coal siding",
+    city: "Mandi",
+    state: "Himachal Pradesh",
+    district: "Mandi",
+    geoCell: "31.7,76.9",
+    minutesAgo: 6 * 60,
+    category: "civic",
+    title: "Slide over the Mandi–Kullu highway after the overnight rain",
     body:
-      "Headlamps, a whistle, a wagon that did not move for forty minutes. " +
-      "Sodium lamps on gravel. Nobody here is identified.\n\n" +
-      "The journalist entity is a test-mode Anon Aadhaar nullifier. The capture is a still hashed on device.",
+      "Red earth and root-mat over the tarmac. The hill had come down onto the carriageway sometime after 2am. One lane was a wall of soil.\n\n" +
+      "Trucks were already stacked on the shoulder a kilometre back. No faces in this still — the cut, the road edge, the moss on the remaining tree.\n\n" +
+      "A JCB was said to be coming from Pandoh. At 7:40 it had not. Local buses had turned around.\n\n" +
+      "Hill-road slides are taken down as “old video”. The capture is time-stamped and district-bound.",
   },
   {
     file: "s6.jpg",
-    journalist: "C",
-    city: "Imphal",
-    state: "Manipur",
-    district: "Imphal West",
-    geoCell: "24.8,93.9",
-    minutesAgo: 36 * 60,
-    category: "civic",
-    title: "Trucks on the NH-2 shoulder, engines off",
+    journalist: "B",
+    city: "Bengaluru",
+    state: "Karnataka",
+    district: "Bengaluru Urban",
+    geoCell: "13.0,77.6",
+    minutesAgo: 14 * 60,
+    category: "labour",
+    title: "Delivery bikes parked out a dark kitchen in Marathahalli",
     body:
-      "A line of trucks on the shoulder, engines off to save fuel. " +
-      "Hills behind the tarmac, late light.\n\n" +
-      "Ground copy like this is the first thing platforms bury. The protected link is a query, not a tweet.",
+      "A row of two-wheelers, top-boxes still on, engines off. The kitchen behind them had gone dark around 9pm. No orders on the screen, riders said; they would not go on record.\n\n" +
+      "This desk stood on the far pavement. The still is the parked line, not a face. Insulated bags sat on a few of the racks.\n\n" +
+      "A strike call had gone out on the riders’ groups after another round of pay cuts. The platform app still showed “high demand”.\n\n" +
+      "Labour footage is the first thing labelled “misleading”. The chain root is the record.",
   },
   {
     file: "s7.jpg",
+    journalist: "A",
+    city: "Yavatmal",
+    state: "Maharashtra",
+    district: "Yavatmal",
+    geoCell: "20.4,78.1",
+    minutesAgo: 20 * 60,
+    category: "environment",
+    title: "Unseasonal rain on the soy in Yavatmal — pods wet, soil a sheet",
+    body:
+      "The standing soy was still green this morning. The soil between the rows was a film of water. Last night’s rain was not in the forecast the mandi had been using.\n\n" +
+      "No one is named. A blue tarp on the bund, a single tree, the field. Farmers on the next plot said the earlier sowing would lodge if the rain returned.\n\n" +
+      "Vidarbha has had this twice in three seasons: a dry spell, then a dump that the crop cannot use. The district agriculture office had not put a loss survey on the board by noon.\n\n" +
+      "Crop stills vanish as “not news”. District, cell, and time are on the chain.",
+  },
+  {
+    file: "s8.jpg",
+    journalist: "C",
+    city: "Guwahati",
+    state: "Assam",
+    district: "Guwahati",
+    geoCell: "26.1,91.7",
+    minutesAgo: 28 * 60,
+    category: "civic",
+    title: "Dam release overnight — water over the fields at Palashbari",
+    body:
+      "From the air the Brahmaputra floodplain was a single sheet. Homesteads sat on the old levee like a spine. The release upstream had started after midnight.\n\n" +
+      "Boats were already on the approach at Palashbari. This still has no faces — water, trees, the road that is now a causeway.\n\n" +
+      "Relief camps from the last rise had not been folded. The district said the gates were opened because the reservoir had crossed the rule curve.\n\n" +
+      "Flood video is labelled “last year”. The capture is this morning, this cell.",
+  },
+  {
+    file: "s9.jpg",
     journalist: "B",
+    city: "Ghaziabad",
+    state: "Uttar Pradesh",
+    district: "Ghaziabad",
+    geoCell: "28.7,77.5",
+    minutesAgo: 10 * 60,
+    category: "environment",
+    title: "Morning haze over the Ghaziabad flyover, AQI still maroon",
+    body:
+      "The sun was a white disc. From a terrace on the Ghaziabad side the NCR skyline was a set of blocks in brown air. Traffic on the flyover was a slow belt.\n\n" +
+      "Schools had already gone online for the day. Construction tarpaulin on a tower two kilometres off was not visible. Nobody on this desk is named.\n\n" +
+      "The public board at the metro still read “very poor”. Diesel gensets under the mall were running because the grid had dipped at dawn.\n\n" +
+      "Air stills are called “seasonal”. The stamp is district and a 0.1° cell, not a weather meme.",
+  },
+  {
+    file: "s10.jpg",
+    journalist: "C",
     city: "Hyderabad",
     state: "Telangana",
     district: "Hyderabad",
     geoCell: "17.4,78.5",
-    minutesAgo: 44 * 60,
-    category: "labour",
-    title: "Riders outside a dark kitchen in Gachibowli",
-    body:
-      "Riders sat on their bikes outside a dark cloud kitchen. Insulated bags, screens still open, no orders.\n\n" +
-      "Tips on this story are Tiramisu test GLM only.",
-  },
-  {
-    file: "s8.jpg",
-    journalist: "B",
-    city: "Kolkata",
-    state: "West Bengal",
-    district: "Howrah",
-    geoCell: "22.6,88.3",
-    minutesAgo: 52 * 60,
+    minutesAgo: 36 * 60,
     category: "civic",
-    title: "Knee-deep at the Howrah flyover mouth",
+    title: "Open pit on Old Mumbai Road — lights out, the slab gone",
     body:
-      "Knee-deep water at a flyover mouth, one pump, two men in reflective vests. " +
-      "The protected link should still resolve from Arkiv after a hypothetical takedown.",
+      "Where the streetlight used to stand there is a hole. Rebar, a plastic bag, the broken cover. Last night the stretch was dark for four poles.\n\n" +
+      "Two-wheelers were cutting around it. This still is the pit, not a face. Residents said they had called the ward office twice this week.\n\n" +
+      "Potholes on the same kilometre were full of yesterday’s rain. No barricade, no cone.\n\n" +
+      "Civic holes are “too local” until someone goes in. The chain is the date and the cell.",
   },
 ];
 
