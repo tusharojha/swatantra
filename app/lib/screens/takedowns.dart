@@ -16,7 +16,7 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
   List<ArkivEntity> items = [];
   bool loading = true;
   String platform = 'X';
-  final law = TextEditingController(text: 'IT Act s.79 (synthetic)');
+  final law = TextEditingController(text: 'IT Act s.79');
   final notes = TextEditingController();
   final storyKey = TextEditingController();
   bool authorityNamed = false;
@@ -142,7 +142,7 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
           decoration: const InputDecoration(labelText: 'Platform'),
         ),
         const SizedBox(height: 12),
-        TextField(controller: law, decoration: const InputDecoration(labelText: 'Law cited (synthetic OK)')),
+        TextField(controller: law, decoration: const InputDecoration(labelText: 'Law cited')),
         const SizedBox(height: 12),
         TextField(controller: storyKey, decoration: const InputDecoration(labelText: 'Related story entity key (optional)')),
         const SizedBox(height: 12),

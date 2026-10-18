@@ -175,13 +175,13 @@ class _JournalistScreenState extends State<JournalistScreen> {
         ],
         TextField(
           controller: name,
-          decoration: const InputDecoration(labelText: 'Public byline (synthetic)'),
+          decoration: const InputDecoration(labelText: 'Public byline'),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: bio,
           maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Bio (synthetic)'),
+          decoration: const InputDecoration(labelText: 'Bio'),
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
