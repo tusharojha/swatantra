@@ -103,7 +103,7 @@ class AppShell extends StatelessWidget {
     final composing = location.startsWith('/post');
     return Scaffold(
       backgroundColor: composing ? const Color(0xFF111111) : Swa.paper,
-      floatingActionButton: (!composing && index == 0)
+      floatingActionButton: (!composing && location == '/')
           ? FloatingActionButton(
               onPressed: () => context.go('/post'),
               backgroundColor: Swa.magenta,
