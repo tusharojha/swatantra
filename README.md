@@ -30,7 +30,7 @@ All people, bylines and dispatches in the seed are **synthetic / fictional**.
 
 ## Why Arkiv
 
-Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a row, hide a CID, or halt the endpoint. Arkiv is the Web3 database: queryable attributes, `$creator` that nobody can forge, Entity Expiration per type, Lifetime Extension so a story can be kept alive without being edited (`readonly` + `permissionlessExtension`).
+Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a row, hide a CID, or halt the endpoint. Arkiv is the Web3 database: queryable attributes, `$creator` that nobody can forge, Entity Expiration per type, Lifetime Extension so a story (and a journalist desk) can be kept alive without being edited (`readonly` + `permissionlessExtension` on journalist, story, capture, takedown, corroboration).
 
 **Kept off Arkiv on purpose:** media bytes (size/cost, 128 KiB payload cap), private keys, Anon Aadhaar QR / Aadhaar data (not even hashed). Only hashes, URLs, synthetic copy, and a nullifier-derived id.
 
@@ -146,6 +146,10 @@ h_i     = sha256( h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms) || place 
 
 `geo_cell` is lat,lng rounded to **0.1°**. Precise GPS is never stored. Only `chain_root`, `district`, `geo_cell`, `capture_ts_ms`, counts go on Arkiv.
 
+```bash
+node scripts/verify-capture.mjs app/web/seed/s1.jpg 1700000000000 Mumbai 19.1,72.9
+```
+
 ## Corroboration
 
 Independent journalists who capture in the **same district** within **±30 minutes** count as witnesses. Distinct Anon Aadhaar nullifiers (`nid` via `$creator` → journalist entity). **N ≥ 2** shows `CORROBORATED · N independent witnesses · {district} district · {time}` on the feed and article. Optionally written as a `corroboration` entity.
@@ -161,10 +165,6 @@ cd bridge && ARKIV_NETWORK=local npx tsx src/seed.ts   # → arkiv/seed-result.l
 ```
 
 Default is still **Tiramisu** (`ARKIV_NETWORK=tiramisu`) so CI / Pages keep building against chain 7738577. The moment the seeder is funded, `ARKIV_NETWORK=tiramisu npx tsx src/seed.ts` writes `arkiv/seed-result.json`. Until then the in-app `ProofEdition` (3 Pune desks + Mumbai solo) stays as a labelled layout fallback.
-
-```bash
-node scripts/verify-capture.mjs app/web/seed/s1.jpg 1700000000000
-```
 
 ## Docs
 

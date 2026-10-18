@@ -20,6 +20,14 @@ class OnboardPanel extends StatefulWidget {
 class _OnboardPanelState extends State<OnboardPanel> {
   String? status;
   bool busy = false;
+  bool showImport = false;
+  final importCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    importCtrl.dispose();
+    super.dispose();
+  }
 
   Future<void> _create() async {
     setState(() {
@@ -33,6 +41,32 @@ class _OnboardPanelState extends State<OnboardPanel> {
         setState(() {
           busy = false;
           status = 'Wallet on this device. Next: Anon Aadhaar (TEST MODE).';
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() { busy = false; status = '$e'; });
+    }
+  }
+
+  Future<void> _import() async {
+    final pk = importCtrl.text.trim();
+    if (!pk.startsWith('0x') || pk.length < 66) {
+      setState(() => status = 'Paste a 0x-prefixed private key. It stays on this device.');
+      return;
+    }
+    setState(() {
+      busy = true;
+      status = null;
+    });
+    try {
+      await WalletStore.importKey(pk);
+      importCtrl.clear();
+      widget.onReady?.call();
+      if (mounted) {
+        setState(() {
+          busy = false;
+          showImport = false;
+          status = 'Key imported. Next: Anon Aadhaar (TEST MODE).';
         });
       }
     } catch (e) {
@@ -110,11 +144,32 @@ class _OnboardPanelState extends State<OnboardPanel> {
           onPressed: busy ? null : _connect,
           child: const Text('Connect wallet'),
         ),
+        const SizedBox(height: 12),
+        TextButton(
+          onPressed: busy ? null : () => setState(() => showImport = !showImport),
+          child: Text(showImport ? 'Hide import' : 'Import key'),
+        ),
+        if (showImport) ...[
+          const SizedBox(height: 8),
+          TextField(
+            controller: importCtrl,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Private key (0x…)',
+              hintText: 'Never committed, never sent to Arkiv',
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: busy ? null : _import,
+            child: const Text('Import on this device'),
+          ),
+        ],
         const SizedBox(height: 16),
         Text(
           kIsWeb
-              ? 'Desktop: MetaMask / injected wallet — Tiramisu (7738577) is added automatically. Phone: Create wallet, or open MetaMask via deep link. WalletConnect uses WALLETCONNECT_PROJECT_ID when set.'
-              : 'On this phone, Create wallet is the fastest path. Connect wallet opens MetaMask if it is installed.',
+              ? 'Desktop: Connect wallet uses an injected wallet (MetaMask) and adds Tiramisu (7738577). Phone: Create wallet, or Import key. WalletConnect is skipped unless WALLETCONNECT_PROJECT_ID is set at build time.'
+              : 'On this phone, Create wallet is the fastest path. Import a key if you already have a funded burner.',
           style: Swa.ui(size: 13, color: Swa.muted, weight: FontWeight.w400, height: 1.45),
         ),
         if (status != null) ...[

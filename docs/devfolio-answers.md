@@ -96,7 +96,7 @@ We judge how and why, not how many. Every row below is in the running app.
 | Queries | `select().where(eq app, eq type, optional eq/gte).ownedBy().createdBy().limit().cursor().fetch()` then sort `created_at_ms` client-side. Feed, story, verify, tracker, Me all hit this. | `queryStories`, `app/lib/arkiv/rpc.dart` |
 | Entity Expiration | 365d journalist / capture / tip; 180d story / takedown / corroboration; 2d draft; 7d tip_request. Product logic: identity lasts longer than a dispatch; drafts are cheap and short. | `EXPIRY` in `bridge/src/index.ts` |
 | Lifetime Extension | `extendEntity(fromDays(180))` on stories. Sets a new 180-day life from now (does not add). UI: “Keep this story alive”. | `extendStory` / `extendStoryDart` |
-| Creation flags | Stories, captures, takedowns, corroboration: `readonly` + `permissionlessExtension`. Journalist: `readonly` without permissionless (identity should not be silently extended by strangers). | `createStory`, `publishStoryWithCapture` |
+| Creation flags | Journalist, stories, captures, takedowns, corroboration: `readonly` + `permissionlessExtension` (web SDK and APK `execute` use the same flags). Tips: `readonly` only. | `createJournalist`, `createStory`, `publishStoryWithCapture` |
 | `$creator` / `$owner` | Byline is `$creator`. Me-screen “Stories I created” is `createdBy`. Journalist uniqueness is `nid`, not a spoofable name. Distinct `nid`s are how corroboration counts witnesses. | story screen, `findJournalistByNullifier` |
 | WebSocket events | `watchEntityEvents` on `webSocket()` with **no** `fromBlock`. | `watchFeed` in `bridge/src/index.ts`, started from `main.dart` |
 | Batch writes | Capture + story in one `executeBatch` with `predictEntityKeys` so each can point at the other. | `publishStoryWithCapture` |
@@ -128,9 +128,9 @@ https://github.com/tusharojha/swatantra/blob/main/arkiv/schema.md
 1. Open https://tusharojha.github.io/swatantra/ — no wallet. Home feed is `arkiv_query` / SDK `select` for `app=swatantra AND type=story`. If the result is empty you will see a small **Demo edition** line (in-app fallback seed: 3 Pune desks + 1 Mumbai solo); that list is dropped the moment entities exist. Filter **Corroborated**.
 2. Open the lead (`/s/proof-s4` in the demo). Magenta stamp **CORROBORATED · 3 independent witnesses · Pune district**, witness list, 0.1° cell. Copy the protected link.
 3. Run the curl in the README; compare keys to the UI and to the explorer (`$creator` = journalist burner). Until seed: empty query is expected.
-4. Verify: capture `chain_root` vs hashing a seed JPEG with `start_ms` **and** district+geo_cell (`bridge/src/hash.ts`).
+4. Verify: `node scripts/verify-capture.mjs app/web/seed/s1.jpg <start_ms> Mumbai 19.1,72.9` — district + 0.1° `geo_cell` are part of the hash (`bridge/src/hash.ts`).
 5. Post: **Use GPS (coarse)** or the labelled **self-declared** district picker (default Pune) → camera still → chain bound to district+cell. Two phones in the same district ±30 min is the live corroboration beat.
-6. Me → **Create wallet** (one tap) or **Connect wallet** (MetaMask / injected; WalletConnect if `WALLETCONNECT_PROJECT_ID` is set) → fund on the Hub faucet → tip / extend. Then Anon Aadhaar TEST MODE. Tracker writes a `takedown` entity.
+6. Me → **Create wallet** (one tap) or **Import key**, or on desktop web **Connect wallet** (injected MetaMask; Tiramisu 7738577 is added automatically). Fund on the Hub faucet → tip / extend. Then Anon Aadhaar TEST MODE. Tracker writes a `takedown` entity.
 7. Web only: journalist onboarding → bundled PSE TEST QR → Groth16 prove/verify → journalist entity with `nid` uniqueness.
 8. Explorer: creator addresses in the table above. **[FILL AFTER SEED]** creation txs from `arkiv/seed-result.json`.
 

@@ -108,7 +108,10 @@ class WalletStore {
   }
 
   static Future<void> importKey(String pk) async {
+    injected = false;
     await unlock(pk);
+    if (address != null) await _prefs?.setString(_addrK, address!);
+    await _prefs?.setString(_srcK, 'burner');
   }
 
   static Future<void> saveJournalist(String key) async {

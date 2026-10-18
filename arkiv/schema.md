@@ -14,7 +14,7 @@ There is **no server-side orderBy**. The app sorts on the client, usually by `cr
 
 | type | lifetime | flags | why |
 |---|---|---|---|
-| `journalist` | 365 days | — | Identity lease. The journalist renews with Lifetime Extension if they keep publishing. |
+| `journalist` | 365 days | `readonly`, `permissionlessExtension` | Identity lease. `nid` uniqueness is the person; flags match stories so the desk cannot be edited and anyone can keep the lease alive. |
 | `story` | 180 days | `readonly`, `permissionlessExtension` | Ground copy should not be edited after publish. Readers and the journalist can keep it alive. |
 | `capture` | 365 days | `readonly`, `permissionlessExtension` | Integrity record outlives a single news cycle. Immutable once written. |
 | `tip` | 365 days | `readonly` | Support history. Only the tipper's wallet (`$creator`) is evidence of who sent it. |

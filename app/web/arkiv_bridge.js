@@ -22528,7 +22528,8 @@ ${prettyStateOverride(stateOverride)}`;
         state_revealed: bool(input.stateRevealed === true),
         ...input.proofHash ? { proof_hash: bytes32(input.proofHash) } : {}
       },
-      expires: EXPIRY.journalist()
+      expires: EXPIRY.journalist(),
+      flags: { readonly: true, permissionlessExtension: true }
     });
     return {
       already: false,

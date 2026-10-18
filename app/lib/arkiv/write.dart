@@ -339,7 +339,7 @@ Future<Map<String, String>> createJournalistDart({
     attributes: attrs,
     days: 365,
     readonly: true,
-    permissionlessExtension: false,
+    permissionlessExtension: true,
   );
 }
 

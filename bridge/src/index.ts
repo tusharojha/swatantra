@@ -379,6 +379,7 @@ export async function createJournalist(input: {
       ...(input.proofHash ? { proof_hash: bytes32(input.proofHash as Hex) } : {}),
     },
     expires: EXPIRY.journalist(),
+    flags: { readonly: true, permissionlessExtension: true },
   });
   return {
     already: false,
