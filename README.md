@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.png" width="160" alt="Swatantra logo — rangoli mandala with a camera aperture"/>
+  <img src="assets/logo.png" width="180" alt="Swatantra logo — rangoli mandala with a camera-aperture centre in saffron, magenta and teal"/>
 </p>
 
 # Swatantra
@@ -9,6 +9,8 @@
 A mobile (and web) app for independent journalism in India. Ground reporters publish stories as Arkiv entities on the Tiramisu testnet so a platform takedown does not erase the record. Readers need no wallet. Journalists prove “Indian resident, 18+” with **Anon Aadhaar in TEST MODE** and keep a burner wallet in local storage — never on Arkiv.
 
 Entered in **Best Indian Use Case** (also relevant to Censorship Resistance & Privacy) at [Arkiv: Global Tour Stop](https://github.com/Arkiv-Network/global-tour-stop-pre-devcon).
+
+**Brand:** launcher icon, splash, favicon and in-app header all use [`assets/logo.png`](assets/logo.png). Accents sampled from the rangoli: magenta `#DC2460`, teal `#089C9C`, saffron `#F47C20`, paper `#FFFBFA`.
 
 **Pre-existing work: None.** Built 18 October 2026.
 
@@ -34,7 +36,7 @@ Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a 
 ## Live demo
 
 - **Web:** https://tusharojha.github.io/swatantra/  
-  If that 404s, enable **Settings → Pages → Source: GitHub Actions** on this repo and re-run the `Build web + APK` workflow.
+  If that 404s: **Settings → Pages → Source: GitHub Actions**, then re-run **Build web + APK**. The workflow also uploads a `swatantra-web` artifact.
 - **Android APK:** GitHub Release tag [`apk`](https://github.com/tusharojha/swatantra/releases/tag/apk), also committed under [`release/`](release/) if Actions did not finish in time.
 - **Protected link shape:** `https://tusharojha.github.io/swatantra/s/<entityKey>`
 

@@ -85,7 +85,16 @@ class AppShell extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
               child: Row(
                 children: [
-                  Image.asset('assets/logo.png', width: 40, height: 40),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      width: 44,
+                      height: 44,
+                      filterQuality: FilterQuality.medium,
+                      semanticLabel: 'Swatantra logo',
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
