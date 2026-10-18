@@ -1,0 +1,35 @@
+{
+    "name": "Swatantra",
+    "short_name": "Swatantra",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#FFFBFA",
+    "theme_color": "#E11D74",
+    "description": "Swatantra — ground truth, unerasable. Independent journalism on Arkiv.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

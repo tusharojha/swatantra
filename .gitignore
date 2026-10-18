@@ -1,0 +1,31 @@
+# Secrets — never commit keys
+.env
+.env.*
+!.env.example
+wallets.local.json
+**/private-keys*
+*.pem
+
+# Dependencies and build
+node_modules/
+bridge/node_modules/
+app/build/
+app/.dart_tool/
+app/.flutter-plugins-dependencies
+app/.pub-cache/
+app/.pub/
+**/.dart_tool/
+**/build/
+
+# Flutter / Android local
+app/android/local.properties
+app/android/.gradle/
+**/*.iml
+.idea/
+
+# OS
+.DS_Store
+*.log
+
+# Generated JS map
+*.js.map
