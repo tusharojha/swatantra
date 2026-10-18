@@ -267,31 +267,34 @@ async function main() {
   }
   if (seedBal === 0n) {
     throw new Error(
-      `Seeder ${seedAcc.address} has 0 GLM. Hub faucet always sends 10 GLM; the dispenser is often ~9.995. A 0.2 GLM top-up of this address is enough to seed. Fallback: ARKIV_NETWORK=local ./scripts/local-node.sh && npx tsx src/seed.ts`,
+      `Seeder ${seedAcc.address} has 0 GLM. Hub faucet always sends 10 GLM; the dispenser is often ~9.995. A 0.05 GLM top-up of this address is enough to seed. Fallback: ARKIV_NETWORK=local ./scripts/local-node.sh && npx tsx src/seed.ts`,
     );
   }
 
   // One funded seeder is enough: split GLM to journalist burners so $creator differs.
-  // Entity writes are cheap; 0.04 GLM each covers createJournalist + several stories.
+  // Writes are cheap; 0.05 GLM total covers three desks + the story/capture batch.
   unlock(seedKey);
-  const topUp = parseEther("0.04");
+  const hungry: { role: string; acc: ReturnType<typeof privateKeyToAccount> }[] = [];
   for (const [role, pk] of roles.slice(1)) {
     const acc = privateKeyToAccount(pk);
     const bal = await pub.getBalance({ address: acc.address });
     console.log(`${role}\t${acc.address}\t${formatEther(bal)} GLM`);
-    if (bal < parseEther("0.02")) {
-      const have = await pub.getBalance({ address: seedAcc.address });
-      if (have < topUp + parseEther("0.01")) {
-        throw new Error(
-          `Seeder has ${formatEther(have)} GLM; need ~0.04 more to top up ${acc.address}.`,
-        );
-      }
-      const tx = await walletClient().sendTransaction({
-        to: acc.address,
-        value: topUp,
-      });
+    if (bal < parseEther("0.008")) hungry.push({ role, acc });
+  }
+  if (hungry.length) {
+    const have = await pub.getBalance({ address: seedAcc.address });
+    const reserve = parseEther("0.008");
+    if (have <= reserve) {
+      throw new Error(`Seeder has ${formatEther(have)} GLM; need ≥0.05 GLM to top up ${hungry.length} desks.`);
+    }
+    const share = (have - reserve) / BigInt(hungry.length);
+    if (share < parseEther("0.008")) {
+      throw new Error(`Seeder has ${formatEther(have)} GLM; each desk would only get ${formatEther(share)}.`);
+    }
+    for (const h of hungry) {
+      const tx = await walletClient().sendTransaction({ to: h.acc.address, value: share });
       await pub.waitForTransactionReceipt({ hash: tx });
-      console.log(`  topped up ${acc.address} with 0.04 GLM  ${EXPLORER}/tx/${tx}`);
+      console.log(`  topped up ${h.acc.address} with ${formatEther(share)} GLM  ${EXPLORER}/tx/${tx}`);
     }
   }
 

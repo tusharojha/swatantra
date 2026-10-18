@@ -63,7 +63,7 @@ Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a 
 | Journalist C (Northeast, synthetic) | `0x68F0Ee5526e28e9072A9Fa398d91A5a867001645` |
 | Reader burner (unused in seed) | `0x376B04bB89b6486d7f30C7B9a2251500cfae9ffF` |
 
-**Before the deadline:** the Hub faucet always tries to send **10 GLM** from dispenser `0x815Ad950ae49102952C10ceBB18901E9e28AC712`. On 18 Oct 2026 it sat at **9.995 GLM**, so SIWE+captcha claims accept then fail in `transferring`. Prefer sending **≥0.2 GLM** (or one successful 10 GLM drop) to the seeder, then `cd bridge && npx tsx src/seed.ts`. Entity keys land in [`arkiv/seed-result.json`](arkiv/seed-result.json). Private keys stay in local `.env` — never in git, never in Arkiv.
+**Before the deadline:** the Hub faucet always tries to send **10 GLM** from dispenser `0x815Ad950ae49102952C10ceBB18901E9e28AC712`. On 18 Oct 2026 it sat at **9.995 GLM**, so SIWE+captcha claims accept then fail in `transferring`. Prefer sending **≥0.05 GLM** (or one successful 10 GLM drop) to the seeder, then `cd bridge && npx tsx src/seed.ts`. Entity keys land in [`arkiv/seed-result.json`](arkiv/seed-result.json). Private keys stay in local `.env` — never in git, never in Arkiv.
 
 ## Anon Aadhaar — TEST MODE
 
@@ -156,7 +156,7 @@ Independent journalists who capture in the **same district** within **±30 minut
 
 ## Local fallback node
 
-Hub faucet is insolvent (see [`arkiv/friction.md`](arkiv/friction.md) §5). Seeder `0x873f5856a0967549D60442481DB5aef270044Bd7` is 0 GLM. Until Tiramisu has ≥0.2 GLM:
+Hub faucet is insolvent (see [`arkiv/friction.md`](arkiv/friction.md) §5). Seeder `0x873f5856a0967549D60442481DB5aef270044Bd7` is 0 GLM. Until Tiramisu has ≥0.05 GLM:
 
 ```bash
 ./scripts/local-node.sh          # official Golem Base / Arkiv op-geth --dev, :8545

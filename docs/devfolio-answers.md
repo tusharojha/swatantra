@@ -115,7 +115,7 @@ https://github.com/tusharojha/swatantra/blob/main/arkiv/friction.md
 | Journalist C (Northeast, synthetic) | `0x68F0Ee5526e28e9072A9Fa398d91A5a867001645` |
 | Reader burner (unused in seed) | `0x376B04bB89b6486d7f30C7B9a2251500cfae9ffF` |
 
-**[FILL AFTER SEED]** entity keys + explorer tx links: [`arkiv/seed-result.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.json). Until the seeder has ≥0.2 GLM the JSON records `status: pending_faucet` and the Hub dispenser shortfall (9.995 GLM vs a 10 GLM drip). Fallback: `ARKIV_NETWORK=local` + `./scripts/local-node.sh` writes [`arkiv/seed-result.local.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.local.json).
+**[FILL AFTER SEED]** entity keys + explorer tx links: [`arkiv/seed-result.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.json). Until the seeder has ≥0.05 GLM the JSON records `status: pending_faucet` and the Hub dispenser shortfall (9.995 GLM vs a 10 GLM drip). Fallback: `ARKIV_NETWORK=local` + `./scripts/local-node.sh` writes [`arkiv/seed-result.local.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.local.json).
 
 Judges can still **write** from the in-app burner (Me → Create wallet) and **read** without login.
 
