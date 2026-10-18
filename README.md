@@ -38,7 +38,7 @@ Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a 
 
 - **Web:** https://tusharojha.github.io/swatantra/  
   Reads need no wallet. If the live query is empty you see a labelled **SYNTHETIC DEMO** that switches off automatically once entities exist.
-  **Pages is currently off** (`has_pages: false`) — a repo admin must click **Settings → Pages → Source: GitHub Actions** once. Until then the workflow still uploads a `swatantra-web` artifact; a Pages 404 does **not** fail the APK job or the GitHub Release.
+  **Pages may 404** until a repo admin sets **Settings → Pages → Source: GitHub Actions**. The workflow still uploads a `swatantra-web` artifact; a Pages 404 does **not** fail the APK job or the GitHub Release.
 - **Android APK:** GitHub Release tag [`apk`](https://github.com/tusharojha/swatantra/releases/tag/apk), also committed under [`release/`](release/) if Actions did not finish in time.
 - **Protected link shape:** `https://tusharojha.github.io/swatantra/s/<entityKey>`
 
@@ -148,7 +148,9 @@ h_i     = sha256( h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms) || place 
 
 ## Corroboration
 
-Independent journalists who capture in the **same district** within **±30 minutes** count as witnesses. Distinct Anon Aadhaar nullifiers (`nid` via `$creator` → journalist entity). **N ≥ 2** shows `CORROBORATED · N independent witnesses · {district} district · {time}` on the feed and article. Optionally written as a `corroboration` entity. Seed: three synthetic desks on FC Road, Pune, plus one solo Mumbai story.
+Independent journalists who capture in the **same district** within **±30 minutes** count as witnesses. Distinct Anon Aadhaar nullifiers (`nid` via `$creator` → journalist entity). **N ≥ 2** shows `CORROBORATED · N independent witnesses · {district} district · {time}` on the feed and article. Optionally written as a `corroboration` entity.
+
+**Fallback seed (Tiramisu seeder still 0 GLM):** there is no local Arkiv node to write to. The in-app `ProofEdition` is the demo seed — three synthetic desks on FC Road, Pune, same 0.1° cell within 20 minutes, plus one solo Mumbai story. It is labelled **SYNTHETIC DEMO** and dropped the moment `arkiv_query` returns live stories. Re-run `cd bridge && npx tsx src/seed.ts` when the seeder has ≥0.2 GLM.
 
 ```bash
 node scripts/verify-capture.mjs app/web/seed/s1.jpg 1700000000000

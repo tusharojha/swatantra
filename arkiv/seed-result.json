@@ -23,5 +23,17 @@
     "journalistC": "0x68F0Ee5526e28e9072A9Fa398d91A5a867001645",
     "reader": "0x376B04bB89b6486d7f30C7B9a2251500cfae9ffF"
   },
-  "entities": []
+  "entities": [],
+  "fallbackSeed": {
+    "kind": "in-app ProofEdition",
+    "label": "SYNTHETIC DEMO — layout only, not on-chain",
+    "why": "No local Arkiv node. Tiramisu seeder has 0 GLM. Hub dispenser ~9.995 GLM cannot drip 10.",
+    "cluster": [
+      {"id": "proof-s3", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 22, "journalist": "A"},
+      {"id": "proof-s2", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 15, "journalist": "B"},
+      {"id": "proof-s4", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 8, "journalist": "C"}
+    ],
+    "solo": {"id": "proof-s1", "district": "Mumbai", "geo_cell": "19.1,72.9", "minutesAgo": 180, "journalist": "A"},
+    "badge": "CORROBORATED · 3 independent witnesses · Pune district"
+  }
 }

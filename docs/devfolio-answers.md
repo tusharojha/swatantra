@@ -125,13 +125,14 @@ https://github.com/tusharojha/swatantra/blob/main/arkiv/schema.md
 
 ### 8. How can judges reproduce your Arkiv usage? \*
 
-1. Open https://tusharojha.github.io/swatantra/ — no wallet. Home feed is `arkiv_query` / SDK `select` for `app=swatantra AND type=story`. If the result is empty you will see a **SYNTHETIC DEMO** banner; that list is dropped the moment entities exist.
-2. Open a card → `/s/<key>` calls `getEntity`. Copy the protected link, paste in a new tab.
-3. Run the curl in the README; compare keys to the UI and to the explorer (`$creator` = journalist burner).
-4. Verify: capture entity `chain_root` vs hashing a seed JPEG with `start_ms` as the timestamp (`bridge/src/hash.ts`, `app/lib/arkiv/hash.dart`).
-5. Me → CREATE BURNER → fund on the Hub faucet → Post a synthetic story (optional camera still) → tip / extend on the article page. Tracker writes a `takedown` entity.
-6. Web only: Me → journalist onboarding → bundled PSE TEST QR → Groth16 prove/verify → “Proof verified ✓ (TEST MODE)” → journalist entity with `nid` uniqueness.
-7. Explorer: creator addresses in the table above. **[FILL AFTER SEED]** creation txs from `arkiv/seed-result.json`.
+1. Open https://tusharojha.github.io/swatantra/ — no wallet. Home feed is `arkiv_query` / SDK `select` for `app=swatantra AND type=story`. If the result is empty you will see a **SYNTHETIC DEMO** banner (in-app fallback seed: 3 Pune desks + 1 Mumbai solo); that list is dropped the moment entities exist. Filter **Corroborated**.
+2. Open the lead (`/s/proof-s4` in the demo). Magenta stamp **CORROBORATED · 3 independent witnesses · Pune district**, witness list, 0.1° cell. Copy the protected link.
+3. Run the curl in the README; compare keys to the UI and to the explorer (`$creator` = journalist burner). Until seed: empty query is expected.
+4. Verify: capture `chain_root` vs hashing a seed JPEG with `start_ms` **and** district+geo_cell (`bridge/src/hash.ts`).
+5. Post: **Use GPS (coarse)** or the labelled **self-declared** district picker (default Pune) → camera still → chain bound to district+cell. Two phones in the same district ±30 min is the live corroboration beat.
+6. Me → CREATE BURNER → fund on the Hub faucet → tip / extend. Tracker writes a `takedown` entity.
+7. Web only: journalist onboarding → bundled PSE TEST QR → Groth16 prove/verify → journalist entity with `nid` uniqueness.
+8. Explorer: creator addresses in the table above. **[FILL AFTER SEED]** creation txs from `arkiv/seed-result.json`.
 
 ### 9. Pre-existing work you reused \*
 
@@ -185,7 +186,7 @@ Yes.
 | `/arkiv/schema.md` | present |
 | `/arkiv/friction.md` | present |
 | Tiramisu creator wallets | table in §6 |
-| Demo video ≤ 3 min | script below; **record before 22:59 UTC 18 Oct** |
+| Demo video ≤ 3 min | script below; **record before 21:59 UTC 18 Oct** (Arkiv X: 23:59 CET) |
 | Every required form question | this file |
 | ≥1 track | Best Indian Use Case + CR + Privacy |
 | Built 9–18 Oct 2026 | yes; pre-existing = None |

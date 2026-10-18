@@ -108,7 +108,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
         ),
         const SizedBox(height: 16),
         const TestModeBanner(
-          'h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms)), h_0 = 32 zero bytes. Seed stills use the capture start_ms as the timestamp.',
+          'h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms) || place); place = sha256(district || 0x00 || geo_cell). Precise GPS is never hashed. Seed stills use capture start_ms as the timestamp.',
         ),
         const SizedBox(height: 16),
         TextField(
