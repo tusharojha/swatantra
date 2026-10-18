@@ -41,14 +41,16 @@ class _PostScreenState extends State<PostScreen> {
   static const states = [
     'Maharashtra',
     'Delhi',
-    'Tamil Nadu',
+    'Karnataka',
+    'Himachal Pradesh',
     'Assam',
+    'Telangana',
+    'Uttar Pradesh',
+    'Tamil Nadu',
     'Jharkhand',
     'Manipur',
-    'Telangana',
     'West Bengal',
     'Meghalaya',
-    'Karnataka',
   ];
   static const cats = ['civic', 'labour', 'environment', 'protest', 'conflict', 'other'];
 

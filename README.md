@@ -164,7 +164,7 @@ cd bridge && ARKIV_NETWORK=local npx tsx src/seed.ts   # → arkiv/seed-result.l
 # app: --dart-define=ARKIV_NETWORK=local  or  http://127.0.0.1:8080/?network=local
 ```
 
-Default is still **Tiramisu** (`ARKIV_NETWORK=tiramisu`) so CI / Pages keep building against chain 7738577. The moment the seeder is funded, `ARKIV_NETWORK=tiramisu npx tsx src/seed.ts` writes `arkiv/seed-result.json`. Until then the in-app `ProofEdition` (3 Pune desks + Mumbai solo) stays as a labelled layout fallback.
+Default is still **Tiramisu** (`ARKIV_NETWORK=tiramisu`) so CI / Pages keep building against chain 7738577. The moment the seeder is funded, `ARKIV_NETWORK=tiramisu npx tsx src/seed.ts` writes `arkiv/seed-result.json`. Until then the in-app `ProofEdition` (ten ground-report stills: Pune underpass cluster plus Delhi, Mandi, Bengaluru, Yavatmal, Assam, Ghaziabad, Hyderabad) stays behind a small **Demo edition** line.
 
 ## Docs
 

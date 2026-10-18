@@ -30,6 +30,7 @@ class _FeedScreenState extends State<FeedScreen> {
     'Himachal Pradesh',
     'Assam',
     'Telangana',
+    'Uttar Pradesh',
     'Tamil Nadu',
   ];
   static const cats = ['', 'civic', 'labour', 'environment', 'protest', 'conflict', 'other'];
@@ -125,15 +126,17 @@ class _FeedScreenState extends State<FeedScreen> {
           padding: Swa.pagePadding,
           children: [
             const Kicker("Today's paper"),
-            const SizedBox(height: 8),
-            Text('आज का अंक', style: Swa.serif(size: 16, color: Swa.muted, height: 1.3)),
-            const SizedBox(height: 8),
-            Text('On the ground', style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(height: 12),
-            Text(
-              'Stories are Arkiv entities. Anyone can query them — no wallet needed to read.',
-              style: Swa.serif(size: 16.5, color: Swa.muted, height: 1.5),
-            ),
+            const SizedBox(height: 6),
+            Text('आज का अंक', style: Swa.serif(size: desktop ? 16 : 14, color: Swa.muted, height: 1.3)),
+            if (desktop) ...[
+              const SizedBox(height: 8),
+              Text('On the ground', style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 12),
+              Text(
+                'Stories are Arkiv entities. Anyone can query them — no wallet needed to read.',
+                style: Swa.serif(size: 16.5, color: Swa.muted, height: 1.5),
+              ),
+            ],
             if (Config.isLocal) ...[
               const SizedBox(height: 16),
               Text(
@@ -179,7 +182,14 @@ class _FeedScreenState extends State<FeedScreen> {
                 clusters: clusters,
               )
             else if (!loading && lead != null) ...[
-              LeadStory(story: lead, cluster: clusters[lead.key], onTap: () => context.go('/s/${lead.key}')),
+              LeadStory(
+                story: lead,
+                cluster: clusters[lead.key],
+                onTap: () => context.go('/s/${lead.key}'),
+                photoFirst: true,
+                imageHeight: 200,
+                headlineSize: 28,
+              ),
               if (rest.isNotEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Hairline()),
               for (var i = 0; i < rest.length; i++) ...[
                 StoryRow(story: rest[i], cluster: clusters[rest[i].key], onTap: () => context.go('/s/${rest[i].key}')),
@@ -344,6 +354,7 @@ class LeadStory extends StatelessWidget {
   final VoidCallback onTap;
   final double imageHeight;
   final double headlineSize;
+  final bool photoFirst;
   const LeadStory({
     super.key,
     required this.story,
@@ -351,10 +362,17 @@ class LeadStory extends StatelessWidget {
     this.cluster,
     this.imageHeight = 220,
     this.headlineSize = 32,
+    this.photoFirst = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final photo = story.mediaUrl.isNotEmpty
+        ? Padding(
+            padding: EdgeInsets.only(top: photoFirst ? 10 : 16, bottom: photoFirst ? 12 : 0),
+            child: StoryImage(story, height: imageHeight),
+          )
+        : const SizedBox.shrink();
     return InkWell(
       onTap: onTap,
       child: Column(
@@ -362,6 +380,7 @@ class LeadStory extends StatelessWidget {
         children: [
           Kicker(story.category.isEmpty ? 'story' : story.category),
           if (cluster != null) CorroborationStamp(cluster!),
+          if (photoFirst) photo,
           const SizedBox(height: 12),
           Text(
             story.title.isEmpty ? 'Untitled story' : story.title,
@@ -369,10 +388,7 @@ class LeadStory extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(journalistByline(story), style: Swa.byline),
-          if (story.mediaUrl.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            StoryImage(story, height: imageHeight),
-          ],
+          if (!photoFirst) photo,
           const SizedBox(height: 16),
           Text(
             standfirst(story.body),

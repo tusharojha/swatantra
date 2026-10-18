@@ -201,15 +201,9 @@ class StoryImage extends StatelessWidget {
 String? assetForStory(ArkivEntity s) {
   final m = s.mediaUrl;
   final name = m.split('/').last;
-  if (name.startsWith('s') && name.endsWith('.jpg')) return 'web/seed/$name';
-  if (s.key.contains('s1')) return 'web/seed/s1.jpg';
-  if (s.key.contains('s2')) return 'web/seed/s2.jpg';
-  if (s.key.contains('s3')) return 'web/seed/s3.jpg';
-  if (s.key.contains('s4')) return 'web/seed/s4.jpg';
-  if (s.key.contains('s5')) return 'web/seed/s5.jpg';
-  if (s.key.contains('s6')) return 'web/seed/s6.jpg';
-  if (s.key.contains('s7')) return 'web/seed/s7.jpg';
-  if (s.key.contains('s8')) return 'web/seed/s8.jpg';
+  if (RegExp(r'^s\d+\.jpg$').hasMatch(name)) return 'web/seed/$name';
+  final id = RegExp(r's(\d+)').firstMatch(s.key);
+  if (id != null) return 'web/seed/s${id.group(1)}.jpg';
   return null;
 }
 

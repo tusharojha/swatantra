@@ -125,7 +125,7 @@ https://github.com/tusharojha/swatantra/blob/main/arkiv/schema.md
 
 ### 8. How can judges reproduce your Arkiv usage? \*
 
-1. Open https://tusharojha.github.io/swatantra/ — no wallet. Home feed is `arkiv_query` / SDK `select` for `app=swatantra AND type=story`. If the result is empty you will see a small **Demo edition** line (in-app fallback seed: 3 Pune desks + 1 Mumbai solo); that list is dropped the moment entities exist. Filter **Corroborated**.
+1. Open https://tusharojha.github.io/swatantra/ — no wallet. Home feed is `arkiv_query` / SDK `select` for `app=swatantra AND type=story`. If the result is empty you will see a small **Demo edition** line (in-app fallback: ten licensed stills, three independent Pune desks on the same underpass); that list is dropped the moment entities exist. Filter **Corroborated**.
 2. Open the lead (`/s/proof-s4` in the demo). Magenta stamp **CORROBORATED · 3 independent witnesses · Pune district**, witness list, 0.1° cell. Copy the protected link.
 3. Run the curl in the README; compare keys to the UI and to the explorer (`$creator` = journalist burner). Until seed: empty query is expected.
 4. Verify: `node scripts/verify-capture.mjs app/web/seed/s4.jpg <start_ms> Pune 18.5,73.9` — district + 0.1° `geo_cell` are part of the hash (`bridge/src/hash.ts`).

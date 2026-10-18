@@ -26,14 +26,23 @@
   "entities": [],
   "fallbackSeed": {
     "kind": "in-app ProofEdition",
-    "label": "SYNTHETIC DEMO — layout only, not on-chain",
-    "why": "No local Arkiv node. Tiramisu seeder has 0 GLM. Hub dispenser ~9.995 GLM cannot drip 10.",
+    "label": "Demo edition — layout only, not on-chain",
+    "why": "Tiramisu seeder has 0 GLM. Hub dispenser ~9.995 GLM cannot drip 10. Same ten ground reports as app/lib/proof_edition.dart and bridge/src/seed.ts.",
     "cluster": [
-      {"id": "proof-s3", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 22, "journalist": "A"},
-      {"id": "proof-s2", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 15, "journalist": "B"},
-      {"id": "proof-s4", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 8, "journalist": "C"}
+      {"id": "proof-s3", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 22, "journalist": "A", "title": "Water through the gate at the underpass mouth"},
+      {"id": "proof-s2", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 15, "journalist": "B", "title": "Same underpass, from the shop-row — water at the lintel"},
+      {"id": "proof-s4", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 8, "journalist": "C", "title": "Sinhagad Road underpass still chest-deep after the rain"}
     ],
-    "solo": {"id": "proof-s1", "district": "Mumbai", "geo_cell": "19.1,72.9", "minutesAgo": 180, "journalist": "A"},
-    "badge": "CORROBORATED · 3 independent witnesses · Pune district"
+    "others": [
+      {"id": "proof-s1", "district": "New Delhi", "geo_cell": "28.6,77.2", "title": "Crowd held at the ITO barricades after the network dropped"},
+      {"id": "proof-s5", "district": "Mandi", "geo_cell": "31.7,76.9", "title": "Slide over the Mandi–Kullu highway after the overnight rain"},
+      {"id": "proof-s6", "district": "Bengaluru Urban", "geo_cell": "13.0,77.6", "title": "Delivery bikes parked out a dark kitchen in Marathahalli"},
+      {"id": "proof-s7", "district": "Yavatmal", "geo_cell": "20.4,78.1", "title": "Unseasonal rain on the soy in Yavatmal — pods wet, soil a sheet"},
+      {"id": "proof-s8", "district": "Guwahati", "geo_cell": "26.1,91.7", "title": "Dam release overnight — water over the fields at Palashbari"},
+      {"id": "proof-s9", "district": "Ghaziabad", "geo_cell": "28.7,77.5", "title": "Morning haze over the Ghaziabad flyover, AQI still maroon"},
+      {"id": "proof-s10", "district": "Hyderabad", "geo_cell": "17.4,78.5", "title": "Open pit on Old Mumbai Road — lights out, the slab gone"}
+    ],
+    "badge": "CORROBORATED · 3 independent witnesses · Pune district",
+    "media": "app/web/seed/s1.jpg–s10.jpg (see assets/CREDITS.md)"
   }
 }
