@@ -44,7 +44,10 @@ final _router = GoRouter(
           path: '/verify',
           builder: (_, s) => VerifyScreen(root: s.uri.queryParameters['root']),
         ),
-        GoRoute(path: '/post', builder: (_, __) => const PostScreen()),
+        GoRoute(
+          path: '/post',
+          builder: (_, s) => PostScreen(stage: s.uri.queryParameters['stage']),
+        ),
         GoRoute(path: '/takedowns', builder: (_, __) => const TakedownsScreen()),
         GoRoute(path: '/me', builder: (_, __) => const MeScreen()),
         GoRoute(path: '/journalist', builder: (_, __) => const JournalistScreen()),
@@ -97,15 +100,26 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final desktop = Swa.isDesktop(context);
+    final composing = location.startsWith('/post');
     return Scaffold(
-      backgroundColor: Swa.paper,
+      backgroundColor: composing ? const Color(0xFF111111) : Swa.paper,
+      floatingActionButton: (!composing && index == 0)
+          ? FloatingActionButton(
+              onPressed: () => context.go('/post'),
+              backgroundColor: Swa.magenta,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.add, size: 28),
+            )
+          : null,
       body: Column(
         children: [
-          Masthead(desktop: desktop, index: index, onNav: (i) => _go(context, i)),
+          if (!composing) Masthead(desktop: desktop, index: index, onNav: (i) => _go(context, i)),
           Expanded(child: child),
         ],
       ),
-      bottomNavigationBar: desktop
+      bottomNavigationBar: desktop || composing
           ? null
           : Column(
               mainAxisSize: MainAxisSize.min,

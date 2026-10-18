@@ -175,43 +175,71 @@ class _JournalistScreenState extends State<JournalistScreen> {
         ],
         TextField(
           controller: name,
-          decoration: const InputDecoration(labelText: 'Public byline'),
+          style: Swa.playfair(size: 24, height: 1.2),
+          decoration: const InputDecoration(
+            hintText: 'Public byline',
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            filled: false,
+          ),
         ),
-        const SizedBox(height: 12),
         TextField(
           controller: bio,
           maxLines: 3,
-          decoration: const InputDecoration(labelText: 'Bio'),
+          style: Swa.serif(size: 16, height: 1.45),
+          decoration: const InputDecoration(
+            hintText: 'Bio',
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            filled: false,
+          ),
         ),
-        const SizedBox(height: 12),
         DropdownButtonFormField<String>(
           // ignore: deprecated_member_use
           value: state,
-          decoration: const InputDecoration(labelText: 'State (optional reveal)'),
+          decoration: const InputDecoration(
+            hintText: 'State (optional reveal)',
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            filled: false,
+          ),
           items: states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
           onChanged: (v) => setState(() => state = v),
         ),
-        const SizedBox(height: 12),
         TextField(
           controller: qr,
           maxLines: 3,
           decoration: const InputDecoration(
-            labelText: 'Anon Aadhaar TEST QR (numeric) — optional',
-            hintText: 'Paste official TEST QR, or use the bundled PSE test identity',
+            hintText: 'Paste TEST QR, or use the bundled identity',
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            filled: false,
           ),
         ),
-        const SizedBox(height: 16),
-        FilledButton(
-          onPressed: proving ? null : () => _verify(bundled: true),
-          child: Text(proving ? 'PROVING…' : 'PROVE BUNDLED TEST IDENTITY'),
-        ),
         const SizedBox(height: 8),
-        OutlinedButton(
-          onPressed: proving ? null : () => _verify(bundled: false),
-          child: const Text('Prove pasted TEST QR'),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton(
+            onPressed: proving ? null : () => _verify(bundled: true),
+            style: FilledButton.styleFrom(minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 16)),
+            child: Text(proving ? 'Proving…' : 'Prove bundled test identity'),
+          ),
         ),
-        const SizedBox(height: 8),
-        FilledButton(onPressed: proving ? null : _register, child: const Text('CREATE JOURNALIST ENTITY')),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(
+            onPressed: proving ? null : () => _verify(bundled: false),
+            child: const Text('Prove pasted TEST QR'),
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton(onPressed: proving ? null : _register, child: const Text('Create journalist entity')),
+        ),
         if (!groth16 && nullifier != null) ...[
           const SizedBox(height: 16),
           const Hairline(),

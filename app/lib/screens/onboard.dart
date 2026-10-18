@@ -155,8 +155,11 @@ class _OnboardPanelState extends State<OnboardPanel> {
             controller: importCtrl,
             obscureText: true,
             decoration: const InputDecoration(
-              labelText: 'Private key (0x…)',
-              hintText: 'Never committed, never sent to Arkiv',
+              hintText: 'Private key (0x…) — stays on this device',
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
             ),
           ),
           const SizedBox(height: 12),

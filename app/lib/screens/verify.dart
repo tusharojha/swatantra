@@ -40,15 +40,14 @@ class _VerifyScreenState extends State<VerifyScreen> {
     final chain = hashChain([(bytes: bytes, timestampMs: ts)]);
     setState(() {
       computedRoot = chain.root;
-      status =
-          'Hashed ${bytes.length} bytes as a 1-frame chain using now=$ts. For a match, the original timestamp must be the one stored on the capture entity.';
+      status = 'Hashed as a 1-frame chain at now=$ts. A match needs the capture’s stored timestamp, district and cell.';
     });
   }
 
   Future<void> _pickWithStoredTs() async {
     final key = rootCtrl.text.trim();
     if (key.isEmpty) {
-      setState(() => status = 'Paste a chain root or capture entity key first, or pick a file to compute a new root.');
+      setState(() => status = 'Paste a chain root or capture key, then pick the file.');
       return;
     }
     setState(() => status = 'Looking up Arkiv…');
@@ -64,13 +63,9 @@ class _VerifyScreenState extends State<VerifyScreen> {
       if (cap == null) {
         setState(() {
           match = null;
-          status =
-              'No capture entity with that key or chain_root on Arkiv (and no synthetic-demo match). Seed stills use capture start_ms.';
+          status = 'No capture on Arkiv for that key. Seed stills use capture start_ms + district + geo_cell.';
         });
         return;
-      }
-      if (ProofEdition.isProof(cap.key)) {
-        setState(() => status = ProofEdition.banner);
       }
       setState(() => match = cap);
       final r = await FilePicker.platform.pickFiles(withData: true);
@@ -86,9 +81,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
       final ok = chain.root.toLowerCase() == expected.toLowerCase();
       setState(() {
         computedRoot = chain.root;
-        status = ok
-            ? 'MATCH. Recomputed root equals the Arkiv capture entity. Media was not stored on Arkiv — only this hash chain.'
-            : 'NO MATCH. Recomputed ${chain.root} vs Arkiv $expected. Different bytes or a different timestamp.';
+        status = ok ? 'Match. Same root as the Arkiv capture.' : 'No match. Different bytes, time, district or cell.';
       });
     } catch (e) {
       setState(() => status = '$e');
@@ -100,55 +93,73 @@ class _VerifyScreenState extends State<VerifyScreen> {
     return PageWidth(
       max: Swa.articleWidth,
       child: ListView(
-      padding: Swa.pagePadding,
-      children: [
-        const SectionHead(
-          kicker: 'Newsroom',
-          title: 'Verify a capture',
-          dek:
-              'Recompute the SHA-256 chain from a media file and compare it to a capture entity on Arkiv. Video/photos stay off Arkiv because of size and cost (128 KiB payload cap).',
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'h_i = sha256(h_{i-1} || sha256(frame_i) || uint64be(timestamp_ms) || place); place = sha256(district || 0x00 || geo_cell). Precise GPS is never hashed.',
-          style: Swa.serif(size: 15, color: Swa.muted, height: 1.5),
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          controller: rootCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Capture entity key or chain_root (0x…)',
-          ),
-        ),
-        const SizedBox(height: 12),
-        FilledButton(onPressed: _pickWithStoredTs, child: const Text('PICK FILE AND COMPARE')),
-        const SizedBox(height: 8),
-        OutlinedButton(onPressed: _pick, child: const Text('Hash a file only (uses current time)')),
-        if (computedRoot != null) ...[
-          const SizedBox(height: 16),
-          const Hairline(),
-          const SizedBox(height: 16),
-          const Kicker('Computed root'),
-          const SizedBox(height: 8),
-          Mono(computedRoot!, maxLines: 4),
-        ],
-        if (match != null) ...[
-          const SizedBox(height: 16),
-          const Hairline(),
-          const SizedBox(height: 16),
-          const Kicker('Arkiv capture entity'),
-          const SizedBox(height: 8),
-          Mono(match!.key, maxLines: 3),
+        padding: Swa.pagePadding,
+        children: [
+          Text('Verify', style: Swa.playfair(size: 28)),
           const SizedBox(height: 8),
           Text(
-            'frames ${match!.attr('frame_count')} · fps ${match!.attr('fps')} · city ${match!.attr('city')}',
-            style: Swa.serif(size: 14, color: Swa.muted),
+            'Recompute the hash chain from a file. Media never sits on Arkiv.',
+            style: Swa.serif(size: 16, color: Swa.muted, height: 1.45),
           ),
-          Text('\$creator ${match!.creator}', style: Swa.byline),
+          const SizedBox(height: 24),
+          TextField(
+            controller: rootCtrl,
+            style: Swa.ui(size: 15),
+            decoration: const InputDecoration(
+              hintText: 'Capture key or chain root',
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+            ),
+          ),
+          const Hairline(),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(onPressed: _pickWithStoredTs, child: const Text('Pick file and compare')),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(onPressed: _pick, child: const Text('Hash a file only')),
+          ),
+          if (computedRoot != null) ...[
+            const SizedBox(height: 16),
+            const Hairline(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Computed root', style: Swa.ui(size: 12, color: Swa.muted, weight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  Mono(computedRoot!, maxLines: 4),
+                ],
+              ),
+            ),
+          ],
+          if (match != null) ...[
+            const Hairline(),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Arkiv capture', style: Swa.ui(size: 12, color: Swa.muted, weight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  Mono(match!.key, maxLines: 3),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${match!.attr('frame_count')} frames · ${match!.district} · ${match!.attr('city')}',
+                    style: Swa.byline,
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (status != null) Text(status!, style: Swa.serif(size: 15, color: Swa.muted, height: 1.45)),
         ],
-        if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
-      ],
-    ),
+      ),
     );
   }
 }

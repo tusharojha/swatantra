@@ -50,11 +50,11 @@ class _MeScreenState extends State<MeScreen> {
           if (addr == null)
             OnboardPanel(onReady: () => _refresh())
           else ...[
-            const SectionHead(
-              kicker: 'Correspondent',
-              title: 'Wallet',
-              dek:
-                  'A key on this device, or an injected wallet. Never written to Arkiv, never committed, never phoned home.',
+            Text('Me', style: Swa.playfair(size: 28)),
+            const SizedBox(height: 8),
+            Text(
+              'A key on this device, or an injected wallet. Never written to Arkiv.',
+              style: Swa.serif(size: 16, color: Swa.muted, height: 1.45),
             ),
             const SizedBox(height: 24),
             Text(
