@@ -20,7 +20,7 @@ async function enableSemantics(p) {
     const el = document.querySelector("flt-semantics-placeholder");
     if (el instanceof HTMLElement) el.click();
   }).catch(() => {});
-  await p.waitForTimeout(400);
+  await p.waitForTimeout(300);
 }
 
 async function waitApp(p) {
@@ -31,7 +31,7 @@ async function waitApp(p) {
 
 async function labels(p) {
   return p.evaluate(() => {
-    const nodes = [...document.querySelectorAll("[aria-label], [flt-semantics-identifier], flt-semantics [role]")];
+    const nodes = [...document.querySelectorAll("[aria-label], [flt-semantics-identifier], flt-semantics")];
     return nodes.map((n) => (n.getAttribute("aria-label") || n.textContent || "").trim()).filter(Boolean);
   });
 }
@@ -53,11 +53,16 @@ async function tapLabel(p, name) {
     await any.click({ force: true });
     return true;
   }
+  const text = p.getByText(name, { exact: true }).first();
+  if (await text.count()) {
+    await text.click({ force: true });
+    return true;
+  }
   return false;
 }
 
 function shot(name) {
-  return page.screenshot({ path: resolve(OUT, `${name}.png`), fullPage: true });
+  return page.screenshot({ path: resolve(OUT, `${name}.png`) });
 }
 
 before(async () => {
@@ -68,6 +73,11 @@ before(async () => {
   });
   page = await context.newPage();
   page.setDefaultTimeout(20000);
+  await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded", timeout: 60000 }).catch(() => {});
+  await page.evaluate(() => {
+    try { localStorage.clear(); } catch {}
+    try { sessionStorage.clear(); } catch {}
+  }).catch(() => {});
 });
 
 after(async () => {
@@ -95,6 +105,7 @@ test("d: article browse never asks for login", async () => {
 test("b: Tip shows Sign in at the moment of the action", async () => {
   await page.goto(`${BASE}/s/${PUNE}`, { waitUntil: "networkidle", timeout: 60000 }).catch(() => {});
   await waitApp(page);
+  await page.waitForTimeout(500);
   const tapped = await tapLabel(page, "Tip");
   await page.waitForTimeout(800);
   await shot("03-tip-gate");
@@ -107,6 +118,7 @@ test("b: Follow, Report, Corroborate also gate", async () => {
   for (const name of ["Follow", "Report", "Corroborate"]) {
     await page.goto(`${BASE}/s/${PUNE}`, { waitUntil: "networkidle", timeout: 60000 }).catch(() => {});
     await waitApp(page);
+    await page.waitForTimeout(500);
     const tapped = await tapLabel(page, name);
     await page.waitForTimeout(700);
     await shot(`04-gate-${name.toLowerCase()}`);
@@ -130,6 +142,7 @@ test("b: Capture on Post gates, opening Post does not", async () => {
 test("c: signed-in tip sheet, then real GLM if a key is set", async (t) => {
   await page.goto(`${BASE}/s/${PUNE}`, { waitUntil: "networkidle", timeout: 60000 }).catch(() => {});
   await waitApp(page);
+  await page.waitForTimeout(500);
   assert.equal(await tapLabel(page, "Tip"), true);
   await page.waitForTimeout(600);
   if (KEY) {

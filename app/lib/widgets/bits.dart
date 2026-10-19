@@ -42,6 +42,19 @@ class SwaI {
   static const following = Icons.person_outlined;
   static const share = Icons.ios_share_outlined;
   static const report = Icons.flag_outlined;
+  static const filter = Icons.tune_outlined;
+  static const qr = Icons.qr_code_2_outlined;
+  static const proof = Icons.auto_awesome_outlined;
+  static const check = Icons.check;
+  static const lock = Icons.lock_outline;
+  static const shield = Icons.shield_outlined;
+  static const news = Icons.article_outlined;
+  static const removed = Icons.visibility_off_outlined;
+  static const instagram = Icons.camera_alt_outlined;
+  static const youtube = Icons.play_circle_outline;
+  static const facebook = Icons.public_outlined;
+  static const whatsapp = Icons.chat_bubble_outline;
+  static const x = Icons.close;
 }
 
 class Kicker extends StatelessWidget {
@@ -68,40 +81,108 @@ class AccentChip extends StatelessWidget {
   Widget build(BuildContext context) => Kicker(label, color: color);
 }
 
-class CorroborationStamp extends StatelessWidget {
+class CorroborationStamp extends StatefulWidget {
   final Corroboration cluster;
-  const CorroborationStamp(this.cluster, {super.key});
+  final bool expandable;
+  const CorroborationStamp(this.cluster, {super.key, this.expandable = false});
+
+  @override
+  State<CorroborationStamp> createState() => _CorroborationStampState();
+}
+
+class _CorroborationStampState extends State<CorroborationStamp> {
+  bool open = false;
 
   @override
   Widget build(BuildContext context) {
+    final cluster = widget.cluster;
     if (!cluster.ok) return const SizedBox.shrink();
     final times = cluster.witnesses.map((w) => w.captureTs).toList()..sort();
     final t = DateTime.fromMillisecondsSinceEpoch(times.isEmpty ? 0 : times.first).toUtc();
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final hh = t.hour.toString().padLeft(2, '0');
     final mm = t.minute.toString().padLeft(2, '0');
-    final line =
-        'Corroborated · ${cluster.count} independent witnesses · ${cluster.district} · ${t.day} ${months[t.month - 1]} $hh:$mm';
-    return Padding(
-      padding: const EdgeInsets.only(top: 8, bottom: 4),
+    final hint =
+        '${cluster.count} independent captures in ${cluster.district} · ${t.day} ${months[t.month - 1]} $hh:$mm UTC';
+    final stamp = Tooltip(
+      message: hint,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
         decoration: BoxDecoration(
           color: const Color(0x14DC2460),
-          borderRadius: BorderRadius.circular(Swa.radiusSm),
+          border: Border.all(color: const Color(0x33DC2460)),
+          borderRadius: BorderRadius.circular(Swa.radiusPill),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(SwaI.corroborated, size: 16, color: Swa.magenta),
+            const Icon(SwaI.corroborated, size: 14, color: Swa.magenta),
+            const SizedBox(width: 6),
+            Text('Corroborated', style: Swa.ui(size: 12, weight: FontWeight.w700, color: Swa.magenta, spacing: 0.2)),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text(line.toUpperCase(), style: Swa.kicker),
-            ),
+            Container(width: 1, height: 12, color: const Color(0x33DC2460)),
+            const SizedBox(width: 8),
+            Text('${cluster.count} witnesses', style: Swa.ui(size: 12, weight: FontWeight.w600, color: Swa.inkSoft, spacing: 0.1)),
           ],
         ),
       ),
     );
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          widget.expandable
+              ? InkWell(
+                  onTap: () => setState(() => open = !open),
+                  borderRadius: BorderRadius.circular(Swa.radiusPill),
+                  child: stamp,
+                )
+              : stamp,
+          if (open) ...[
+            const SizedBox(height: 8),
+            Text(hint, style: Swa.serif(size: 13, color: Swa.muted, height: 1.4)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class TrustRow extends StatelessWidget {
+  final ArkivEntity story;
+  final Corroboration? cluster;
+  const TrustRow({super.key, required this.story, this.cluster});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (cluster != null && cluster!.ok) CorroborationStamp(cluster!),
+        if (story.hasCapture) const CaptureSeal(),
+      ],
+    );
+  }
+}
+
+IconData platformIcon(String platform) {
+  switch (platform.toLowerCase()) {
+    case 'x':
+    case 'twitter':
+      return SwaI.x;
+    case 'instagram':
+      return SwaI.instagram;
+    case 'youtube':
+      return SwaI.youtube;
+    case 'facebook':
+      return SwaI.facebook;
+    case 'whatsapp':
+      return SwaI.whatsapp;
+    default:
+      return SwaI.takedown;
   }
 }
 
@@ -270,9 +351,10 @@ class ActionPill extends StatelessWidget {
       child: Semantics(
         button: true,
         label: label,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
+        child: ExcludeSemantics(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(Swa.radiusPill),
             child: AnimatedContainer(
@@ -295,6 +377,7 @@ class ActionPill extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
             ),
           ),
         ),

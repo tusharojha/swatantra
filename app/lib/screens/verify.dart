@@ -23,6 +23,8 @@ class _VerifyScreenState extends State<VerifyScreen> {
   bool? matched;
   final rootCtrl = TextEditingController();
 
+  bool get _idle => computedRoot == null && match == null && !looking && matched == null;
+
   @override
   void initState() {
     super.initState();
@@ -117,24 +119,61 @@ class _VerifyScreenState extends State<VerifyScreen> {
           Text('Verify', style: Swa.playfair(size: 32)),
           const SizedBox(height: 8),
           Text(
-            'Recompute the hash chain from a file. Media never sits on Arkiv.',
+            'A hash chain binds bytes, time and district. Matching the Arkiv root proves the still was not swapped.',
             style: Swa.serif(size: 16, color: Swa.muted, height: 1.45),
           ),
           const SizedBox(height: 24),
-          TextField(
-            controller: rootCtrl,
-            style: Swa.ui(size: 15),
-            decoration: const InputDecoration(
-              hintText: 'Capture key or chain root',
+          if (_idle)
+            EmptyState(
+              icon: SwaI.hash,
+              title: 'Recompute a capture',
+              dek:
+                  'Each frame is hashed with its timestamp, then bound to district and cell. The root lives on Arkiv; the file stays with you. A match means those bytes are the ones that were sealed.',
+              action: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: rootCtrl,
+                    style: Swa.ui(size: 15),
+                    decoration: const InputDecoration(
+                      filled: true,
+                      fillColor: Swa.paper,
+                      hintText: 'Capture key or chain root',
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  FilledButton.icon(
+                    onPressed: _pickWithStoredTs,
+                    icon: const Icon(SwaI.verify, size: 18),
+                    label: const Text('Pick file and compare'),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: _pick,
+                    icon: const Icon(SwaI.hash, size: 18),
+                    label: const Text('Hash a file'),
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            TextField(
+              controller: rootCtrl,
+              style: Swa.ui(size: 15),
+              decoration: const InputDecoration(
+                filled: true,
+                fillColor: Swa.paper,
+                hintText: 'Capture key or chain root',
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            children: [
-              ActionPill(icon: SwaI.verify, label: 'Pick file and compare', onTap: _pickWithStoredTs),
-              ActionPill(icon: SwaI.hash, label: 'Hash a file', onTap: _pick),
-            ],
-          ),
+            const SizedBox(height: 12),
+            Wrap(
+              children: [
+                ActionPill(icon: SwaI.verify, label: 'Pick file and compare', onTap: _pickWithStoredTs),
+                ActionPill(icon: SwaI.hash, label: 'Hash a file', onTap: _pick),
+              ],
+            ),
+          ],
           if (looking) ...[
             const SizedBox(height: 24),
             const Skeleton(height: 14, width: 180),
@@ -199,7 +238,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
               ),
             ),
           ],
-          if (status != null) Text(sanitizeUi(status!), style: Swa.serif(size: 15, color: Swa.muted, height: 1.45)),
+          if (status != null && !_idle) Text(sanitizeUi(status!), style: Swa.serif(size: 15, color: Swa.muted, height: 1.45)),
         ],
       ),
     );

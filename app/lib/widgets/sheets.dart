@@ -161,31 +161,31 @@ class _SignInSheetState extends State<SignInSheet> {
       title: 'Needed to ${widget.action}',
       dek: 'Reading never needs a wallet. A key on this device is only for posting, tipping, or registering a desk — never written to Arkiv.',
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Wrap(
-            children: [
-              ActionPill(
-                key: const ValueKey('sign-in-create'),
-                icon: SwaI.wallet,
-                label: busy ? 'Working…' : 'Create wallet',
-                accent: true,
-                onTap: busy ? null : _create,
-              ),
-              ActionPill(
-                key: const ValueKey('sign-in-connect'),
-                icon: SwaI.wallet,
-                label: 'Connect wallet',
-                onTap: busy ? null : _connect,
-              ),
-              ActionPill(
-                key: const ValueKey('sign-in-import-toggle'),
-                icon: SwaI.key,
-                label: showImport ? 'Hide import' : 'Import key',
-                selected: showImport,
-                onTap: busy ? null : () => setState(() => showImport = !showImport),
-              ),
-            ],
+          Semantics(
+            button: true,
+            label: busy ? 'Working…' : 'Create wallet',
+            child: FilledButton.icon(
+              key: const ValueKey('sign-in-create'),
+              onPressed: busy ? null : _create,
+              icon: const Icon(SwaI.wallet, size: 18),
+              label: Text(busy ? 'Working…' : 'Create wallet'),
+            ),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            key: const ValueKey('sign-in-connect'),
+            onPressed: busy ? null : _connect,
+            icon: const Icon(SwaI.wallet, size: 18),
+            label: const Text('Connect wallet'),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            key: const ValueKey('sign-in-import-toggle'),
+            onPressed: busy ? null : () => setState(() => showImport = !showImport),
+            icon: const Icon(SwaI.key, size: 18),
+            label: Text(showImport ? 'Hide import' : 'Import key'),
           ),
           if (showImport) ...[
             const SizedBox(height: 8),
@@ -226,7 +226,24 @@ class TipSheet extends StatefulWidget {
   final String storyKey;
   final String to;
   final Future<Map<String, dynamic>> Function(String amountEth) send;
-  const TipSheet({super.key, required this.storyKey, required this.to, required this.send});
+  final bool startCustom;
+  final bool previewPending;
+  final String? previewTx;
+  final String? previewEntity;
+  final String? previewError;
+  final String? initialAmount;
+  const TipSheet({
+    super.key,
+    required this.storyKey,
+    required this.to,
+    required this.send,
+    this.startCustom = false,
+    this.previewPending = false,
+    this.previewTx,
+    this.previewEntity,
+    this.previewError,
+    this.initialAmount,
+  });
 
   @override
   State<TipSheet> createState() => _TipSheetState();
@@ -241,7 +258,28 @@ class _TipSheetState extends State<TipSheet> {
   String? entity;
   String? error;
   bool insufficient = false;
-  final amount = TextEditingController(text: '0.001');
+  late final TextEditingController amount;
+
+  @override
+  void initState() {
+    super.initState();
+    custom = widget.startCustom;
+    preset = widget.initialAmount ?? '0.001';
+    amount = TextEditingController(text: widget.initialAmount ?? '0.001');
+    if (widget.previewPending) {
+      sending = true;
+      status = 'Sending GLM on Arkiv Tiramisu…';
+    }
+    if (widget.previewTx != null) {
+      tx = widget.previewTx;
+      entity = widget.previewEntity;
+      status = 'Tip recorded.';
+    }
+    if (widget.previewError != null) {
+      error = widget.previewError;
+      insufficient = true;
+    }
+  }
 
   @override
   void dispose() {
@@ -326,12 +364,17 @@ class _TipSheetState extends State<TipSheet> {
               ),
             ],
             const SizedBox(height: 16),
-            ActionPill(
-              key: const ValueKey('tip-confirm'),
-              icon: SwaI.tip,
+            Semantics(
+              button: true,
               label: sending ? 'Sending…' : 'Confirm tip',
-              accent: true,
-              onTap: sending ? null : _send,
+              child: FilledButton.icon(
+                key: const ValueKey('tip-confirm'),
+                onPressed: sending ? null : _send,
+                icon: sending
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(SwaI.tip, size: 18),
+                label: Text(sending ? 'Sending…' : 'Confirm tip'),
+              ),
             ),
           ],
           if (status != null) ...[
@@ -472,12 +515,15 @@ class _ReportSheetState extends State<ReportSheet> {
               decoration: const InputDecoration(hintText: 'What disappeared?'),
             ),
             const SizedBox(height: 16),
-            ActionPill(
-              key: const ValueKey('report-submit'),
-              icon: SwaI.report,
+            Semantics(
+              button: true,
               label: sending ? 'Logging…' : 'Log notice',
-              accent: true,
-              onTap: sending ? null : _submit,
+              child: FilledButton.icon(
+                key: const ValueKey('report-submit'),
+                onPressed: sending ? null : _submit,
+                icon: const Icon(SwaI.report, size: 18),
+                label: Text(sending ? 'Logging…' : 'Log notice'),
+              ),
             ),
           ],
           if (status != null) ...[
@@ -491,6 +537,91 @@ class _ReportSheetState extends State<ReportSheet> {
               onTap: () => openUrl(explorerEntity(entity!)),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class FiltersSheet extends StatelessWidget {
+  final List<String> states;
+  final List<String> cats;
+  final String state;
+  final String category;
+  final bool corroboratedOnly;
+  final void Function(String state, String category, bool corroborated) onApply;
+  const FiltersSheet({
+    super.key,
+    required this.states,
+    required this.cats,
+    required this.state,
+    required this.category,
+    required this.corroboratedOnly,
+    required this.onApply,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    var nextState = state;
+    var nextCat = category;
+    var nextCorr = corroboratedOnly;
+    return SheetScaffold(
+      kicker: 'Feed',
+      title: 'Filters',
+      dek: 'Narrow by state, desk, or corroborated captures.',
+      child: StatefulBuilder(
+        builder: (context, setLocal) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('STATE', style: Swa.dateline.copyWith(color: Swa.muted)),
+              const SizedBox(height: 8),
+              Wrap(
+                children: [
+                  for (final s in states)
+                    ActionPill(
+                      icon: SwaI.place,
+                      label: s.isEmpty ? 'All India' : s,
+                      selected: nextState == s,
+                      onTap: () => setLocal(() => nextState = s),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text('DESK', style: Swa.dateline.copyWith(color: Swa.muted)),
+              const SizedBox(height: 8),
+              Wrap(
+                children: [
+                  for (final c in cats)
+                    ActionPill(
+                      icon: SwaI.feed,
+                      label: c.isEmpty ? 'All desks' : c,
+                      selected: nextCat == c,
+                      onTap: () => setLocal(() => nextCat = c),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ActionPill(
+                icon: SwaI.corroborated,
+                label: 'Corroborated',
+                selected: nextCorr,
+                accent: nextCorr,
+                onTap: () => setLocal(() => nextCorr = !nextCorr),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () {
+                    onApply(nextState, nextCat, nextCorr);
+                    Navigator.of(context).maybePop();
+                  },
+                  child: const Text('Show stories'),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

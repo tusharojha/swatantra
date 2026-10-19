@@ -13,7 +13,8 @@ import '../widgets/skeleton.dart';
 
 class StoryScreen extends StatefulWidget {
   final String entityKey;
-  const StoryScreen({super.key, required this.entityKey});
+  final String? preview;
+  const StoryScreen({super.key, required this.entityKey, this.preview});
   @override
   State<StoryScreen> createState() => _StoryScreenState();
 }
@@ -28,11 +29,29 @@ class _StoryScreenState extends State<StoryScreen> {
   Corroboration? cluster;
   String? status;
   bool corroborating = false;
+  final scroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  void _maybeScrollFold() {
+    if (widget.preview != 'fold' && widget.preview != 'actions') return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!scroll.hasClients) return;
+      final max = scroll.position.maxScrollExtent;
+      if (max <= 0) return;
+      final frac = widget.preview == 'actions' ? 1.0 : 0.84;
+      scroll.jumpTo((max * frac).clamp(0, max));
+    });
+  }
+
+  @override
+  void dispose() {
+    scroll.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -46,6 +65,7 @@ class _StoryScreenState extends State<StoryScreen> {
         loading = false;
         if (e == null) error = 'No story for this key.';
       });
+      _maybeScrollFold();
       return;
     }
     setState(() {
@@ -78,6 +98,7 @@ class _StoryScreenState extends State<StoryScreen> {
         loading = false;
         if (e == null) error = 'No live entity for this key. It may have expired.';
       });
+      _maybeScrollFold();
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -88,7 +109,7 @@ class _StoryScreenState extends State<StoryScreen> {
     }
   }
 
-  Future<void> _tip() async {
+  Future<void> _tip({String? amount, bool custom = false}) async {
     if (proof) {
       setState(() => status = 'Open a live story to send GLM on Arkiv Tiramisu.');
       return;
@@ -100,10 +121,12 @@ class _StoryScreenState extends State<StoryScreen> {
       TipSheet(
         storyKey: widget.entityKey,
         to: story!.creator,
-        send: (amount) => Arkiv.callWrite('createTip', {
+        initialAmount: amount,
+        startCustom: custom,
+        send: (v) => Arkiv.callWrite('createTip', {
           'storyKey': widget.entityKey,
           'to': story!.creator,
-          'amountEth': amount,
+          'amountEth': v,
           'note': 'Swatantra tip',
         }),
       ),
@@ -187,6 +210,7 @@ class _StoryScreenState extends State<StoryScreen> {
     return PageWidth(
       max: Swa.articleWidth,
       child: ListView(
+        controller: scroll,
         padding: Swa.pagePadding,
         children: [
           TextButton.icon(
@@ -200,49 +224,31 @@ class _StoryScreenState extends State<StoryScreen> {
           if (error != null) ErrorNote(error!),
           if (s != null) ...[
             Kicker(s.category.isEmpty ? 'story' : s.category),
-            if (cluster != null) CorroborationStamp(cluster!),
+            if (cluster != null) CorroborationStamp(cluster!, expandable: true),
             const SizedBox(height: 12),
             Text(s.title, style: Swa.playfair(size: 34, weight: FontWeight.w700, height: 1.12)),
             const SizedBox(height: 16),
             Text(standfirst(s.body), style: Swa.serif(size: 18, height: 1.45, weight: FontWeight.w400)),
             const SizedBox(height: 12),
             BylineRow(s),
-            const SizedBox(height: 24),
-            if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 280),
-            const SizedBox(height: 24),
-            Text(articleRest(s.body), style: Swa.serif(size: 17, height: 1.5)),
-            const SizedBox(height: 24),
-            _VerifyBlock(story: s, capture: capture, proof: proof),
-            if (cluster != null && cluster!.ok) ...[
-              const SizedBox(height: 16),
-              _WitnessList(cluster: cluster!, proof: proof),
-            ],
-            const SizedBox(height: 16),
-            const Hairline(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             Wrap(
               children: [
-                ActionPill(
-                  key: const ValueKey('action-tip'),
-                  icon: SwaI.tip,
-                  label: 'Tip',
-                  accent: true,
-                  onTap: _tip,
-                ),
+                ActionPill(key: const ValueKey('action-tip'), icon: SwaI.tip, label: 'Tip', accent: true, onTap: _tip),
                 ActionPill(icon: SwaI.share, label: 'Share', onTap: _share),
-                ActionPill(
-                  key: const ValueKey('action-corroborate'),
-                  icon: SwaI.corroborated,
-                  label: corroborating ? 'Writing…' : 'Corroborate',
-                  selected: cluster?.ok == true,
-                  onTap: corroborating ? null : _corroborate,
-                ),
                 ActionPill(
                   key: const ValueKey('action-follow'),
                   icon: following ? SwaI.following : SwaI.follow,
                   label: following ? 'Following' : 'Follow',
                   selected: following,
                   onTap: _follow,
+                ),
+                ActionPill(
+                  key: const ValueKey('action-corroborate'),
+                  icon: SwaI.corroborated,
+                  label: corroborating ? 'Writing…' : 'Corroborate',
+                  selected: cluster?.ok == true,
+                  onTap: corroborating ? null : _corroborate,
                 ),
                 ActionPill(
                   key: const ValueKey('action-report'),
@@ -253,9 +259,36 @@ class _StoryScreenState extends State<StoryScreen> {
                 ActionPill(icon: SwaI.extend, label: 'Keep alive', onTap: _extend),
               ],
             ),
+            const SizedBox(height: 20),
+            if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 280),
+            const SizedBox(height: 24),
+            Text(articleRest(s.body), style: Swa.serif(size: 17, height: 1.5)),
+            const SizedBox(height: 24),
+            _VerifyBlock(story: s, capture: capture, proof: proof),
+            if (cluster != null && cluster!.ok) ...[
+              const SizedBox(height: 16),
+              _WitnessList(cluster: cluster!, proof: proof),
+            ],
+            const SizedBox(height: 24),
+            const Hairline(),
+            const SizedBox(height: 20),
+            const Kicker('Support'),
+            const SizedBox(height: 8),
+            Text('Tip this desk', style: Swa.playfair(size: 22)),
+            const SizedBox(height: 8),
+            Text('GLM on Arkiv Tiramisu. Presets, or your own amount.', style: Swa.serif(size: 14, color: Swa.muted, height: 1.4)),
+            const SizedBox(height: 12),
+            Wrap(
+              children: [
+                ActionPill(icon: SwaI.tip, label: 'GLM 0.001', accent: true, onTap: () => _tip(amount: '0.001')),
+                ActionPill(icon: SwaI.tip, label: 'GLM 0.01', onTap: () => _tip(amount: '0.01')),
+                ActionPill(icon: SwaI.tip, label: 'GLM 0.05', onTap: () => _tip(amount: '0.05')),
+                ActionPill(icon: SwaI.tip, label: 'Custom', onTap: () => _tip(custom: true)),
+              ],
+            ),
             if (tipTotal != '0')
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
                 child: Text('${formatGlm(tipTotal)} tipped · on Arkiv Tiramisu', style: Swa.byline),
               ),
             if (status != null) ...[
@@ -346,33 +379,53 @@ class _WitnessList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Hairline(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         const Kicker('Witnesses'),
         const SizedBox(height: 8),
         Text('${cluster.district} district', style: Swa.playfair(size: 22)),
         const SizedBox(height: 8),
         Text(
-          'Independent captures in the same district ±30 minutes. Identity is a nullifier or \$creator, never a name. Precise GPS is never stored.',
+          'Independent captures in the same district ±30 minutes. Identity is a nullifier or \$creator, never a name.',
           style: Swa.serif(size: 14, color: Swa.muted, height: 1.45),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         _DistrictCell(district: cluster.district, geoCell: cluster.geoCell, n: cluster.count),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         for (var i = 0; i < witnesses.length; i++) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Column(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(witnesses[i].anonId, style: Swa.playfair(size: 16, height: 1.3)),
-                const SizedBox(height: 4),
-                Text(
-                  '${relativeTime(witnesses[i].captureTs)} · root ${shortAddr(witnesses[i].chainRoot)}',
-                  style: Swa.byline,
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Swa.wash,
+                    border: Border.all(color: Swa.line),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(child: Text('${i + 1}', style: Swa.ui(size: 12, weight: FontWeight.w700))),
                 ),
-                TextButton(
-                  onPressed: proof ? null : () => openUrl(explorerEntity(witnesses[i].entityKey)),
-                  child: const Text('Open capture entity'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(witnesses[i].anonId, style: Swa.playfair(size: 16, height: 1.3)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${relativeTime(witnesses[i].captureTs)} · root ${shortAddr(witnesses[i].chainRoot)}',
+                        style: Swa.byline,
+                      ),
+                      const SizedBox(height: 6),
+                      ActionPill(
+                        icon: SwaI.open,
+                        label: 'Open capture',
+                        onTap: proof ? null : () => openUrl(explorerEntity(witnesses[i].entityKey)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

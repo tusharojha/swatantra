@@ -7,7 +7,10 @@ import 'package:swatantra/geo/districts.dart';
 import 'package:swatantra/arkiv/write.dart';
 import 'package:swatantra/auth.dart';
 import 'package:swatantra/main.dart';
+import 'package:swatantra/models.dart';
 import 'package:swatantra/proof_edition.dart';
+import 'package:swatantra/screens/journalist.dart';
+import 'package:swatantra/screens/onboard.dart';
 import 'package:swatantra/theme.dart';
 import 'package:swatantra/widgets/bits.dart';
 import 'package:swatantra/widgets/sheets.dart';
@@ -131,6 +134,55 @@ void main() {
     expect(find.text('Create wallet'), findsOneWidget);
     expect(find.text('Connect wallet'), findsOneWidget);
     expect(find.textContaining('TEST MODE'), findsNothing);
+  });
+
+  testWidgets('corroboration stamp is compact', (tester) async {
+    final cluster = Corroboration(
+      district: 'Pune',
+      geoCell: '18.5,73.9',
+      windowStart: 0,
+      windowEnd: 1,
+      witnesses: const [
+        Witness(creator: '0xaaa', nid: '0x1111aaaa', captureTs: 1, chainRoot: '0x1', entityKey: '0xk1', district: 'Pune'),
+        Witness(creator: '0xbbb', nid: '0x2222bbbb', captureTs: 2, chainRoot: '0x2', entityKey: '0xk2', district: 'Pune'),
+        Witness(creator: '0xccc', nid: '0x3333cccc', captureTs: 3, chainRoot: '0x3', entityKey: '0xk3', district: 'Pune'),
+      ],
+    );
+    await tester.pumpWidget(MaterialApp(
+      theme: swatantraTheme(),
+      home: Scaffold(body: CorroborationStamp(cluster, expandable: true)),
+    ));
+    expect(find.text('Corroborated'), findsOneWidget);
+    expect(find.text('3 witnesses'), findsOneWidget);
+    expect(find.textContaining('INDEPENDENT WITNESSES'), findsNothing);
+    await tester.tap(find.text('Corroborated'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Pune'), findsWidgets);
+  });
+
+  testWidgets('onboarding card has a primary create action', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: swatantraTheme(),
+      home: const Scaffold(body: SingleChildScrollView(child: OnboardPanel())),
+    ));
+    expect(find.text('Create wallet'), findsOneWidget);
+    expect(find.text('Connect wallet'), findsOneWidget);
+    expect(find.textContaining('Stays on this device'), findsOneWidget);
+    expect(find.textContaining('TEST MODE'), findsNothing);
+  });
+
+  testWidgets('journalist screen shows a proof stepper', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(
+      theme: swatantraTheme(),
+      home: const Scaffold(body: JournalistScreen()),
+    ));
+    expect(find.text('Scan QR'), findsOneWidget);
+    expect(find.text('Generate proof'), findsOneWidget);
+    expect(find.text('Verified seal'), findsOneWidget);
+    expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+    expect(find.text('Proving…'), findsNothing);
   });
 
   testWidgets('tip sheet has presets and confirm', (tester) async {

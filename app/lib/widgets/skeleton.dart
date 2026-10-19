@@ -92,17 +92,36 @@ class ArticleSkeleton extends StatelessWidget {
 class EmptyState extends StatelessWidget {
   final String title;
   final String dek;
-  const EmptyState({super.key, required this.title, required this.dek});
+  final IconData? icon;
+  final Widget? action;
+  const EmptyState({super.key, required this.title, required this.dek, this.icon, this.action});
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
+      padding: const EdgeInsets.symmetric(vertical: 28),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (icon != null) ...[
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: Swa.wash,
+                borderRadius: BorderRadius.circular(Swa.radiusLg),
+                border: Border.all(color: Swa.line),
+              ),
+              child: Icon(icon, size: 28, color: Swa.magenta),
+            ),
+            const SizedBox(height: 20),
+          ],
           Text(title, style: Swa.playfair(size: 24)),
           const SizedBox(height: 8),
           Text(dek, style: Swa.serif(size: 16, color: Swa.muted, height: 1.45)),
+          if (action != null) ...[
+            const SizedBox(height: 20),
+            action!,
+          ],
         ],
       ),
     );

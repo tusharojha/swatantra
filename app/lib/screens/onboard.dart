@@ -103,7 +103,7 @@ class _OnboardPanelState extends State<OnboardPanel> {
           setState(() {
             busy = false;
             status = Config.walletConnectProjectId.isEmpty
-                ? 'No injected wallet. Create wallet works on this phone. WalletConnect needs WALLETCONNECT_PROJECT_ID (Reown) — falling back to the in-app burner.'
+                ? 'No injected wallet. Create wallet works on this phone.'
                 : 'No injected wallet. Trying WalletConnect…';
           });
         }
@@ -114,7 +114,7 @@ class _OnboardPanelState extends State<OnboardPanel> {
             if (mounted) setState(() { busy = false; status = 'WalletConnect ready.'; });
             return;
           } catch (e2) {
-            if (mounted) setState(() { busy = false; status = 'WalletConnect unavailable: $e2. Create wallet instead.'; });
+            if (mounted) setState(() { busy = false; status = 'WalletConnect unavailable. Create wallet instead.'; });
           }
         }
         return;
@@ -123,64 +123,107 @@ class _OnboardPanelState extends State<OnboardPanel> {
     }
   }
 
+  Widget _bullet(IconData icon, String title, String dek) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Swa.wash,
+              borderRadius: BorderRadius.circular(Swa.radiusSm),
+              border: Border.all(color: Swa.line),
+            ),
+            child: Icon(icon, size: 18, color: Swa.ink),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Swa.ui(size: 14, weight: FontWeight.w700, spacing: 0.1)),
+                const SizedBox(height: 2),
+                Text(dek, style: Swa.serif(size: 14, color: Swa.muted, height: 1.35)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionHead(
-          kicker: 'Correspondent',
-          title: 'Start writing',
-          dek:
-              'Reading needs no login. A wallet is only for posting, tipping, and registering a desk. The default is a one-tap burner saved on this device — never on Arkiv.',
-        ),
+        const Kicker('Correspondent'),
+        const SizedBox(height: 8),
+        Text('Start writing', style: Swa.playfair(size: 32, height: 1.1)),
+        const SizedBox(height: 8),
+        Text('A wallet on this device. Reading never needs one.', style: Swa.serif(size: 16, color: Swa.muted, height: 1.4)),
         const SizedBox(height: 24),
-        Wrap(
-          children: [
-            ActionPill(
-              key: const ValueKey('sign-in-create'),
-              icon: SwaI.wallet,
-              label: busy ? 'Working…' : 'Create wallet',
-              accent: true,
-              onTap: busy ? null : _create,
-            ),
-            ActionPill(
-              key: const ValueKey('sign-in-connect'),
-              icon: SwaI.wallet,
-              label: 'Connect wallet',
-              onTap: busy ? null : _connect,
-            ),
-            ActionPill(
-              key: const ValueKey('sign-in-import-toggle'),
-              icon: SwaI.key,
-              label: showImport ? 'Hide import' : 'Import key',
-              selected: showImport,
-              onTap: busy ? null : () => setState(() => showImport = !showImport),
-            ),
-          ],
-        ),
-        if (showImport) ...[
-          const SizedBox(height: 8),
-          TextField(
-            controller: importCtrl,
-            obscureText: true,
-            decoration: const InputDecoration(
-              hintText: 'Private key (0x…) — stays on this device',
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              filled: false,
-            ),
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+          decoration: BoxDecoration(
+            color: Swa.paper,
+            borderRadius: BorderRadius.circular(Swa.radiusLg),
+            border: Border.all(color: Swa.line),
+            boxShadow: Swa.lift,
           ),
-          const SizedBox(height: 12),
-          ActionPill(key: const ValueKey('sign-in-import'), icon: SwaI.key, label: 'Import on this device', accent: true, onTap: busy ? null : _import),
-        ],
-        const SizedBox(height: 16),
-        Text(
-          kIsWeb
-              ? 'On a phone, Create wallet is one tap — the key stays here. On desktop, Connect wallet uses an injected wallet and adds Arkiv Tiramisu.'
-              : 'Create wallet is one tap on this phone. Import a key if you already have a funded one.',
-          style: Swa.ui(size: 13, color: Swa.muted, weight: FontWeight.w400, height: 1.45),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _bullet(SwaI.lock, 'Stays on this device', 'Never written to Arkiv.'),
+              _bullet(SwaI.news, 'Browse without signing in', 'A key is only for posting and tips.'),
+              _bullet(SwaI.journalist, 'Prove 18+ without a name', 'Anon Aadhaar stores a nullifier only.'),
+              const SizedBox(height: 8),
+              Semantics(
+                button: true,
+                label: busy ? 'Working…' : 'Create wallet',
+                child: FilledButton.icon(
+                  key: const ValueKey('sign-in-create'),
+                  onPressed: busy ? null : _create,
+                  icon: const Icon(SwaI.wallet, size: 18),
+                  label: Text(busy ? 'Working…' : 'Create wallet'),
+                ),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const ValueKey('sign-in-connect'),
+                onPressed: busy ? null : _connect,
+                icon: const Icon(SwaI.wallet, size: 18),
+                label: const Text('Connect wallet'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                key: const ValueKey('sign-in-import-toggle'),
+                onPressed: busy ? null : () => setState(() => showImport = !showImport),
+                icon: const Icon(SwaI.key, size: 18),
+                label: Text(showImport ? 'Hide import' : 'Import key'),
+              ),
+              if (showImport) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: importCtrl,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Private key (0x…) — stays on this device',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  key: const ValueKey('sign-in-import'),
+                  onPressed: busy ? null : _import,
+                  icon: const Icon(SwaI.key, size: 18),
+                  label: const Text('Import on this device'),
+                ),
+              ],
+            ],
+          ),
         ),
         if (status != null) ...[
           const SizedBox(height: 16),
@@ -195,15 +238,17 @@ class _OnboardPanelState extends State<OnboardPanel> {
           Text('Anon Aadhaar', style: Swa.playfair(size: 22)),
           const SizedBox(height: 8),
           Text(
-            'Prove 18+ / Indian resident without putting a name on Arkiv. Then you can file a dispatch.',
+            'Prove 18+ without putting a name on Arkiv.',
             style: Swa.serif(size: 16, color: Swa.muted, height: 1.5),
           ),
           const SizedBox(height: 16),
-          ActionPill(
-            icon: SwaI.journalist,
-            label: 'Continue to Anon Aadhaar',
-            accent: true,
-            onTap: () => context.go('/journalist'),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: FilledButton.icon(
+              onPressed: () => context.go('/journalist'),
+              icon: const Icon(SwaI.journalist, size: 18),
+              label: const Text('Continue to Anon Aadhaar'),
+            ),
           ),
         ],
       ],
