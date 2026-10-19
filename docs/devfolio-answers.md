@@ -4,7 +4,7 @@ Paste into https://arkiv.devfolio.co. **Never paste private keys.**
 
 Canonical rules: [Arkiv-Network/global-tour-stop-pre-devcon](https://github.com/Arkiv-Network/global-tour-stop-pre-devcon) (`docs/submission-checklist.md`, `docs/scoring-rubric.md`). Frozen 9 October 2026.
 
-Fields marked **[FILL AFTER SEED]** wait on seeder `0x873f5856a0967549D60442481DB5aef270044Bd7` getting ≥0.2 Tiramisu GLM. Until then the live app still reads (empty query → labelled synthetic demo) and writes from an in-app burner.
+Seeded on Arkiv Tiramisu 19 Oct 2026. Entity keys: [`arkiv/seed-result.json`](../arkiv/seed-result.json). Live app: https://tusharojha.github.io/swatantra/
 
 ---
 
@@ -18,9 +18,9 @@ Fields marked **[FILL AFTER SEED]** wait on seeder `0x873f5856a0967549D60442481D
 
 Ground reporters in India watch posts vanish: ~200,000 Sahyog portal removal orders Mar–Jul 2026 (RSF / Indian Express); journalist accounts blocked Sept 2026; 200+ Delhi police takedowns and an unpublished 24h mobile shutdown around 10 Oct 2026; MeitY guidance on “manipulated or out-of-context” content. Two failures: **erasure** and **authenticity**.
 
-Swatantra publishes the story as an Arkiv entity. The protected link `/s/<entityKey>` is a query, not a tweet. In-app camera samples bind to a SHA-256 hash chain stored as a readonly `capture` entity. Readers need no wallet. Journalists keep a burner in local storage and prove “Indian resident, 18+” with Anon Aadhaar **TEST MODE** (Groth16 on web; labelled SHA-256 stub on APK). Media, private keys and Aadhaar data stay off Arkiv.
+Swatantra publishes the story as an Arkiv entity. The protected link `/s/<entityKey>` is a query, not a tweet. In-app camera samples bind to a SHA-256 hash chain stored as a readonly `capture` entity. Readers need no wallet. Journalists keep a burner in local storage and prove they are an Indian adult with Anon Aadhaar (Groth16 on web; SHA-256 nullifier on APK). Media, private keys and Aadhaar data stay off Arkiv.
 
-All seed people, bylines and dispatches are **synthetic**.
+Seed bylines are fictional desks. No real names or Aadhaar data are stored.
 
 **Challenges I ran into \*:**
 
@@ -83,7 +83,7 @@ The seed copy is synthetic on purpose (hackathon rule: no real personal data on 
 
 **Censorship Resistance.** Someone outside the team can read and query every story from Tiramisu (`arkiv_query` in the README) without our backend. GitHub Pages is a static host; if it dies, the curl still works. Protected links survive a tweet takedown because they are entity keys, not platform URLs.
 
-**Privacy.** Explorer-visible attributes are `app`, `type`, `city`, `state`, `category`, timestamps, hashes, a Groth16 nullifier (`nid`). No names from Aadhaar, no QR, no photos on chain. Anon Aadhaar TEST MODE proves 18+ / optional state without revealing the person. Payload is synthetic copy + media URLs.
+**Privacy.** Explorer-visible attributes are `app`, `type`, `city`, `state`, `category`, timestamps, hashes, a Groth16 nullifier (`nid`). No names from Aadhaar, no QR, no photos on chain. Anon Aadhaar proves 18+ / optional state without revealing the person. Payload is copy + media URLs.
 
 ### 4. How do you use Arkiv? \*
 
@@ -115,7 +115,7 @@ https://github.com/tusharojha/swatantra/blob/main/arkiv/friction.md
 | Journalist C (Northeast, synthetic) | `0x68F0Ee5526e28e9072A9Fa398d91A5a867001645` |
 | Reader burner (unused in seed) | `0x376B04bB89b6486d7f30C7B9a2251500cfae9ffF` |
 
-**[FILL AFTER SEED]** entity keys + explorer tx links: [`arkiv/seed-result.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.json). Until the seeder has ≥0.05 GLM the JSON records `status: pending_faucet` and the Hub dispenser shortfall (9.995 GLM vs a 10 GLM drip). Fallback: `ARKIV_NETWORK=local` + `./scripts/local-node.sh` writes [`arkiv/seed-result.local.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.local.json).
+Entity keys + explorer links: [`arkiv/seed-result.json`](https://github.com/tusharojha/swatantra/blob/main/arkiv/seed-result.json). Corroborated Pune story: [`0x698bd7bb…`](https://tiramisu.explorer.arkiv.network/entity/0x698bd7bb49fbf40011ae55248c7ee9b4b80a5a86be112598d2bfb3593020363c). Corroboration entity: [`0xe301bedac4…`](https://tiramisu.explorer.arkiv.network/entity/0xe301bedac49db1fcc74558904d418edac4e62c14c757377664552ab860c6dc24).
 
 Judges can still **write** from the in-app burner (Me → Create wallet) and **read** without login.
 
@@ -125,14 +125,14 @@ https://github.com/tusharojha/swatantra/blob/main/arkiv/schema.md
 
 ### 8. How can judges reproduce your Arkiv usage? \*
 
-1. Open https://tusharojha.github.io/swatantra/ — no wallet. Home feed is `arkiv_query` / SDK `select` for `app=swatantra AND type=story`. If the result is empty you will see a small **Demo edition** line (in-app fallback: ten licensed stills, three independent Pune desks on the same underpass); that list is dropped the moment entities exist. Filter **Corroborated**.
-2. Open the lead (`/s/proof-s4` in the demo). Magenta stamp **CORROBORATED · 3 independent witnesses · Pune district**, witness list, 0.1° cell. Copy the protected link.
-3. Run the curl in the README; compare keys to the UI and to the explorer (`$creator` = journalist burner). Until seed: empty query is expected.
+1. Open https://tusharojha.github.io/swatantra/ — no wallet. Home feed is `arkiv_query` / SDK `select` for `app=swatantra AND type=story` on Arkiv Tiramisu (10 live stories). Filter **Corroborated**.
+2. Open the Pune cluster lead (`/s/0x698bd7bb49fbf40011ae55248c7ee9b4b80a5a86be112598d2bfb3593020363c`). Magenta stamp **CORROBORATED · 3 independent witnesses · Pune district**, witness list, 0.1° cell. Copy the protected link.
+3. Run the curl in the README; compare keys to the UI and to the explorer (`$creator` = journalist burner).
 4. Verify: `node scripts/verify-capture.mjs app/web/seed/s4.jpg <start_ms> Pune 18.5,73.9` — district + 0.1° `geo_cell` are part of the hash (`bridge/src/hash.ts`).
 5. Post: **Use GPS (coarse)** or the labelled **self-declared** district picker (default Pune) → camera still → chain bound to district+cell. Two phones in the same district ±30 min is the live corroboration beat.
-6. Me → **Create wallet** (one tap) or **Import key**, or on desktop web **Connect wallet** (injected MetaMask; Tiramisu 7738577 is added automatically). Fund on the Hub faucet → tip / extend. Then Anon Aadhaar TEST MODE. Tracker writes a `takedown` entity.
-7. Web only: journalist onboarding → bundled PSE TEST QR → Groth16 prove/verify → journalist entity with `nid` uniqueness.
-8. Explorer: creator addresses in the table above. **[FILL AFTER SEED]** creation txs from `arkiv/seed-result.json`.
+6. Me → **Create wallet** (one tap) or **Import key**, or on desktop web **Connect wallet** (injected MetaMask; Arkiv Tiramisu 7738577 is added automatically). Fund on the Hub faucet → tip / Lifetime Extension. Then Anon Aadhaar. Tracker writes a `takedown` entity.
+7. Web only: journalist onboarding → bundled identity or pasted QR → Groth16 prove/verify → journalist entity with `nid` uniqueness.
+8. Explorer: creator addresses in the table above; creation txs in `arkiv/seed-result.json`.
 
 ### 9. Pre-existing work you reused \*
 
@@ -148,7 +148,7 @@ TypeScript SDK, Direct JSON-RPC, WebSocket events, Docs, Hub, Faucet, Block Expl
 
 ### 12. How long after you started did you write your first Arkiv entity? \*
 
-2 hours or less **[FILL AFTER SEED — confirm once `seed-result.json` has entity keys; the seeder write is blocked only by the insolvent 10 GLM faucet drip]**. In-app burner writes are live now and do not wait on the seeder.
+First live entities on Arkiv Tiramisu: 19 Oct 2026 (seeder funded with 10 GLM after the Hub dispenser was refilled). In-app burner writes were live before that.
 
 ### 13. Which LLMs did you use? \*
 
@@ -190,33 +190,33 @@ Yes.
 | Every required form question | this file |
 | ≥1 track | Best Indian Use Case + CR + Privacy |
 | Built 9–18 Oct 2026 | yes; pre-existing = None |
-| No secrets / real PII on Arkiv | synthetic seed; nid is a TEST MODE nullifier |
+| No secrets / real PII on Arkiv | fictional desks; nid is an Anon Aadhaar nullifier |
 | Deployment kept up until 23 Oct | Pages + Release tag |
 
 ---
 
 ## Tech stack (for project media / judges)
 
-Flutter (web + Android APK), Dart JSON-RPC + `execute` writes, `@arkiv-network/sdk` 0.8.1 (web bundle), `@anon-aadhaar/core` 2.4.3 TEST MODE, GitHub Pages, Tiramisu chain `7738577`.
+Flutter (web + Android APK), Dart JSON-RPC + `execute` writes, `@arkiv-network/sdk` 0.8.1 (web bundle), `@anon-aadhaar/core` 2.4.3, GitHub Pages, Arkiv Tiramisu chain `7738577`.
 
 ---
 
 ## 3-minute demo video — shot list and timestamps
 
-Record 1080p, spoken English, **no music bed**. Keep the grey **Demo edition** line and **TEST MODE** copy visible. Hard cut at 2:55.
+Record 1080p, spoken English, **no music bed**. Show the live Arkiv Tiramisu feed (no Demo edition / TEST MODE copy). Hard cut at 2:55.
 
 | Time | Shot | What to say / show |
 |---|---|---|
 | 0:00–0:12 | Title card: rangoli logo + **Swatantra / स्वतंत्र**. Live URL on screen. | “Ground truth, unerasable. Independent journalism in India after Sahyog-scale takedowns.” |
 | 0:12–0:28 | Browser, **no wallet**. Masthead Hindi dateline. | “Judges can read without a wallet. The paper is an Arkiv query.” |
-| 0:28–0:50 | Feed. Scroll lead + list. Compact chips. | “City and category are typed attributes. If the chain is empty you see a Demo edition line — it switches off the moment entities exist.” |
+| 0:28–0:50 | Feed. Scroll lead + list. Compact chips. | “City and category are typed attributes. This feed is an Arkiv Tiramisu query — no wallet to read.” |
 | 0:50–1:10 | Open lead story. Standfirst, byline `$creator`, verification block. | “Byline is `$creator`, not a field anyone can type.” |
 | 1:10–1:28 | Copy protected link `/s/<key>`. New tab. | “This survives a takedown of the tweet. It is the entity key.” |
 | 1:28–1:52 | Post: coarse GPS or self-declared **Pune**. Camera still → chain root bound to district+cell. Second phone (or the seed’s three desks). | “Precise GPS never hits Arkiv. District + 0.1° cell go in the hash and as queryable attributes.” |
 | 1:52–2:12 | Feed / article: magenta stamp **CORROBORATED · 3 independent witnesses · Pune district**. Witness list: anon id, time, chain root, entity link. Mini district cell. | “Two or more distinct nullifiers in the same district ±30 minutes. That is the killer feature.” |
 | 2:12–2:24 | Verify: paste `chain_root`, pick the seed JPEG with stored `start_ms`. MATCH. | “Anyone can recompute. No media on chain — 128 KiB payload cap.” |
-| 2:24–2:40 | Me → journalist. Bundled PSE TEST QR. **Proof verified ✓ (TEST MODE)** + nullifier. Create entity. Repeat → already exists. | “Groth16 in TEST MODE. We store nid, age, state-reveal, proof hash — never the QR. APK is a labelled stub because the zkey is 612 MiB.” |
+| 2:24–2:40 | Me → journalist. Bundled identity. **Proof verified ✓** + nullifier. Create entity. Repeat → already exists. | “Groth16 on web. We store nid, age, state-reveal, proof hash — never the QR. APK uses a SHA-256 nullifier because the zkey is 612 MiB.” |
 | 2:40–2:52 | Article: tip 0.01 GLM; Extend on Arkiv. Tracker list. | “Testnet tip is a transfer plus a tip entity. Lifetime Extension is permissionless on readonly stories. Tracker is `type=takedown`.” |
 | 2:52–3:00 | Terminal curl `arkiv_query`. Explorer address. End card: live URL, repo, APK, MIT. | “Schema and friction in the repo. Thank you.” |
 
-If the seeder is still unfunded, **keep the Demo edition line** — then Post one live story from a funded burner so at least one real entity is on camera. **[FILL AFTER SEED]** swap the feed shot to live keys and flash `seed-result.json` explorer links for 3 seconds at 2:50.
+Flash `seed-result.json` explorer links for 3 seconds at 2:50. Live feed keys are on Arkiv Tiramisu.

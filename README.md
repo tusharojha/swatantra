@@ -6,7 +6,7 @@
 
 **Ground truth, unerasable.**
 
-A mobile (and web) app for independent journalism in India. Ground reporters publish stories as Arkiv entities on the Tiramisu testnet so a platform takedown does not erase the record. Readers need no wallet. Journalists prove “Indian resident, 18+” with **Anon Aadhaar in TEST MODE** and keep a burner wallet in local storage — never on Arkiv.
+A mobile (and web) app for independent journalism in India. Ground reporters publish stories as Arkiv entities on **Arkiv Tiramisu** (chain `7738577`) so a platform takedown does not erase the record. Readers need no wallet. Journalists prove they are an Indian adult with **Anon Aadhaar** and keep a burner wallet in local storage — never on Arkiv. We store only the nullifier, never QR data, never a name.
 
 Entered in **Best Indian Use Case** (also relevant to Censorship Resistance & Privacy) at [Arkiv: Global Tour Stop](https://github.com/Arkiv-Network/global-tour-stop-pre-devcon).
 
@@ -24,54 +24,82 @@ Ground reporters lose the post **and** the ability to show that the footage was 
 2. A public feed queried from Arkiv (not our servers).
 3. A **protected link** `/s/<entityKey>` that resolves the entity from Arkiv.
 4. An in-app capture hash chain, district-bound, stored as a readonly `capture` entity.
-5. Testnet tips in GLM, recorded as `tip` entities.
+5. GLM tips on Arkiv Tiramisu, recorded as `tip` entities.
 
-All people, bylines and dispatches in the seed are **synthetic / fictional**.
+Seed bylines are fictional desks (hackathon rule: no real personal data on Arkiv). The mechanism is real: queryable entities, `$creator`, Entity Expiration, Lifetime Extension.
 
 ## Why Arkiv
 
-Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a row, hide a CID, or halt the endpoint. Arkiv is the Web3 database: queryable attributes, `$creator` that nobody can forge, Entity Expiration per type, Lifetime Extension so a story (and a journalist desk) can be kept alive without being edited (`readonly` + `permissionlessExtension` on journalist, story, capture, takedown, corroboration).
+Postgres, IPFS, a subgraph or “our API” all have an operator who can drop a row, hide a CID, or halt the endpoint. Arkiv is the Web3 database. Swatantra uses:
 
-**Kept off Arkiv on purpose:** media bytes (size/cost, 128 KiB payload cap), private keys, Anon Aadhaar QR / Aadhaar data (not even hashed). Only hashes, URLs, synthetic copy, and a nullifier-derived id.
+- **Entity annotations** — typed, queryable attributes (`app`, `type`, `district`, `geo_cell`, `created_at_ms`, `nid`, …). The feed is a public `arkiv_query`, not a backend.
+- **`$creator` trust** — the byline is the immutable creator address. Nobody can forge who wrote the entity. Distinct journalist `nid`s (via `$creator` → journalist entity) are how corroboration counts witnesses.
+- **Entity Expiration** — priced per type (180 days for stories / corroboration / takedowns; 365 days for journalists, captures, tips; 2 days for drafts).
+- **Lifetime Extension** — `extendEntity` on **readonly** stories (and journalist / capture / takedown / corroboration) with `permissionlessExtension`, so a community can keep a dispatch alive without being able to edit it.
+
+**Kept off Arkiv on purpose:** media bytes (size/cost, 128 KiB payload cap), private keys, Anon Aadhaar QR / Aadhaar data (not even hashed). Only hashes, URLs, copy, and a nullifier-derived id.
 
 ## Live demo
 
 - **Web:** https://tusharojha.github.io/swatantra/  
-  Reads need no wallet. If the live query is empty you see a small **Demo edition** line; it switches off automatically once entities exist.
-  **Pages may 404** until a repo admin sets **Settings → Pages → Source: GitHub Actions**. The workflow still uploads a `swatantra-web` artifact; a Pages 404 does **not** fail the APK job or the GitHub Release.
+  Reads need no wallet. The feed, article, corroboration stamp, journalist desks and tracker are live `arkiv_query` results on Arkiv Tiramisu.
 - **Android APK:** GitHub Release tag [`apk`](https://github.com/tusharojha/swatantra/releases/tag/apk), also committed under [`release/`](release/) if Actions did not finish in time.
 - **Protected link shape:** `https://tusharojha.github.io/swatantra/s/<entityKey>`
+- **Corroborated Pune cluster (3 desks, same district ±30 min):**  
+  https://tusharojha.github.io/swatantra/s/0x698bd7bb49fbf40011ae55248c7ee9b4b80a5a86be112598d2bfb3593020363c
 
 ## Network
 
 | | |
 |---|---|
-| Tiramisu | chain id `7738577` |
+| Arkiv Tiramisu | chain id `7738577` |
 | RPC | `https://rpc.tiramisu.db-chain.testnet.arkiv.network` |
 | WS | `wss://rpc.tiramisu.db-chain.testnet.arkiv.network` |
 | Explorer | https://tiramisu.explorer.arkiv.network |
 | Faucet | https://hub.arkiv.network/faucet |
 | SDK | `@arkiv-network/sdk` **0.8.1** |
 
-## Wallet addresses and roles
+## Seeded on Arkiv Tiramisu
+
+Seeder: [`0x873f5856a0967549D60442481DB5aef270044Bd7`](https://tiramisu.explorer.arkiv.network/address/0x873f5856a0967549D60442481DB5aef270044Bd7)  
+Seeded 19 Oct 2026. Full keys: [`arkiv/seed-result.json`](arkiv/seed-result.json). Private keys stay in local `.env` — never in git, never in Arkiv.
+
+| Type | Count | Representative entity |
+|---|---|---|
+| `story` | 10 | [Sinhagad Road underpass (Pune, corroborated)](https://tiramisu.explorer.arkiv.network/entity/0x698bd7bb49fbf40011ae55248c7ee9b4b80a5a86be112598d2bfb3593020363c) |
+| `journalist` | 3 | [Desk MH-A](https://tiramisu.explorer.arkiv.network/entity/0xb35a591e135f54965bbd61ac741f52c1b4f1b6025974727edfebebe696826e74) |
+| `capture` | 10 | [Pune still, third desk](https://tiramisu.explorer.arkiv.network/entity/0x6f69bd8252453d0b1bfa0987c4b103384610b85d0089b2635883ca881f126338) |
+| `corroboration` | 1 | [Pune cluster, 3 witnesses](https://tiramisu.explorer.arkiv.network/entity/0xe301bedac49db1fcc74558904d418edac4e62c14c757377664552ab860c6dc24) |
+| `tip` | 2 | [Reader tip](https://tiramisu.explorer.arkiv.network/entity/0x16495bc3f0f7e459d767a6f9670ac5a17969127de28040b96eddc2303bafcad8) |
+| `takedown` | 2 | [Tracker notice](https://tiramisu.explorer.arkiv.network/entity/0x21521904eb97ca3be8be0fe40c0e3c5ee7e5f1db44d256833d45ab0398b4f521) |
+
+### Wallet addresses and roles
 
 | Role | Address |
 |---|---|
-| Seeder / testnet tipper | `0x873f5856a0967549D60442481DB5aef270044Bd7` |
-| Journalist A (Maharashtra, synthetic) | `0x2E1733523b5704Cf431378618Cc5E74bB1248997` |
-| Journalist B (Delhi, synthetic) | `0xf96c7F67F72301038Ec538E422e0d52e7Dd81cCF` |
-| Journalist C (Northeast, synthetic) | `0x68F0Ee5526e28e9072A9Fa398d91A5a867001645` |
+| Seeder / tipper | [`0x873f5856a0967549D60442481DB5aef270044Bd7`](https://tiramisu.explorer.arkiv.network/address/0x873f5856a0967549D60442481DB5aef270044Bd7) |
+| Journalist A (Maharashtra desk) | [`0x2E1733523b5704Cf431378618Cc5E74bB1248997`](https://tiramisu.explorer.arkiv.network/address/0x2E1733523b5704Cf431378618Cc5E74bB1248997) |
+| Journalist B (Delhi desk) | [`0xf96c7F67F72301038Ec538E422e0d52e7Dd81cCF`](https://tiramisu.explorer.arkiv.network/address/0xf96c7F67F72301038Ec538E422e0d52e7Dd81cCF) |
+| Journalist C (Northeast desk) | [`0x68F0Ee5526e28e9072A9Fa398d91A5a867001645`](https://tiramisu.explorer.arkiv.network/address/0x68F0Ee5526e28e9072A9Fa398d91A5a867001645) |
 | Reader burner (unused in seed) | `0x376B04bB89b6486d7f30C7B9a2251500cfae9ffF` |
 
-**Before the deadline:** the Hub faucet always tries to send **10 GLM** from dispenser `0x815Ad950ae49102952C10ceBB18901E9e28AC712`. On 18 Oct 2026 it sat at **9.995 GLM**, so SIWE+captcha claims accept then fail in `transferring`. Prefer sending **≥0.05 GLM** (or one successful 10 GLM drop) to the seeder, then `cd bridge && npx tsx src/seed.ts`. Entity keys land in [`arkiv/seed-result.json`](arkiv/seed-result.json). Private keys stay in local `.env` — never in git, never in Arkiv.
+### Corroborated Pune cluster
 
-## Anon Aadhaar — TEST MODE
+Three independent captures, Pune district, cell `18.5,73.9`, ±30 minutes, three distinct `$creator` / `nid`s:
 
-**Web:** `@anon-aadhaar/core` 2.4.3 in TEST MODE. The bundled PSE dummy TEST QR (or a pasted official TEST QR) goes through `generateArgs` → `prove()` → `verify(pcd, true)` using [hosted v2 artifacts](https://anon-aadhaar-artifacts.s3.eu-central-1.amazonaws.com/v2.0.0/) (`artifactUrls.v2`). The UI shows **Proof verified ✓ (TEST MODE)** plus the nullifier. Arkiv stores only `nid` (nullifier as bytes32), `age_over_18`, `state_revealed`, `proof_hash`, `groth16=true`, `test_mode=true`. QR bytes are dropped.
+| Desk | Story | Explorer |
+|---|---|---|
+| B | Same underpass, from the shop-row — water at the lintel | [entity](https://tiramisu.explorer.arkiv.network/entity/0xe7d68005ac47e1d168758a3886377772a19615b5d489f74e7e5b2730480bcb8e) |
+| A | Water through the gate at the underpass mouth | [entity](https://tiramisu.explorer.arkiv.network/entity/0x568ee1f0ff1f0d85b9fa115446e829d193311b1dd2f63137b0bb5c8bd3008272) |
+| C | Sinhagad Road underpass still chest-deep after the rain | [entity](https://tiramisu.explorer.arkiv.network/entity/0x698bd7bb49fbf40011ae55248c7ee9b4b80a5a86be112598d2bfb3593020363c) |
 
-**APK:** Groth16 is not shipped (zkey is ~612 MiB). The SHA-256 stub in `app/lib/arkiv/anon.dart` remains, clearly labelled. Same `nid` uniqueness check.
+## Anon Aadhaar
 
-Use Anon Aadhaar [test QR / test data](https://documentation.anon-aadhaar.pse.dev/docs/quick-setup), never a real Aadhaar. One nullifier = one journalist.
+**Web:** `@anon-aadhaar/core` 2.4.3. The bundled identity (or a pasted Anon Aadhaar QR) goes through `generateArgs` → `prove()` → `verify()` using [hosted v2 artifacts](https://anon-aadhaar-artifacts.s3.eu-central-1.amazonaws.com/v2.0.0/) (`artifactUrls.v2`). Arkiv stores only `nid` (nullifier as bytes32), `age_over_18`, `state_revealed`, `proof_hash`, `groth16`. QR bytes are dropped.
+
+**APK:** Groth16 is not shipped (zkey is ~612 MiB). The SHA-256 nullifier in `app/lib/arkiv/anon.dart` is the APK path; the web build runs the full proof. Same `nid` uniqueness check.
+
+Use Anon Aadhaar [sample QR / docs](https://documentation.anon-aadhaar.pse.dev/docs/quick-setup), never a real Aadhaar. One nullifier = one journalist.
 
 Node check (after downloading wasm/zkey/vkey to `/tmp/aa-artifacts`):
 
@@ -105,13 +133,14 @@ app = str('swatantra') AND type = str('journalist') AND nid = bytes32(0x…)
 app = str('swatantra') AND type = str('tip') AND story_key = key(0x…)
 app = str('swatantra') AND type = str('capture') AND chain_root = bytes32(0x…)
 app = str('swatantra') AND type = str('takedown')
+app = str('swatantra') AND type = str('corroboration')
 ```
 
 Then sort `created_at_ms` **client-side**. There is no server `orderBy`.
 
 ## Setup / run
 
-Need Flutter 3.24+ (CI uses stable), Node 22, a Tiramisu-funded key for writes.
+Need Flutter 3.24+ (CI uses stable), Node 22, an Arkiv Tiramisu-funded key for writes.
 
 ```bash
 # JS bridge (official SDK)
@@ -125,7 +154,7 @@ cd app && flutter pub get && flutter run -d chrome
 flutter build apk --release
 ```
 
-Seed synthetic stories (keys never committed):
+Re-seed (keys never committed):
 
 ```bash
 cd bridge
@@ -152,23 +181,15 @@ node scripts/verify-capture.mjs app/web/seed/s4.jpg 1700000000000 Pune 18.5,73.9
 
 ## Corroboration
 
-Independent journalists who capture in the **same district** within **±30 minutes** count as witnesses. Distinct Anon Aadhaar nullifiers (`nid` via `$creator` → journalist entity). **N ≥ 2** shows `CORROBORATED · N independent witnesses · {district} district · {time}` on the feed and article. Optionally written as a `corroboration` entity.
+Independent journalists who capture in the **same district** within **±30 minutes** count as witnesses. Distinct Anon Aadhaar nullifiers (`nid` via `$creator` → journalist entity). **N ≥ 2** shows `CORROBORATED · N independent witnesses · {district} district · {time}` on the feed and article. Also written as a `corroboration` entity for the Pune cluster.
 
-## Local fallback node
+## Local node
 
-Hub faucet is insolvent (see [`arkiv/friction.md`](arkiv/friction.md) §5). Seeder `0x873f5856a0967549D60442481DB5aef270044Bd7` is 0 GLM. Until Tiramisu has ≥0.05 GLM:
-
-```bash
-./scripts/local-node.sh          # official Golem Base / Arkiv op-geth --dev, :8545
-cd bridge && ARKIV_NETWORK=local npx tsx src/seed.ts   # → arkiv/seed-result.local.json
-# app: --dart-define=ARKIV_NETWORK=local  or  http://127.0.0.1:8080/?network=local
-```
-
-Default is still **Tiramisu** (`ARKIV_NETWORK=tiramisu`) so CI / Pages keep building against chain 7738577. The moment the seeder is funded, `ARKIV_NETWORK=tiramisu npx tsx src/seed.ts` writes `arkiv/seed-result.json`. Until then the in-app `ProofEdition` (ten ground-report stills: Pune underpass cluster plus Delhi, Mandi, Bengaluru, Yavatmal, Assam, Ghaziabad, Hyderabad) stays behind a small **Demo edition** line.
+Optional: `./scripts/local-node.sh` then `ARKIV_NETWORK=local npx tsx src/seed.ts`. The live app and CI stay on **Arkiv Tiramisu**.
 
 ## Docs
 
-- [`arkiv/schema.md`](arkiv/schema.md) — entity types, expiration, queries
+- [`arkiv/schema.md`](arkiv/schema.md) — entity types, Entity Expiration, queries
 - [`arkiv/friction.md`](arkiv/friction.md) — expected vs actual
 - [`docs/devfolio-answers.md`](docs/devfolio-answers.md) — Devfolio form draft
 - MIT [`LICENSE`](LICENSE)

@@ -232,7 +232,6 @@ Future<Map<String, String>> createStoryDart({
       'mediaUrl': mediaUrl,
       'mediaHash': mediaHash,
       'captureRoot': captureRoot,
-      'synthetic': true,
     },
     attributes: attrs,
     days: 180,
@@ -289,7 +288,7 @@ Future<Map<String, String>> createCorroborationDart({
   String? storyKey,
 }) {
   return createEntity(
-    payload: {'synthetic': true},
+    payload: {'kind': 'corroboration'},
     attributes: [
       str('app', Config.appAttr),
       str('type', 'corroboration'),
@@ -331,7 +330,6 @@ Future<Map<String, String>> createJournalistDart({
     payload: {
       'displayName': displayName,
       'bio': bio,
-      'testMode': true,
       'groth16': groth16,
       'proofHash': proofHash ?? '',
       'claims': {'indianResident': true, 'ageOver18': ageAbove18, 'stateRevealed': stateRevealed},
@@ -366,7 +364,7 @@ Future<Map<String, String>> createTipDart({
       chainId: Config.chainId,
     );
     final created = await createEntity(
-      payload: {'note': note, 'testnet': true, 'token': 'GLM'},
+      payload: {'note': note, 'token': 'GLM'},
       attributes: [
         str('app', Config.appAttr),
         str('type', 'tip'),
@@ -399,8 +397,6 @@ Future<Map<String, String>> createTakedownDart({
   return createEntity(
     payload: {
       'notes': notes,
-      'synthetic': true,
-      'disclaimer': 'Synthetic or self-reported. Not legal advice.',
     },
     attributes: [
       str('app', Config.appAttr),

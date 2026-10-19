@@ -1,48 +1,124 @@
 {
-  "status": "pending_faucet",
+  "status": "seeded",
+  "app": "swatantra",
   "network": "tiramisu",
   "chainId": 7738577,
-  "checkedAt": "2026-10-18T19:27:32Z",
-  "note": "Hub POST /api/faucet for seeder returned 202 accepted then GET status=failed phase=transferring. Dispenser 0x815Ad950ae49102952C10ceBB18901E9e28AC712 has 9.995400999990803 GLM and always sends 10. Need either a dispenser refill of ≥0.0046 GLM or ≥0.2 GLM sent to the seeder. Re-run: cd bridge && npx tsx src/seed.ts",
-  "dispenser": {
-    "address": "0x815Ad950ae49102952C10ceBB18901E9e28AC712",
-    "balanceGlm": "9.995400999990803",
-    "dripGlm": "10"
+  "explorer": "https://tiramisu.explorer.arkiv.network",
+  "seededAt": "2026-10-19T08:40:02.164Z",
+  "elapsedMs": 145585,
+  "seeder": {
+    "address": "0x873f5856a0967549D60442481DB5aef270044Bd7",
+    "balanceBeforeGlm": "10.0",
+    "balanceAfterGlm": "0.007936999999874001"
   },
-  "lastClaim": {
-    "recipient": "0x873f5856a0967549D60442481DB5aef270044Bd7",
-    "http": 202,
-    "status": "failed",
-    "phase": "transferring",
-    "error": "insufficient funds for gas * price + value: have 9995400999990802000 want 10000000000000000000"
+  "counts": {
+    "story": 10,
+    "journalist": 3,
+    "capture": 10,
+    "tip": 2,
+    "takedown": 2,
+    "corroboration": 1
   },
-  "wallets": {
-    "seeder": "0x873f5856a0967549D60442481DB5aef270044Bd7",
-    "journalistA": "0x2E1733523b5704Cf431378618Cc5E74bB1248997",
-    "journalistB": "0xf96c7F67F72301038Ec538E422e0d52e7Dd81cCF",
-    "journalistC": "0x68F0Ee5526e28e9072A9Fa398d91A5a867001645",
-    "reader": "0x376B04bB89b6486d7f30C7B9a2251500cfae9ffF"
+  "journalists": {
+    "A": {
+      "key": "0xb35a591e135f54965bbd61ac741f52c1b4f1b6025974727edfebebe696826e74",
+      "address": "0x2E1733523b5704Cf431378618Cc5E74bB1248997",
+      "tx": "0x421882e8fc5cd70cfbfebc264bc9013ad3924229b4659a32dcdaab3f125117fd"
+    },
+    "B": {
+      "key": "0xbbc4f04c633056805a6dcb70fa36336e3f91cfd49491202eb0460fe11a265053",
+      "address": "0xf96c7F67F72301038Ec538E422e0d52e7Dd81cCF",
+      "tx": "0x958669addf7c9df5995ac85da5f624bdadbab8c9087d77663da6f6481c4ddae9"
+    },
+    "C": {
+      "key": "0x297f7231c6b4f214402a6020d786879e69b8d97ec20605fba5ac24158e0e4c76",
+      "address": "0x68F0Ee5526e28e9072A9Fa398d91A5a867001645",
+      "tx": "0xacddfbb277638e254d7fb6160eb42a6b97b7b2b00682d5631a3325fda26dbbe2"
+    }
   },
-  "entities": [],
-  "fallbackSeed": {
-    "kind": "in-app ProofEdition",
-    "label": "Demo edition — layout only, not on-chain",
-    "why": "Tiramisu seeder has 0 GLM. Hub dispenser ~9.995 GLM cannot drip 10. Same ten ground reports as app/lib/proof_edition.dart and bridge/src/seed.ts.",
-    "cluster": [
-      {"id": "proof-s3", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 22, "journalist": "A", "title": "Water through the gate at the underpass mouth"},
-      {"id": "proof-s2", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 15, "journalist": "B", "title": "Same underpass, from the shop-row — water at the lintel"},
-      {"id": "proof-s4", "district": "Pune", "geo_cell": "18.5,73.9", "minutesAgo": 8, "journalist": "C", "title": "Sinhagad Road underpass still chest-deep after the rain"}
-    ],
-    "others": [
-      {"id": "proof-s1", "district": "New Delhi", "geo_cell": "28.6,77.2", "title": "Crowd held at the ITO barricades after the network dropped"},
-      {"id": "proof-s5", "district": "Mandi", "geo_cell": "31.7,76.9", "title": "Slide over the Mandi–Kullu highway after the overnight rain"},
-      {"id": "proof-s6", "district": "Bengaluru Urban", "geo_cell": "13.0,77.6", "title": "Delivery bikes parked out a dark kitchen in Marathahalli"},
-      {"id": "proof-s7", "district": "Yavatmal", "geo_cell": "20.4,78.1", "title": "Unseasonal rain on the soy in Yavatmal — pods wet, soil a sheet"},
-      {"id": "proof-s8", "district": "Guwahati", "geo_cell": "26.1,91.7", "title": "Dam release overnight — water over the fields at Palashbari"},
-      {"id": "proof-s9", "district": "Ghaziabad", "geo_cell": "28.7,77.5", "title": "Morning haze over the Ghaziabad flyover, AQI still maroon"},
-      {"id": "proof-s10", "district": "Hyderabad", "geo_cell": "17.4,78.5", "title": "Open pit on Old Mumbai Road — lights out, the slab gone"}
-    ],
-    "badge": "CORROBORATED · 3 independent witnesses · Pune district",
-    "media": "app/web/seed/s1.jpg–s10.jpg (see assets/CREDITS.md)"
-  }
+  "stories": [
+    {
+      "title": "Crowd held at the ITO barricades after the network dropped",
+      "key": "0x6c7f22929c20533195e8c947e3e9acbae5c59650b2c952f4ec2ce5f164eb7266",
+      "capture": "0xfd25bde4002657871664d588b1395d8b87ae1962c86b51ec1e53d00947312fbf",
+      "city": "New Delhi",
+      "tx": "0x55c8ba10ef7d6bfaeff18f44c820f70d540e72c4847aea25928d6d57effb9cf4"
+    },
+    {
+      "title": "Same underpass, from the shop-row — water at the lintel",
+      "key": "0xe7d68005ac47e1d168758a3886377772a19615b5d489f74e7e5b2730480bcb8e",
+      "capture": "0xd4b9dbd24219716a1c31b0485ea70297c3dae3419f422867fef4d2e6cb9bfaf6",
+      "city": "Pune",
+      "tx": "0xe9cc9321acb7adbf66658b025b00f5138dbe73a87a906be43da96970c7dffe61"
+    },
+    {
+      "title": "Water through the gate at the underpass mouth",
+      "key": "0x568ee1f0ff1f0d85b9fa115446e829d193311b1dd2f63137b0bb5c8bd3008272",
+      "capture": "0x922dec0370804f77377ac652a42ce16716b12f1dd85df7e884f6a51de839b5c9",
+      "city": "Pune",
+      "tx": "0x7f501c3ca497ac7a1d7fcd46149c0ffd3414d0d9fd356eebb49de08b8429139b"
+    },
+    {
+      "title": "Sinhagad Road underpass still chest-deep after the rain",
+      "key": "0x698bd7bb49fbf40011ae55248c7ee9b4b80a5a86be112598d2bfb3593020363c",
+      "capture": "0x6f69bd8252453d0b1bfa0987c4b103384610b85d0089b2635883ca881f126338",
+      "city": "Pune",
+      "tx": "0xd7d33b0ecd8dd8dee413888cf5da47b96a1c7c9eb7cd4e1b406773f912741b9f"
+    },
+    {
+      "title": "Slide over the Mandi–Kullu highway after the overnight rain",
+      "key": "0x373f5f9a44058f1a5a2131377bce7b273ff00e3bab382e92845619ba2a4493a6",
+      "capture": "0xfb5c9e86ec07ea2a6b9ab621ff92f2d85bbe94eef5b9fee86986366fa6d00403",
+      "city": "Mandi",
+      "tx": "0xa5a3a8ccf0d445fa82706326a729246000277a6c28bcd309604699f4508960fa"
+    },
+    {
+      "title": "Delivery bikes parked out a dark kitchen in Marathahalli",
+      "key": "0x1eeec6d74878503cfd5f059bc66630c524be10e825ac39901f03a018c49551bf",
+      "capture": "0x4dd8e71c233169a1c0102a36ee77e83793ee81dee31ee9474eca46f539420f49",
+      "city": "Bengaluru",
+      "tx": "0xc52cf32c5ebc94dfd67876ced3bca9bb6e900a7b81666fcd1c4ad54a3706e3f5"
+    },
+    {
+      "title": "Unseasonal rain on the soy in Yavatmal — pods wet, soil a sheet",
+      "key": "0x90c103f02968b45398ece5b3a127607255148255f5bf83a1031da7537763757f",
+      "capture": "0x136f289ae5250a0854e782bf3e9071d0b0f7ac548ed5c1b91fc9a4ec91192679",
+      "city": "Yavatmal",
+      "tx": "0xfee18aada79caf7ce8c06a98db04d7468d73c18fc438b259fb919d0d6ab89090"
+    },
+    {
+      "title": "Dam release overnight — water over the fields at Palashbari",
+      "key": "0x85ac4c08afd851c8e4fc17f7b184f32a4e25baf3df4750fb73fdee661acef40d",
+      "capture": "0x7ed35a43ca41f007c2e92c13dac244286bc479ec3657c09a968414e244828002",
+      "city": "Guwahati",
+      "tx": "0x275be1397a887069aabebd223baec93aa293bc36b59d842534deae1eb4b44f08"
+    },
+    {
+      "title": "Morning haze over the Ghaziabad flyover, AQI still maroon",
+      "key": "0x226d56376a08bc2e4eca2ad23087bf1dee0155e94fee9f4963afc32d2c8f6ae8",
+      "capture": "0x825b14ff01fe241a094b867faa9fe6b5eac4109c33b82de24517d898a330fb16",
+      "city": "Ghaziabad",
+      "tx": "0x4f8d2bd0a42d5a94112d26505761e66208523c2eff2c253f8dc05bd193e8584b"
+    },
+    {
+      "title": "Open pit on Old Mumbai Road — lights out, the slab gone",
+      "key": "0x8c562f19e681cd7a1f9e57c4fa659abe212b67adbd98754bdf99a18888a12336",
+      "capture": "0x312e75cb227d387ddcc14a2b86a6bbb0ab2c2dd31719bd404762eaa220d7d2b0",
+      "city": "Hyderabad",
+      "tx": "0x340258cb471a089488cf3ff8cf347f6ce4061466028a79e705f42eb82a8e94c7"
+    }
+  ],
+  "feedCount": 10,
+  "corroboration": "0xe301bedac49db1fcc74558904d418edac4e62c14c757377664552ab860c6dc24",
+  "corroborationTx": "0x3361aa2a97e44305ea807b086b824636c15535fe9d23294dfcc8037bffa6a601",
+  "corroboratedStory": "0x698bd7bb49fbf40011ae55248c7ee9b4b80a5a86be112598d2bfb3593020363c",
+  "tips": [
+    "0x16495bc3f0f7e459d767a6f9670ac5a17969127de28040b96eddc2303bafcad8",
+    "0xa45d034ab889ea8f4810911af9461d529879612103d489ec77231589b9b8a9f2"
+  ],
+  "takedowns": [
+    "0xf8cb6fa2f923b4f708a760c1676e5785991e5314fa1c41a732ba0ec2550925e4",
+    "0x21521904eb97ca3be8be0fe40c0e3c5ee7e5f1db44d256833d45ab0398b4f521"
+  ],
+  "takedown": "0x21521904eb97ca3be8be0fe40c0e3c5ee7e5f1db44d256833d45ab0398b4f521"
 }

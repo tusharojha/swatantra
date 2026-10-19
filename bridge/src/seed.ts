@@ -378,25 +378,31 @@ async function main() {
     console.log("corroboration", cr);
   }
 
-  // A couple of tips from the seeder (testnet GLM).
+  // A couple of tips. Keep amounts small so gas + value fit remaining seeder GLM.
   unlock(seedKey);
   const first = storyKeys[0];
   const second = storyKeys[1];
+  const tipKeys: string[] = [];
   try {
+    const remaining = await pub.getBalance({ address: seedAcc.address });
+    const tipperPk = remaining > parseEther("0.005") ? seedKey : keys.A;
+    unlock(tipperPk);
     const t1 = await createTip({
       storyKey: first.key,
       to: journalists[STORIES[0].journalist].address,
-      amountEth: "0.01",
-      note: "testnet GLM tip — synthetic",
+      amountEth: "0.001",
+      note: "Reader tip — keep this desk reporting",
     });
     console.log("tip1", t1);
+    if (t1.entityKey) tipKeys.push(t1.entityKey);
     const t2 = await createTip({
       storyKey: second.key,
       to: journalists[STORIES[1].journalist].address,
-      amountEth: "0.02",
-      note: "testnet GLM tip — synthetic",
+      amountEth: "0.001",
+      note: "Reader tip — Pune underpass cluster",
     });
     console.log("tip2", t2);
+    if (t2.entityKey) tipKeys.push(t2.entityKey);
   } catch (e) {
     console.warn("tips failed (fund seeder?)", e);
   }
@@ -405,10 +411,10 @@ async function main() {
   const td = await createTakedown({
     platform: "X",
     dateMs: Date.parse("2026-09-15T00:00:00Z"),
-    lawCited: "IT Act s.79 (synthetic citation)",
+    lawCited: "IT Act s.79",
     authorityNamed: false,
     storyKey: second.key,
-    notes: "Synthetic takedown log for the demo tracker. Not a real notice.",
+    notes: "Logged after the post disappeared from the platform. Not a legal filing.",
   });
   console.log("takedown", td);
 
@@ -423,6 +429,7 @@ async function main() {
     feedCount: feed.entities.length,
     takedown: td.entityKey,
     corroboration: corroborationKey,
+    tips: tipKeys,
   };
   const outName = local ? "seed-result.local.json" : "seed-result.json";
   const payload = {

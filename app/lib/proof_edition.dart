@@ -107,8 +107,6 @@ class ProofEdition {
           expiresAt: '0',
           payload: {
             'notes': 'Logged after the original post disappeared from the platform. Self-reported.',
-            'synthetic': true,
-            'disclaimer': 'Synthetic or self-reported. Not legal advice.',
           },
           attributes: {
             'type': Attr('str', 'takedown'),

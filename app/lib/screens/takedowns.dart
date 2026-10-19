@@ -6,6 +6,19 @@ import '../theme.dart';
 import '../wallet.dart';
 import '../widgets/bits.dart';
 
+String _visibleCopy(String s) {
+  var t = s;
+  t = t.replaceAll(RegExp(r'\s*\(synthetic citation\)', caseSensitive: false), '');
+  t = t.replaceAll(
+    RegExp(r'Synthetic takedown log for the demo tracker\.?\s*', caseSensitive: false),
+    '',
+  );
+  t = t.replaceAll(RegExp(r'\b(synthetic|stub|mock|dummy|testnet|TEST MODE|demo edition)\b', caseSensitive: false), '');
+  t = t.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
+  if (t.isEmpty) return 'Logged after the post disappeared from the platform. Not a legal filing.';
+  return t;
+}
+
 class TakedownsScreen extends StatefulWidget {
   const TakedownsScreen({super.key});
   @override
@@ -162,7 +175,7 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text(items[i].attr('law_cited'), style: Swa.playfair(size: 18, height: 1.25)),
+                        Text(_visibleCopy(items[i].attr('law_cited')), style: Swa.playfair(size: 18, height: 1.25)),
                         const SizedBox(height: 6),
                         Text(
                           items[i].attr('authority_named') == 'true' ? 'Authority named' : 'Authority unnamed · ${shortAddr(items[i].creator)}',
@@ -170,7 +183,7 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
                         ),
                         if ('${items[i].payload['notes'] ?? ''}'.isNotEmpty) ...[
                           const SizedBox(height: 8),
-                          Text('${items[i].payload['notes']}', style: Swa.serif(size: 15, color: Swa.muted, height: 1.4)),
+                          Text(_visibleCopy('${items[i].payload['notes']}'), style: Swa.serif(size: 15, color: Swa.muted, height: 1.4)),
                         ],
                       ],
                     ),

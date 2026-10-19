@@ -220,7 +220,7 @@ class _JournalistScreenState extends State<JournalistScreen> {
           controller: qr,
           maxLines: 3,
           decoration: const InputDecoration(
-            hintText: 'Paste TEST QR, or use the bundled identity',
+            hintText: 'Paste Anon Aadhaar QR, or use the bundled identity',
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
@@ -233,14 +233,14 @@ class _JournalistScreenState extends State<JournalistScreen> {
           child: FilledButton(
             onPressed: proving ? null : () => _verify(bundled: true),
             style: FilledButton.styleFrom(minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 16)),
-            child: Text(proving ? 'Proving…' : 'Prove bundled test identity'),
+            child: Text(proving ? 'Proving…' : 'Prove bundled identity'),
           ),
         ),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton(
             onPressed: proving ? null : () => _verify(bundled: false),
-            child: const Text('Prove pasted TEST QR'),
+            child: const Text('Prove pasted QR'),
           ),
         ),
         Align(
@@ -258,7 +258,7 @@ class _JournalistScreenState extends State<JournalistScreen> {
         if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
         const SizedBox(height: 24),
         Text(
-          'On Arkiv: type=journalist, nid=nullifier, groth16, age_over_18, state_revealed, optional state, proof_hash, test_mode=true. No QR, no Aadhaar fields. \$creator is the burner wallet. nid uniqueness: one person = one journalist.',
+          'On Arkiv Tiramisu: type=journalist, nid=nullifier, groth16, age_over_18, state_revealed, optional state, proof_hash. No QR, no Aadhaar fields. \$creator is the burner wallet. nid uniqueness: one person = one journalist.',
           style: Swa.serif(size: 13, color: Swa.muted, height: 1.45),
         ),
       ],

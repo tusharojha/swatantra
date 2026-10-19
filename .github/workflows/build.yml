@@ -120,7 +120,7 @@ jobs:
         with:
           tag_name: apk
           name: Swatantra Android APK
-          body: Release APK for Swatantra. Testnet only. Built from ${{ github.sha }}.
+          body: Release APK for Swatantra on Arkiv Tiramisu. Built from ${{ github.sha }}.
           files: app/build/app/outputs/flutter-apk/app-release.apk
           make_latest: true
         env:

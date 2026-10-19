@@ -356,7 +356,6 @@ export async function createJournalist(input: {
     payload: jsonToPayload({
       displayName: input.displayName,
       bio: input.bio ?? "",
-      testMode: true,
       groth16: input.groth16 === true,
       proofHash: input.proofHash ?? "",
       claims: {
@@ -412,7 +411,6 @@ export async function createStory(input: {
       mediaUrl: input.mediaUrl ?? "",
       mediaHash: input.mediaHash ?? "",
       captureRoot: input.captureRoot ?? "",
-      synthetic: true,
     }),
     contentType: "application/json",
     attributes: {
@@ -593,7 +591,7 @@ export async function createTip(input: {
     value,
   });
   const created = await w.createEntity({
-    payload: jsonToPayload({ note: input.note ?? "", testnet: true, token: "GLM" }),
+    payload: jsonToPayload({ note: input.note ?? "", token: "GLM" }),
     contentType: "application/json",
     attributes: {
       app: str(APP),
@@ -624,8 +622,6 @@ export async function createTakedown(input: {
   const created = await walletClient().createEntity({
     payload: jsonToPayload({
       notes: input.notes ?? "",
-      synthetic: true,
-      disclaimer: "Synthetic or self-reported. Not legal advice.",
     }),
     contentType: "application/json",
     attributes: {

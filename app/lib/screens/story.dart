@@ -108,20 +108,20 @@ class _StoryScreenState extends State<StoryScreen> {
 
   Future<void> _tip() async {
     if (proof) {
-      setState(() => status = 'Proof edition — tips write to Arkiv once the seeder is funded.');
+      setState(() => status = 'Open a live story to send GLM on Arkiv Tiramisu.');
       return;
     }
     if (WalletStore.address == null) {
-      setState(() => status = 'Create a burner wallet in Me first, then fund it on the Tiramisu faucet.');
+      setState(() => status = 'Create a wallet in Me first, then fund it on the Arkiv Tiramisu faucet.');
       return;
     }
-    setState(() => status = 'Sending testnet GLM…');
+    setState(() => status = 'Sending GLM on Arkiv Tiramisu…');
     try {
       final r = await Arkiv.callWrite('createTip', {
         'storyKey': widget.entityKey,
         'to': story!.creator,
         'amountEth': amount.text.trim(),
-        'note': 'Swatantra testnet tip',
+        'note': 'Swatantra tip',
       });
       setState(() => status = 'Tipped. Transfer ${r['transferTx']} · tip entity ${r['entityKey']}');
       await _load();
@@ -132,7 +132,7 @@ class _StoryScreenState extends State<StoryScreen> {
 
   Future<void> _extend() async {
     if (proof) {
-      setState(() => status = 'Proof edition — Lifetime Extension runs against a live entity.');
+      setState(() => status = 'Lifetime Extension runs against a live Arkiv Tiramisu entity.');
       return;
     }
     setState(() => status = 'Lifetime Extension…');
@@ -243,7 +243,7 @@ class _StoryScreenState extends State<StoryScreen> {
           if (tipTotal != '0')
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('$tipTotal wei tipped · testnet GLM', style: Swa.byline),
+              child: Text('$tipTotal wei tipped · GLM on Arkiv Tiramisu', style: Swa.byline),
             ),
           if (status != null) ...[const SizedBox(height: 12), TestModeBanner(status!)],
         ],
@@ -353,7 +353,7 @@ class _WitnessList extends StatelessWidget {
                   onPressed: proof
                       ? null
                       : () => openUrl(explorerEntity(witnesses[i].entityKey)),
-                  child: Text(proof ? 'Demo capture' : 'Open capture entity'),
+                  child: const Text('Open capture entity'),
                 ),
               ],
             ),

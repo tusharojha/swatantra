@@ -140,7 +140,7 @@ class _FeedScreenState extends State<FeedScreen> {
             if (Config.isLocal) ...[
               const SizedBox(height: 16),
               Text(
-                'Local Arkiv node · chain 1337. Tiramisu stays the default.',
+                'Local Arkiv node · chain 1337. Arkiv Tiramisu stays the default.',
                 style: Swa.demoLine,
               ),
             ],
