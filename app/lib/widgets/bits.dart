@@ -38,6 +38,23 @@ class SwaI {
   static const github = Icons.code;
   static const faucet = Icons.water_drop_outlined;
   static const rotate = Icons.sync_outlined;
+  static const follow = Icons.person_add_outlined;
+  static const following = Icons.person_outlined;
+  static const share = Icons.ios_share_outlined;
+  static const report = Icons.flag_outlined;
+  static const filter = Icons.tune_outlined;
+  static const qr = Icons.qr_code_2_outlined;
+  static const proof = Icons.auto_awesome_outlined;
+  static const check = Icons.check;
+  static const lock = Icons.lock_outline;
+  static const shield = Icons.shield_outlined;
+  static const news = Icons.article_outlined;
+  static const removed = Icons.visibility_off_outlined;
+  static const instagram = Icons.camera_alt_outlined;
+  static const youtube = Icons.play_circle_outline;
+  static const facebook = Icons.public_outlined;
+  static const whatsapp = Icons.chat_bubble_outline;
+  static const x = Icons.close;
 }
 
 class Kicker extends StatelessWidget {
@@ -64,33 +81,163 @@ class AccentChip extends StatelessWidget {
   Widget build(BuildContext context) => Kicker(label, color: color);
 }
 
-class CorroborationStamp extends StatelessWidget {
+class CorroborationStamp extends StatefulWidget {
   final Corroboration cluster;
-  const CorroborationStamp(this.cluster, {super.key});
+  final bool expandable;
+  const CorroborationStamp(this.cluster, {super.key, this.expandable = false});
+
+  @override
+  State<CorroborationStamp> createState() => _CorroborationStampState();
+}
+
+class _CorroborationStampState extends State<CorroborationStamp> {
+  bool open = false;
 
   @override
   Widget build(BuildContext context) {
+    final cluster = widget.cluster;
     if (!cluster.ok) return const SizedBox.shrink();
     final times = cluster.witnesses.map((w) => w.captureTs).toList()..sort();
     final t = DateTime.fromMillisecondsSinceEpoch(times.isEmpty ? 0 : times.first).toUtc();
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final hh = t.hour.toString().padLeft(2, '0');
     final mm = t.minute.toString().padLeft(2, '0');
-    final line =
-        'Corroborated · ${cluster.count} independent witnesses · ${cluster.district} · ${t.day} ${months[t.month - 1]} $hh:$mm';
+    final hint =
+        '${cluster.count} independent captures in ${cluster.district} · ${t.day} ${months[t.month - 1]} $hh:$mm UTC';
+    final stamp = Tooltip(
+      message: hint,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
+        decoration: BoxDecoration(
+          color: const Color(0x14DC2460),
+          border: Border.all(color: const Color(0x33DC2460)),
+          borderRadius: BorderRadius.circular(Swa.radiusPill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(SwaI.corroborated, size: 14, color: Swa.magenta),
+            const SizedBox(width: 6),
+            Text('Corroborated', style: Swa.ui(size: 12, weight: FontWeight.w700, color: Swa.magenta, spacing: 0.2)),
+            const SizedBox(width: 8),
+            Container(width: 1, height: 12, color: const Color(0x33DC2460)),
+            const SizedBox(width: 8),
+            Text('${cluster.count} witnesses', style: Swa.ui(size: 12, weight: FontWeight.w600, color: Swa.inkSoft, spacing: 0.1)),
+          ],
+        ),
+      ),
+    );
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(SwaI.corroborated, size: 16, color: Swa.magenta),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(line.toUpperCase(), style: Swa.kicker),
-          ),
+          widget.expandable
+              ? InkWell(
+                  onTap: () => setState(() => open = !open),
+                  borderRadius: BorderRadius.circular(Swa.radiusPill),
+                  child: stamp,
+                )
+              : stamp,
+          if (open) ...[
+            const SizedBox(height: 8),
+            Text(hint, style: Swa.serif(size: 13, color: Swa.muted, height: 1.4)),
+          ],
         ],
       ),
     );
+  }
+}
+
+class TrustRow extends StatelessWidget {
+  final ArkivEntity story;
+  final Corroboration? cluster;
+  const TrustRow({super.key, required this.story, this.cluster});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (cluster != null && cluster!.ok) CorroborationStamp(cluster!),
+        if (story.hasCapture) const CaptureSeal(),
+      ],
+    );
+  }
+}
+
+IconData platformIcon(String platform) {
+  switch (platform.toLowerCase()) {
+    case 'x':
+    case 'twitter':
+      return SwaI.x;
+    case 'instagram':
+      return SwaI.instagram;
+    case 'youtube':
+      return SwaI.youtube;
+    case 'facebook':
+      return SwaI.facebook;
+    case 'whatsapp':
+      return SwaI.whatsapp;
+    default:
+      return SwaI.takedown;
+  }
+}
+
+class CaptureSeal extends StatelessWidget {
+  const CaptureSeal({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border.all(color: Swa.line),
+        borderRadius: BorderRadius.circular(Swa.radiusPill),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(SwaI.sealed, size: 14, color: Swa.teal),
+          SizedBox(width: 6),
+          Text('CAPTURE VERIFIED', style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8, color: Swa.teal)),
+        ],
+      ),
+    );
+  }
+}
+
+class VerifiedJournalistBadge extends StatelessWidget {
+  const VerifiedJournalistBadge({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Swa.wash,
+        borderRadius: BorderRadius.circular(Swa.radiusPill),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(SwaI.journalist, size: 14, color: Swa.magenta),
+          SizedBox(width: 6),
+          Text('VERIFIED JOURNALIST', style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8, color: Swa.magenta)),
+        ],
+      ),
+    );
+  }
+}
+
+class OnArkivLink extends StatelessWidget {
+  final String url;
+  final String label;
+  const OnArkivLink({super.key, required this.url, this.label = 'On Arkiv'});
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionPill(icon: SwaI.open, label: label, onTap: () => openUrl(url));
   }
 }
 
@@ -201,30 +348,36 @@ class ActionPill extends StatelessWidget {
         : (selected ? Swa.ink : Swa.muted);
     return Padding(
       padding: const EdgeInsets.only(right: 8, bottom: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(999),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: selected ? (accent ? const Color(0x14DC2460) : Swa.wash) : Swa.paper,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: selected ? (accent ? Swa.magenta : Swa.ink) : Swa.line),
+      child: Semantics(
+        button: true,
+        label: label,
+        child: ExcludeSemantics(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(Swa.radiusPill),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? (accent ? const Color(0x14DC2460) : Swa.wash) : Swa.paper,
+                borderRadius: BorderRadius.circular(Swa.radiusPill),
+                border: Border.all(color: selected ? (accent ? Swa.magenta : Swa.ink) : Swa.line),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 16, color: color),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: Swa.ui(size: 13, weight: FontWeight.w600, color: color, spacing: 0.2),
+                  ),
+                ],
+              ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 16, color: color),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: Swa.ui(size: 13, weight: FontWeight.w600, color: color, spacing: 0.2),
-                ),
-              ],
             ),
           ),
         ),
@@ -330,7 +483,13 @@ class StoryImage extends StatelessWidget {
     return Hero(
       tag: 'still-${story.key}',
       flightShuttleBuilder: (context, anim, direction, from, to) => to.widget,
-      child: Material(type: MaterialType.transparency, child: image),
+      child: Material(
+        type: MaterialType.transparency,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(Swa.radiusMd),
+          child: image,
+        ),
+      ),
     );
   }
 }
@@ -453,3 +612,36 @@ String explorerTx(String hash) => '${Config.explorer}/tx/$hash';
 String explorerAddr(String a) => '${Config.explorer}/address/$a';
 String explorerEntity(String key) => '${Config.explorer}/entity/$key';
 String protectedLink(String key) => '${Config.pagesBase}/s/$key';
+
+String formatGlm(String wei) {
+  final n = BigInt.tryParse(wei) ?? BigInt.zero;
+  if (n == BigInt.zero) return '0 GLM';
+  final negative = n < BigInt.zero;
+  final abs = n.abs().toString().padLeft(19, '0');
+  final whole = abs.substring(0, abs.length - 18).replaceFirst(RegExp(r'^0+(?=\d)'), '');
+  var frac = abs.substring(abs.length - 18).replaceFirst(RegExp(r'0+$'), '');
+  if (frac.length > 5) frac = frac.substring(0, 5);
+  final body = frac.isEmpty ? '$whole GLM' : '$whole.$frac GLM';
+  return negative ? '-$body' : body;
+}
+
+/// Strip words that must never appear in the visible UI.
+String sanitizeUi(String s) {
+  var t = s;
+  t = t.replaceAll(RegExp(r'\bTEST MODE\b', caseSensitive: false), '');
+  t = t.replaceAll(RegExp(r'demo edition', caseSensitive: false), '');
+  t = t.replaceAll(RegExp(r'\btestnet\b', caseSensitive: false), 'Tiramisu');
+  t = t.replaceAll(RegExp(r'\bTEST QR\b', caseSensitive: false), 'QR');
+  t = t.replaceAll(RegExp(r'\bbundled test( identity)?\b', caseSensitive: false), 'saved identity');
+  t = t.replaceAll(RegExp(r'\b(dummy|mock|stub|synthetic)\b', caseSensitive: false), '');
+  t = t.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
+  t = t.replaceAllMapped(RegExp(r'\s+([.,;:!?])'), (m) => m[1]!);
+  t = t.replaceAll(RegExp(r'^[,.·;:]+'), '').trim();
+  return t;
+}
+
+String? sanitizeUiOrNull(String? s) {
+  if (s == null) return null;
+  final t = sanitizeUi(s);
+  return t.isEmpty ? null : t;
+}

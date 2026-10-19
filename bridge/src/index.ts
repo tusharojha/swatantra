@@ -371,7 +371,6 @@ export async function createJournalist(input: {
       nid: bytes32(input.nullifier as Hex),
       created_at_ms: u64(BigInt(Date.now())),
       ...(input.state ? { state: str(input.state) } : {}),
-      test_mode: bool(true),
       groth16: bool(input.groth16 === true),
       age_over_18: bool(input.ageAbove18 !== false),
       state_revealed: bool(input.stateRevealed === true),
@@ -548,7 +547,6 @@ export async function publishStoryWithCapture(input: {
           mediaUrl: input.mediaUrl ?? "",
           mediaHash: input.mediaHash ?? "",
           captureRoot: input.capture.root,
-          synthetic: true,
         }),
         contentType: "application/json",
         attributes: {
@@ -795,7 +793,6 @@ export async function createCorroboration(input: {
       story_keys: input.storyKeys ?? [],
       capture_keys: input.captureKeys ?? [],
       nids: input.nids ?? [],
-      synthetic: true,
     }),
     contentType: "application/json",
     attributes: {

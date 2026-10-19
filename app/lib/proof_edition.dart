@@ -106,7 +106,7 @@ class ProofEdition {
           createdAt: '${DateTime.now().millisecondsSinceEpoch - 8 * 3600 * 1000}',
           expiresAt: '0',
           payload: {
-            'notes': 'Logged after the original post disappeared from the platform. Self-reported.',
+            'notes': 'X removed the ITO barricade still within two hours of posting. The protected link still resolves the entity.',
           },
           attributes: {
             'type': Attr('str', 'takedown'),

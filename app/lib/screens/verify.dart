@@ -6,6 +6,7 @@ import '../models.dart';
 import '../proof_edition.dart';
 import '../theme.dart';
 import '../widgets/bits.dart';
+import '../widgets/skeleton.dart';
 
 class VerifyScreen extends StatefulWidget {
   final String? root;
@@ -18,7 +19,11 @@ class _VerifyScreenState extends State<VerifyScreen> {
   String? status;
   String? computedRoot;
   ArkivEntity? match;
+  bool looking = false;
+  bool? matched;
   final rootCtrl = TextEditingController();
+
+  bool get _idle => computedRoot == null && match == null && !looking && matched == null;
 
   @override
   void initState() {
@@ -40,7 +45,8 @@ class _VerifyScreenState extends State<VerifyScreen> {
     final chain = hashChain([(bytes: bytes, timestampMs: ts)]);
     setState(() {
       computedRoot = chain.root;
-      status = 'Hashed as a 1-frame chain at now=$ts. A match needs the capture’s stored timestamp, district and cell.';
+      matched = null;
+      status = 'Hashed as a 1-frame chain. A match needs the capture’s stored timestamp, district and cell.';
     });
   }
 
@@ -50,7 +56,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
       setState(() => status = 'Paste a chain root or capture key, then pick the file.');
       return;
     }
-    setState(() => status = 'Looking up Arkiv…');
+    setState(() {
+      looking = true;
+      status = 'Looking up Arkiv…';
+    });
     try {
       ArkivEntity? cap;
       if (key.startsWith('0x') && key.length == 66) {
@@ -63,13 +72,18 @@ class _VerifyScreenState extends State<VerifyScreen> {
       if (cap == null) {
         setState(() {
           match = null;
-          status = 'No capture on Arkiv for that key. Seed stills use capture start_ms + district + geo_cell.';
+          matched = false;
+          looking = false;
+          status = 'No capture on Arkiv for that key.';
         });
         return;
       }
       setState(() => match = cap);
       final r = await FilePicker.platform.pickFiles(withData: true);
-      if (r == null || r.files.first.bytes == null) return;
+      if (r == null || r.files.first.bytes == null) {
+        setState(() => looking = false);
+        return;
+      }
       final bytes = r.files.first.bytes!;
       final ts = int.tryParse(cap.attr('start_ms', '0')) ?? 0;
       final chain = hashChain(
@@ -81,10 +95,15 @@ class _VerifyScreenState extends State<VerifyScreen> {
       final ok = chain.root.toLowerCase() == expected.toLowerCase();
       setState(() {
         computedRoot = chain.root;
+        matched = ok;
+        looking = false;
         status = ok ? 'Match. Same root as the Arkiv capture.' : 'No match. Different bytes, time, district or cell.';
       });
     } catch (e) {
-      setState(() => status = '$e');
+      setState(() {
+        looking = false;
+        status = sanitizeUi('$e');
+      });
     }
   }
 
@@ -95,32 +114,94 @@ class _VerifyScreenState extends State<VerifyScreen> {
       child: ListView(
         padding: Swa.pagePadding,
         children: [
-          Text('Verify', style: Swa.playfair(size: 28)),
+          const Kicker('Integrity'),
+          const SizedBox(height: 8),
+          Text('Verify', style: Swa.playfair(size: 32)),
           const SizedBox(height: 8),
           Text(
-            'Recompute the hash chain from a file. Media never sits on Arkiv.',
+            'A hash chain binds bytes, time and district. Matching the Arkiv root proves the still was not swapped.',
             style: Swa.serif(size: 16, color: Swa.muted, height: 1.45),
           ),
           const SizedBox(height: 24),
-          TextField(
-            controller: rootCtrl,
-            style: Swa.ui(size: 15),
-            decoration: const InputDecoration(
-              hintText: 'Capture key or chain root',
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              filled: false,
+          if (_idle)
+            EmptyState(
+              icon: SwaI.hash,
+              title: 'Recompute a capture',
+              dek:
+                  'Each frame is hashed with its timestamp, then bound to district and cell. The root lives on Arkiv; the file stays with you. A match means those bytes are the ones that were sealed.',
+              action: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    controller: rootCtrl,
+                    style: Swa.ui(size: 15),
+                    decoration: const InputDecoration(
+                      filled: true,
+                      fillColor: Swa.paper,
+                      hintText: 'Capture key or chain root',
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  FilledButton.icon(
+                    onPressed: _pickWithStoredTs,
+                    icon: const Icon(SwaI.verify, size: 18),
+                    label: const Text('Pick file and compare'),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: _pick,
+                    icon: const Icon(SwaI.hash, size: 18),
+                    label: const Text('Hash a file'),
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            TextField(
+              controller: rootCtrl,
+              style: Swa.ui(size: 15),
+              decoration: const InputDecoration(
+                filled: true,
+                fillColor: Swa.paper,
+                hintText: 'Capture key or chain root',
+              ),
             ),
-          ),
-          const Hairline(),
-          const SizedBox(height: 8),
-          Wrap(
-            children: [
-              ActionPill(icon: SwaI.verify, label: 'Pick file and compare', onTap: _pickWithStoredTs),
-              ActionPill(icon: SwaI.hash, label: 'Hash a file', onTap: _pick),
-            ],
-          ),
+            const SizedBox(height: 12),
+            Wrap(
+              children: [
+                ActionPill(icon: SwaI.verify, label: 'Pick file and compare', onTap: _pickWithStoredTs),
+                ActionPill(icon: SwaI.hash, label: 'Hash a file', onTap: _pick),
+              ],
+            ),
+          ],
+          if (looking) ...[
+            const SizedBox(height: 24),
+            const Skeleton(height: 14, width: 180),
+            const SizedBox(height: 12),
+            const Skeleton(height: 48, radius: 12),
+          ],
+          if (matched != null) ...[
+            const SizedBox(height: 24),
+            matched == true
+                ? const CaptureSeal()
+                : Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Swa.line),
+                      borderRadius: BorderRadius.circular(Swa.radiusPill),
+                    ),
+                    child: const Text(
+                      'NO MATCH',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: Swa.muted,
+                      ),
+                    ),
+                  ),
+          ],
           if (computedRoot != null) ...[
             const SizedBox(height: 16),
             const Hairline(),
@@ -151,11 +232,13 @@ class _VerifyScreenState extends State<VerifyScreen> {
                     '${match!.attr('frame_count')} frames · ${match!.district} · ${match!.attr('city')}',
                     style: Swa.byline,
                   ),
+                  const SizedBox(height: 8),
+                  OnArkivLink(url: explorerEntity(match!.key)),
                 ],
               ),
             ),
           ],
-          if (status != null) Text(status!, style: Swa.serif(size: 15, color: Swa.muted, height: 1.45)),
+          if (status != null && !_idle) Text(sanitizeUi(status!), style: Swa.serif(size: 15, color: Swa.muted, height: 1.45)),
         ],
       ),
     );

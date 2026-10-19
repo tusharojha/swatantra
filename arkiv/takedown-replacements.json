@@ -1,0 +1,17 @@
+{
+  "superseded": [
+    "0xf8cb6fa2f923b4f708a760c1676e5785991e5314fa1c41a732ba0ec2550925e4",
+    "0x21521904eb97ca3be8be0fe40c0e3c5ee7e5f1db44d256833d45ab0398b4f521"
+  ],
+  "replacements": [
+    {
+      "entityKey": "0x7933e16582855dbeefdaed017146f734da2976b7e56f559689a29017f58fc0a3",
+      "txHash": "0x60fa7605e9ac88fbda73b517273bf51d7fc5fcee87405cf07721af0b0a7c8a88"
+    },
+    {
+      "entityKey": "0xc44bedb10a360999b20fd1e9076a6fa0a23e54cf1d8553be1c49bfb8df5886ef",
+      "txHash": "0x9ff725085dfba91f1899e7c785672c82aa7185d24b9946957765f22073456d46"
+    }
+  ],
+  "at": "2026-10-19T09:35:31.594Z"
+}

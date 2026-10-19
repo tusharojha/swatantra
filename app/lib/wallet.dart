@@ -32,6 +32,7 @@ class WalletStore {
     } else if (injected) {
       address = _prefs!.getString(_addrK);
     }
+    await FollowStore.load();
   }
 
   static Future<Map<String, String>> unlock(String pk) async {
@@ -146,5 +147,32 @@ class WalletStore {
     await _prefs?.remove(_addrK);
     await _prefs?.remove(_srcK);
     await _prefs?.remove(_journalistK);
+  }
+}
+
+/// Local-only follows. Never written to Arkiv.
+class FollowStore {
+  static const _k = 'swatantra.follows';
+  static final ids = <String>{};
+
+  static Future<void> load() async {
+    final p = await SharedPreferences.getInstance();
+    ids
+      ..clear()
+      ..addAll((p.getStringList(_k) ?? []).map((e) => e.toLowerCase()));
+  }
+
+  static bool of(String creator) => ids.contains(creator.toLowerCase());
+
+  static Future<bool> toggle(String creator) async {
+    final id = creator.toLowerCase();
+    if (ids.contains(id)) {
+      ids.remove(id);
+    } else {
+      ids.add(id);
+    }
+    final p = await SharedPreferences.getInstance();
+    await p.setStringList(_k, ids.toList());
+    return ids.contains(id);
   }
 }

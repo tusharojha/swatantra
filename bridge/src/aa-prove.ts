@@ -79,10 +79,10 @@ export async function proveAndVerifyTestMode(opts: {
   const progress = opts.onProgress ?? (() => undefined);
   const qr = (opts.qrData || "").trim() || OFFICIAL_TEST_QR;
   if (!/^\d{64,}$/.test(qr)) {
-    throw new Error("TEST QR must be a long numeric string from the Anon Aadhaar QR generator (or the bundled PSE test QR).");
+    throw new Error("QR must be a long numeric string from mAadhaar, or the saved identity on this device.");
   }
 
-  progress("Building circuit inputs from TEST QR (no Aadhaar data kept)…");
+  progress("Building circuit inputs from the QR (no Aadhaar data kept)…");
   const args = await generateArgs({
     qrData: qr,
     certificateFile: TEST_CERTIFICATE,
@@ -115,7 +115,7 @@ export async function proveAndVerifyTestMode(opts: {
   progress("Groth16 prove() — first run fetches ~10 MiB wasm + ~612 MiB zkey from PSE…");
   const pcd: AnonAadhaarCore = await prove(args, (st) => progress(`prover: ${st}`));
 
-  progress("verify() on the Groth16 proof (TEST public key)…");
+  progress("verify() on the Groth16 proof…");
   const ok = await verify(pcd, true);
   if (!ok) throw new Error("Anon Aadhaar verify() returned false");
 

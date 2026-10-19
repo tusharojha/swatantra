@@ -414,7 +414,8 @@ async function main() {
     lawCited: "IT Act s.79",
     authorityNamed: false,
     storyKey: second.key,
-    notes: "Logged after the post disappeared from the platform. Not a legal filing.",
+    notes:
+      "X removed the ITO barricade still within two hours of posting. The protected link still resolves the entity.",
   });
   console.log("takedown", td);
 

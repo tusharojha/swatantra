@@ -16,13 +16,33 @@ class Swa {
   static const muted = Color(0xFF5C5C5C);
   static const paper = Color(0xFFFFFFFF);
   static const card = Color(0xFFFFFFFF);
-  static const line = Color(0xFFD0D0D0);
-  static const wash = Color(0xFFF7F7F7);
+  static const line = Color(0xFFE6E4DF);
+  static const wash = Color(0xFFF6F5F2);
+  static const inkSoft = Color(0xFF2A2A2A);
+
+  static const space4 = 4.0;
+  static const space8 = 8.0;
+  static const space12 = 12.0;
+  static const space16 = 16.0;
+  static const space24 = 24.0;
+  static const space32 = 32.0;
+  static const space48 = 48.0;
+  static const radiusSm = 8.0;
+  static const radiusMd = 12.0;
+  static const radiusLg = 16.0;
+  static const radiusPill = 999.0;
 
   static const pagePadding = EdgeInsets.fromLTRB(22, 16, 22, 48);
   static const maxWidth = 1200.0;
   static const articleWidth = 720.0;
   static const desktopBreakpoint = 1024.0;
+
+  static List<BoxShadow> get rest => const [
+        BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 6)),
+      ];
+  static List<BoxShadow> get lift => const [
+        BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+      ];
 
   static bool isDesktop(BuildContext context) =>
       MediaQuery.sizeOf(context).width >= desktopBreakpoint;
@@ -144,7 +164,7 @@ class PageWidth extends StatelessWidget {
 }
 
 ThemeData swatantraTheme() {
-  final square = RoundedRectangleBorder(borderRadius: BorderRadius.zero);
+  final round = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Swa.radiusMd));
   const hairline = BorderSide(color: Swa.line);
   const tap = Size(48, 48);
 
@@ -186,13 +206,13 @@ ThemeData swatantraTheme() {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Swa.paper,
+      fillColor: Swa.wash,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      border: const OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: hairline),
-      enabledBorder: const OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: hairline),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.zero,
-        borderSide: BorderSide(color: Swa.ink, width: 1.2),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(Swa.radiusMd), borderSide: hairline),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(Swa.radiusMd), borderSide: hairline),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(Swa.radiusMd),
+        borderSide: const BorderSide(color: Swa.ink, width: 1.2),
       ),
       labelStyle: Swa.ui(size: 13, color: Swa.muted, spacing: 0.2),
       hintStyle: Swa.ui(size: 13, color: Swa.muted, weight: FontWeight.w400),
@@ -203,7 +223,7 @@ ThemeData swatantraTheme() {
         foregroundColor: Colors.white,
         minimumSize: tap,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        shape: square,
+        shape: round,
         textStyle: Swa.ui(size: 14, weight: FontWeight.w700, color: Colors.white, spacing: 0.4),
       ),
     ),
@@ -213,7 +233,7 @@ ThemeData swatantraTheme() {
         minimumSize: tap,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         side: hairline,
-        shape: square,
+        shape: round,
         textStyle: Swa.ui(size: 14, weight: FontWeight.w600, color: Swa.ink, spacing: 0.2),
       ),
     ),
@@ -221,7 +241,7 @@ ThemeData swatantraTheme() {
       style: TextButton.styleFrom(
         foregroundColor: Swa.magenta,
         minimumSize: const Size(44, 44),
-        shape: square,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Swa.radiusSm)),
         textStyle: Swa.ui(size: 14, weight: FontWeight.w600, color: Swa.magenta, spacing: 0.2),
       ),
     ),
@@ -251,11 +271,19 @@ ThemeData swatantraTheme() {
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: Swa.ink),
     chipTheme: ChipThemeData(
       backgroundColor: Swa.paper,
-      selectedColor: Swa.paper,
-      side: BorderSide.none,
+      selectedColor: Swa.wash,
+      side: hairline,
       labelStyle: Swa.ui(size: 13, weight: FontWeight.w600),
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Swa.radiusPill)),
+    ),
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: Colors.transparent,
+      modalBackgroundColor: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(Swa.radiusLg)),
+      ),
     ),
   );
 }

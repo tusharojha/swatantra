@@ -6,6 +6,8 @@ import '../models.dart';
 import '../proof_edition.dart';
 import '../theme.dart';
 import '../widgets/bits.dart';
+import '../widgets/sheets.dart';
+import '../widgets/skeleton.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -50,7 +52,7 @@ class _FeedScreenState extends State<FeedScreen> {
       final list = await Arkiv.feed(
         state: state?.isEmpty == true ? null : state,
         category: category?.isEmpty == true ? null : category,
-      );
+      ).timeout(const Duration(seconds: 8), onTimeout: () => const <ArkivEntity>[]);
       if (!mounted) return;
       if (list.isEmpty) {
         var edition = ProofEdition.stories;
@@ -107,6 +109,27 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
+  Future<void> _openFilters() async {
+    await showAppSheet<void>(
+      context,
+      FiltersSheet(
+        states: states,
+        cats: cats,
+        state: state ?? '',
+        category: category ?? '',
+        corroboratedOnly: corroboratedOnly,
+        onApply: (s, c, corr) {
+          setState(() {
+            state = s;
+            category = c;
+            corroboratedOnly = corr;
+          });
+          _load();
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     var shown = items;
@@ -125,55 +148,36 @@ class _FeedScreenState extends State<FeedScreen> {
         child: ListView(
           padding: Swa.pagePadding,
           children: [
-            const Kicker("Today's paper"),
-            const SizedBox(height: 6),
-            Text('आज का अंक', style: Swa.serif(size: desktop ? 16 : 14, color: Swa.muted, height: 1.3)),
-            if (desktop) ...[
-              const SizedBox(height: 8),
-              Text('On the ground', style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 12),
-              Text(
-                'Stories are Arkiv entities. Anyone can query them — no wallet needed to read.',
-                style: Swa.serif(size: 16.5, color: Swa.muted, height: 1.5),
-              ),
-            ],
+            _FilterBar(
+              state: state ?? '',
+              category: category ?? '',
+              corroboratedOnly: corroboratedOnly,
+              onAllIndia: () {
+                setState(() => state = '');
+                _load();
+              },
+              onCorr: () => setState(() => corroboratedOnly = !corroboratedOnly),
+              onClearCat: () {
+                setState(() => category = '');
+                _load();
+              },
+              onFilters: _openFilters,
+            ),
             if (Config.isLocal) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 'Local Arkiv node · chain 1337. Arkiv Tiramisu stays the default.',
                 style: Swa.demoLine,
               ),
             ],
-            const SizedBox(height: 24),
-            _FilterRow(
-              states: states,
-              cats: cats,
-              state: state ?? '',
-              category: category ?? '',
-              corroboratedOnly: corroboratedOnly,
-              onState: (v) {
-                setState(() => state = v);
-                _load();
-              },
-              onCat: (v) {
-                setState(() => category = v);
-                _load();
-              },
-              onCorr: (v) => setState(() => corroboratedOnly = v),
-            ),
-            const SizedBox(height: 24),
-            if (error != null) ...[
-              Text(error!, style: Swa.serif(size: 14, color: Swa.muted)),
-              const SizedBox(height: 16),
-            ],
-            if (loading) const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator())),
+            const SizedBox(height: 20),
+            if (error != null) ErrorNote(sanitizeUi(error!)),
+            if (loading) const FeedSkeleton(),
             if (!loading && items.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40),
-                child: Text(
-                  'No live stories. They may have expired, or the seed has not run yet.',
-                  style: Swa.serif(size: 16, color: Swa.muted),
-                ),
+              const EmptyState(
+                icon: SwaI.news,
+                title: 'No live stories',
+                dek: 'They may have expired, or the seed has not run yet. Pull to refresh.',
               ),
             if (!loading && lead != null && desktop)
               _DesktopFront(
@@ -190,7 +194,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 imageHeight: 200,
                 headlineSize: 28,
               ),
-              if (rest.isNotEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Hairline()),
+              if (rest.isNotEmpty) const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Hairline()),
               for (var i = 0; i < rest.length; i++) ...[
                 StoryRow(story: rest[i], cluster: clusters[rest[i].key], onTap: () => context.go('/s/${rest[i].key}')),
                 if (i != rest.length - 1) const Hairline(),
@@ -203,115 +207,70 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 }
 
-class _FilterRow extends StatelessWidget {
-  final List<String> states;
-  final List<String> cats;
+class _FilterBar extends StatelessWidget {
   final String state;
   final String category;
   final bool corroboratedOnly;
-  final ValueChanged<String> onState;
-  final ValueChanged<String> onCat;
-  final ValueChanged<bool> onCorr;
-  const _FilterRow({
-    required this.states,
-    required this.cats,
+  final VoidCallback onAllIndia;
+  final VoidCallback onCorr;
+  final VoidCallback onClearCat;
+  final VoidCallback onFilters;
+  const _FilterBar({
     required this.state,
     required this.category,
     required this.corroboratedOnly,
-    required this.onState,
-    required this.onCat,
+    required this.onAllIndia,
     required this.onCorr,
+    required this.onClearCat,
+    required this.onFilters,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        SizedBox(
-          height: 44,
-          child: ListView(
+        Expanded(
+          child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            children: [
-              for (final s in states)
-                _TextChip(
-                  label: s.isEmpty ? 'All India' : s,
-                  selected: state == s,
-                  onTap: () => onState(s),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 44,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              for (final c in cats)
-                _TextChip(
-                  label: c.isEmpty ? 'All desks' : c,
-                  selected: category == c,
-                  onTap: () => onCat(c),
-                ),
-              _TextChip(
-                label: 'Corroborated',
-                selected: corroboratedOnly,
-                accent: true,
-                icon: SwaI.corroborated,
-                onTap: () => onCorr(!corroboratedOnly),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TextChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final bool accent;
-  final IconData? icon;
-  final VoidCallback onTap;
-  const _TextChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.accent = false,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? (accent ? Swa.magenta : Swa.ink) : Swa.muted;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 20),
-        child: Center(
-          child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 180),
-            style: Swa.ui(
-              size: 13,
-              weight: selected ? FontWeight.w700 : FontWeight.w500,
-              color: color,
-              spacing: 0.2,
-            ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                if (icon != null) ...[
-                  Icon(icon, size: 15, color: color),
-                  const SizedBox(width: 5),
-                ],
-                Text(label),
+                ActionPill(
+                  icon: SwaI.place,
+                  label: 'All India',
+                  selected: state.isEmpty,
+                  onTap: onAllIndia,
+                ),
+                if (state.isNotEmpty)
+                  ActionPill(
+                    icon: SwaI.place,
+                    label: state,
+                    selected: true,
+                    onTap: onFilters,
+                  ),
+                if (category.isNotEmpty)
+                  ActionPill(
+                    icon: SwaI.feed,
+                    label: category,
+                    selected: true,
+                    onTap: onClearCat,
+                  ),
+                ActionPill(
+                  icon: SwaI.corroborated,
+                  label: 'Corroborated',
+                  selected: corroboratedOnly,
+                  accent: corroboratedOnly,
+                  onTap: onCorr,
+                ),
               ],
             ),
           ),
         ),
-      ),
+        ActionPill(
+          icon: SwaI.filter,
+          label: 'Filters',
+          onTap: onFilters,
+        ),
+      ],
     );
   }
 }
@@ -382,7 +341,7 @@ class LeadStory extends StatelessWidget {
   Widget build(BuildContext context) {
     final photo = story.mediaUrl.isNotEmpty
         ? Padding(
-            padding: EdgeInsets.only(top: photoFirst ? 10 : 16, bottom: photoFirst ? 12 : 0),
+            padding: EdgeInsets.only(top: photoFirst ? 4 : 16, bottom: photoFirst ? 14 : 0),
             child: StoryImage(story, height: imageHeight),
           )
         : const SizedBox.shrink();
@@ -391,18 +350,18 @@ class LeadStory extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Kicker(story.category.isEmpty ? 'story' : story.category),
-          if (cluster != null) CorroborationStamp(cluster!),
           if (photoFirst) photo,
-          const SizedBox(height: 12),
+          Kicker(story.category.isEmpty ? 'story' : story.category),
+          const SizedBox(height: 10),
           Text(
             story.title.isEmpty ? 'Untitled story' : story.title,
             style: Swa.playfair(size: headlineSize, weight: FontWeight.w700, height: 1.12),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           BylineRow(story),
+          if (cluster != null && cluster!.ok) CorroborationStamp(cluster!),
           if (!photoFirst) photo,
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Text(
             standfirst(story.body),
             style: Swa.serif(size: 17, height: 1.5),
@@ -440,7 +399,6 @@ class StoryRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Kicker(story.category.isEmpty ? 'story' : story.category),
-                  if (cluster != null) CorroborationStamp(cluster!),
                   const SizedBox(height: 8),
                   Text(
                     story.title.isEmpty ? 'Untitled story' : story.title,
@@ -448,12 +406,13 @@ class StoryRow extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   BylineRow(story),
+                  if (cluster != null && cluster!.ok) CorroborationStamp(cluster!),
                 ],
               ),
             ),
             if (story.mediaUrl.isNotEmpty) ...[
               const SizedBox(width: 16),
-              StoryImage(story, height: compact ? 72 : 88, width: compact ? 108 : 128),
+              StoryImage(story, height: compact ? 72 : 92, width: compact ? 108 : 132),
             ],
           ],
         ),

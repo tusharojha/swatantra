@@ -42,6 +42,8 @@ jobs:
         working-directory: app
         run: |
           flutter pub get
+          flutter analyze --no-fatal-infos
+          flutter test
           dart run flutter_launcher_icons || true
           dart run flutter_native_splash:create || true
           python3 ../scripts/gen-brand-icons.py
@@ -56,6 +58,37 @@ jobs:
         with:
           name: swatantra-web
           path: app/build/web
+
+  e2e:
+    needs: web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/download-artifact@v4
+        with:
+          name: swatantra-web
+          path: /tmp/swatantra-web
+      - name: Serve build and run Playwright
+        working-directory: e2e
+        env:
+          E2E_BASE: http://127.0.0.1:8080/swatantra
+          E2E_PRIVATE_KEY: ${{ secrets.E2E_PRIVATE_KEY }}
+        run: |
+          mkdir -p /tmp/serve/swatantra
+          cp -a /tmp/swatantra-web/. /tmp/serve/swatantra/
+          npm ci || npm install
+          npx playwright install --with-deps chromium
+          node serve.mjs /tmp/serve 8080 &
+          node --test flows.spec.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: swatantra-e2e
+          path: artifacts/e2e
+          if-no-files-found: ignore
 
   deploy-pages:
     needs: web

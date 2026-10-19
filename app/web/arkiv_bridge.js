@@ -22194,7 +22194,7 @@ ${prettyStateOverride(stateOverride)}`;
   async function verifyTestAnonAadhaar(qrData, revealState) {
     const qr = (qrData || "").trim() || BUNDLED_TEST_QR;
     if (qr.length < 32) {
-      throw new Error("test QR too short \u2014 paste Anon Aadhaar TEST QR data, or use the bundled test identity");
+      throw new Error("QR too short \u2014 paste an Anon Aadhaar QR, or prove with the saved identity");
     }
     const material = new TextEncoder().encode(`${NULLIFIER_SEED}|${qr}`);
     const digest = await sha2564(material);
@@ -22206,7 +22206,7 @@ ${prettyStateOverride(stateOverride)}`;
       indianResident: true,
       ageOver18: true,
       state: revealState && revealState.length > 0 ? revealState : void 0,
-      note: "Anon Aadhaar TEST MODE. Nullifier only. No Aadhaar data stored."
+      note: "Anon Aadhaar proof. Nullifier only. No Aadhaar data stored."
     };
   }
 
@@ -22506,7 +22506,6 @@ ${prettyStateOverride(stateOverride)}`;
       payload: jsonToPayload({
         displayName: input.displayName,
         bio: input.bio ?? "",
-        testMode: true,
         groth16: input.groth16 === true,
         proofHash: input.proofHash ?? "",
         claims: {
@@ -22522,7 +22521,6 @@ ${prettyStateOverride(stateOverride)}`;
         nid: bytes32(input.nullifier),
         created_at_ms: u64(BigInt(Date.now())),
         ...input.state ? { state: str(input.state) } : {},
-        test_mode: bool(true),
         groth16: bool(input.groth16 === true),
         age_over_18: bool(input.ageAbove18 !== false),
         state_revealed: bool(input.stateRevealed === true),
@@ -22546,8 +22544,7 @@ ${prettyStateOverride(stateOverride)}`;
         body: input.body,
         mediaUrl: input.mediaUrl ?? "",
         mediaHash: input.mediaHash ?? "",
-        captureRoot: input.captureRoot ?? "",
-        synthetic: true
+        captureRoot: input.captureRoot ?? ""
       }),
       contentType: "application/json",
       attributes: {
@@ -22652,8 +22649,7 @@ ${prettyStateOverride(stateOverride)}`;
             body: input.body,
             mediaUrl: input.mediaUrl ?? "",
             mediaHash: input.mediaHash ?? "",
-            captureRoot: input.capture.root,
-            synthetic: true
+            captureRoot: input.capture.root
           }),
           contentType: "application/json",
           attributes: {
@@ -22690,7 +22686,7 @@ ${prettyStateOverride(stateOverride)}`;
       value
     });
     const created = await w.createEntity({
-      payload: jsonToPayload({ note: input.note ?? "", testnet: true, token: "GLM" }),
+      payload: jsonToPayload({ note: input.note ?? "", token: "GLM" }),
       contentType: "application/json",
       attributes: {
         app: str(APP),
@@ -22712,9 +22708,7 @@ ${prettyStateOverride(stateOverride)}`;
   async function createTakedown(input) {
     const created = await walletClient().createEntity({
       payload: jsonToPayload({
-        notes: input.notes ?? "",
-        synthetic: true,
-        disclaimer: "Synthetic or self-reported. Not legal advice."
+        notes: input.notes ?? ""
       }),
       contentType: "application/json",
       attributes: {
@@ -22850,8 +22844,7 @@ ${prettyStateOverride(stateOverride)}`;
       payload: jsonToPayload({
         story_keys: input.storyKeys ?? [],
         capture_keys: input.captureKeys ?? [],
-        nids: input.nids ?? [],
-        synthetic: true
+        nids: input.nids ?? []
       }),
       contentType: "application/json",
       attributes: {

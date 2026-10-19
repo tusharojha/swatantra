@@ -5,10 +5,15 @@ import 'package:swatantra/arkiv/anon.dart';
 import 'package:swatantra/arkiv/hash.dart';
 import 'package:swatantra/geo/districts.dart';
 import 'package:swatantra/arkiv/write.dart';
+import 'package:swatantra/auth.dart';
 import 'package:swatantra/main.dart';
+import 'package:swatantra/models.dart';
 import 'package:swatantra/proof_edition.dart';
+import 'package:swatantra/screens/journalist.dart';
+import 'package:swatantra/screens/onboard.dart';
 import 'package:swatantra/theme.dart';
 import 'package:swatantra/widgets/bits.dart';
+import 'package:swatantra/widgets/sheets.dart';
 
 void main() {
   testWidgets('App loads with rangoli logo and brand palette', (tester) async {
@@ -92,5 +97,111 @@ void main() {
     final h = ident32Hex('app');
     expect(h.startsWith('0x617070'), isTrue);
     expect(h.length, 66);
+  });
+
+  test('formatGlm and sanitizeUi', () {
+    expect(formatGlm('0'), '0 GLM');
+    expect(formatGlm('1000000000000000'), '0.001 GLM');
+    expect(sanitizeUi('Anon Aadhaar TEST MODE. Nullifier only.'), 'Anon Aadhaar. Nullifier only.');
+    expect(sanitizeUi('bundled test identity'), 'saved identity');
+    expect(sanitizeUi('GLM on testnet'), 'GLM on Tiramisu');
+  });
+
+  testWidgets('browse never asks for a wallet', (tester) async {
+    await tester.pumpWidget(const SwatantraApp());
+    await tester.pump();
+    expect(find.textContaining('Needed to'), findsNothing);
+    expect(find.text('Create wallet'), findsNothing);
+    expect(find.text('Sign in'), findsNothing);
+  });
+
+  testWidgets('sign-in sheet appears for a gated action', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: swatantraTheme(),
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: ActionPill(
+            icon: SwaI.tip,
+            label: 'Tip',
+            onTap: () => ensureSignedIn(context, action: 'tip this desk'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('Tip'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Needed to tip this desk'), findsOneWidget);
+    expect(find.text('Create wallet'), findsOneWidget);
+    expect(find.text('Connect wallet'), findsOneWidget);
+    expect(find.textContaining('TEST MODE'), findsNothing);
+  });
+
+  testWidgets('corroboration stamp is compact', (tester) async {
+    final cluster = Corroboration(
+      district: 'Pune',
+      geoCell: '18.5,73.9',
+      windowStart: 0,
+      windowEnd: 1,
+      witnesses: const [
+        Witness(creator: '0xaaa', nid: '0x1111aaaa', captureTs: 1, chainRoot: '0x1', entityKey: '0xk1', district: 'Pune'),
+        Witness(creator: '0xbbb', nid: '0x2222bbbb', captureTs: 2, chainRoot: '0x2', entityKey: '0xk2', district: 'Pune'),
+        Witness(creator: '0xccc', nid: '0x3333cccc', captureTs: 3, chainRoot: '0x3', entityKey: '0xk3', district: 'Pune'),
+      ],
+    );
+    await tester.pumpWidget(MaterialApp(
+      theme: swatantraTheme(),
+      home: Scaffold(body: CorroborationStamp(cluster, expandable: true)),
+    ));
+    expect(find.text('Corroborated'), findsOneWidget);
+    expect(find.text('3 witnesses'), findsOneWidget);
+    expect(find.textContaining('INDEPENDENT WITNESSES'), findsNothing);
+    await tester.tap(find.text('Corroborated'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Pune'), findsWidgets);
+  });
+
+  testWidgets('onboarding card has a primary create action', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: swatantraTheme(),
+      home: const Scaffold(body: SingleChildScrollView(child: OnboardPanel())),
+    ));
+    expect(find.text('Create wallet'), findsOneWidget);
+    expect(find.text('Connect wallet'), findsOneWidget);
+    expect(find.textContaining('Stays on this device'), findsOneWidget);
+    expect(find.textContaining('TEST MODE'), findsNothing);
+  });
+
+  testWidgets('journalist screen shows a proof stepper', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(400, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(
+      theme: swatantraTheme(),
+      home: const Scaffold(body: JournalistScreen()),
+    ));
+    expect(find.text('Scan QR'), findsOneWidget);
+    expect(find.text('Generate proof'), findsOneWidget);
+    expect(find.text('Verified seal'), findsOneWidget);
+    expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+    expect(find.text('Proving…'), findsNothing);
+  });
+
+  testWidgets('tip sheet has presets and confirm', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: swatantraTheme(),
+      home: Scaffold(
+        body: TipSheet(
+          storyKey: '0xabc',
+          to: '0x2e1733523b5704cf431378618cc5e74bb1248997',
+          send: (amount) async => {'transferTx': '0xhash', 'entityKey': '0xent', 'amount': amount},
+        ),
+      ),
+    ));
+    expect(find.text('Support this desk'), findsOneWidget);
+    expect(find.text('GLM 0.001'), findsOneWidget);
+    expect(find.text('Custom'), findsOneWidget);
+    await tester.tap(find.text('Confirm tip'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tip sent'), findsOneWidget);
+    expect(find.text('On Arkiv'), findsOneWidget);
   });
 }

@@ -318,7 +318,6 @@ Future<Map<String, String>> createJournalistDart({
     str('app', Config.appAttr),
     str('type', 'journalist'),
     b32('nid', nullifier),
-    boolCell('test_mode', true),
     boolCell('groth16', groth16),
     boolCell('age_over_18', ageAbove18),
     boolCell('state_revealed', stateRevealed),

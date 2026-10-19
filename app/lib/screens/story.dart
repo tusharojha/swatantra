@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../arkiv/service.dart';
+import '../auth.dart';
 import '../config.dart';
 import '../models.dart';
 import '../proof_edition.dart';
 import '../theme.dart';
 import '../wallet.dart';
 import '../widgets/bits.dart';
+import '../widgets/sheets.dart';
+import '../widgets/skeleton.dart';
 
 class StoryScreen extends StatefulWidget {
   final String entityKey;
-  const StoryScreen({super.key, required this.entityKey});
+  final String? preview;
+  const StoryScreen({super.key, required this.entityKey, this.preview});
   @override
   State<StoryScreen> createState() => _StoryScreenState();
 }
@@ -23,10 +27,9 @@ class _StoryScreenState extends State<StoryScreen> {
   bool loading = true;
   bool proof = false;
   Corroboration? cluster;
-  final amount = TextEditingController(text: '0.01');
-  String tipPreset = '0.01';
-  bool customTip = false;
   String? status;
+  bool corroborating = false;
+  final scroll = ScrollController();
 
   @override
   void initState() {
@@ -34,9 +37,20 @@ class _StoryScreenState extends State<StoryScreen> {
     _load();
   }
 
+  void _maybeScrollFold() {
+    if (widget.preview != 'fold' && widget.preview != 'actions') return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!scroll.hasClients) return;
+      final max = scroll.position.maxScrollExtent;
+      if (max <= 0) return;
+      final frac = widget.preview == 'actions' ? 1.0 : 0.84;
+      scroll.jumpTo((max * frac).clamp(0, max));
+    });
+  }
+
   @override
   void dispose() {
-    amount.dispose();
+    scroll.dispose();
     super.dispose();
   }
 
@@ -49,8 +63,9 @@ class _StoryScreenState extends State<StoryScreen> {
         cluster = e == null ? null : ProofEdition.corroborationFor(e);
         proof = true;
         loading = false;
-        if (e == null) error = 'No proof-edition story for this key.';
+        if (e == null) error = 'No story for this key.';
       });
+      _maybeScrollFold();
       return;
     }
     setState(() {
@@ -68,65 +83,57 @@ class _StoryScreenState extends State<StoryScreen> {
       for (final t in tips) {
         total += BigInt.tryParse(t.attr('amount_wei', '0')) ?? BigInt.zero;
       }
-      if (mounted) {
-        Corroboration? c;
-        if (e != null) {
-          final district = e.district.isNotEmpty ? e.district : (cap?.district ?? e.city);
-          final ts = cap?.captureTsMs ?? e.captureTsMs;
-          c = await Arkiv.corroborationFor(district: district, captureTsMs: ts, geoCell: cap?.geoCell ?? e.geoCell);
-          if (c != null && c.ok && WalletStore.address != null) {
-            try {
-              await Arkiv.callWrite('createCorroboration', {
-                'district': c.district,
-                'geoCell': c.geoCell,
-                'windowStartMs': c.windowStart,
-                'windowEndMs': c.windowEnd,
-                'witnessCount': c.count,
-                'storyKey': e.key,
-              });
-            } catch (_) {}
-          }
-        }
-        setState(() {
-          story = e;
-          capture = cap;
-          cluster = c != null && c.ok ? c : null;
-          tipTotal = total.toString();
-          loading = false;
-          if (e == null) error = 'No live entity for this key. It may have expired.';
-        });
+      if (!mounted) return;
+      Corroboration? c;
+      if (e != null) {
+        final district = e.district.isNotEmpty ? e.district : (cap?.district ?? e.city);
+        final ts = cap?.captureTsMs ?? e.captureTsMs;
+        c = await Arkiv.corroborationFor(district: district, captureTsMs: ts, geoCell: cap?.geoCell ?? e.geoCell);
       }
+      setState(() {
+        story = e;
+        capture = cap;
+        cluster = c != null && c.ok ? c : null;
+        tipTotal = total.toString();
+        loading = false;
+        if (e == null) error = 'No live entity for this key. It may have expired.';
+      });
+      _maybeScrollFold();
     } catch (e) {
       if (mounted) {
         setState(() {
-          error = '$e';
+          error = sanitizeUi('$e');
           loading = false;
         });
       }
     }
   }
 
-  Future<void> _tip() async {
+  Future<void> _tip({String? amount, bool custom = false}) async {
     if (proof) {
       setState(() => status = 'Open a live story to send GLM on Arkiv Tiramisu.');
       return;
     }
-    if (WalletStore.address == null) {
-      setState(() => status = 'Create a wallet in Me first, then fund it on the Arkiv Tiramisu faucet.');
-      return;
-    }
-    setState(() => status = 'Sending GLM on Arkiv Tiramisu…');
-    try {
-      final r = await Arkiv.callWrite('createTip', {
-        'storyKey': widget.entityKey,
-        'to': story!.creator,
-        'amountEth': amount.text.trim(),
-        'note': 'Swatantra tip',
-      });
-      setState(() => status = 'Tipped. Transfer ${r['transferTx']} · tip entity ${r['entityKey']}');
+    if (!await ensureSignedIn(context, action: 'tip this desk')) return;
+    if (!mounted || story == null) return;
+    final result = await showAppSheet<TipResult>(
+      context,
+      TipSheet(
+        storyKey: widget.entityKey,
+        to: story!.creator,
+        initialAmount: amount,
+        startCustom: custom,
+        send: (v) => Arkiv.callWrite('createTip', {
+          'storyKey': widget.entityKey,
+          'to': story!.creator,
+          'amountEth': v,
+          'note': 'Swatantra tip',
+        }),
+      ),
+    );
+    if (result?.ok == true && mounted) {
+      setState(() => status = 'Tip recorded.');
       await _load();
-    } catch (e) {
-      setState(() => status = 'Tip failed: $e');
     }
   }
 
@@ -135,120 +142,162 @@ class _StoryScreenState extends State<StoryScreen> {
       setState(() => status = 'Lifetime Extension runs against a live Arkiv Tiramisu entity.');
       return;
     }
+    if (!await ensureSignedIn(context, action: 'keep this dispatch alive')) return;
+    if (!mounted) return;
     setState(() => status = 'Lifetime Extension…');
     try {
       final r = await Arkiv.callWrite('extendStory', {'entityKey': widget.entityKey});
-      setState(() => status = 'Extended. New expiry block ${r['expiresAt']}. Tx ${r['txHash']}');
+      setState(() => status = 'Extended. New expiry block ${r['expiresAt']}.');
     } catch (e) {
-      setState(() => status = 'Extension failed: $e');
+      setState(() => status = sanitizeUi('Extension failed: $e'));
     }
+  }
+
+  Future<void> _follow() async {
+    if (!await ensureSignedIn(context, action: 'follow this desk')) return;
+    if (!mounted || story == null) return;
+    final on = await FollowStore.toggle(story!.creator);
+    setState(() => status = on ? 'Following this desk.' : 'Unfollowed.');
+  }
+
+  Future<void> _report() async {
+    if (!await ensureSignedIn(context, action: 'log a notice')) return;
+    if (!mounted) return;
+    await showAppSheet<void>(context, ReportSheet(storyKey: widget.entityKey));
+  }
+
+  Future<void> _corroborate() async {
+    if (proof) {
+      setState(() => status = 'Corroboration writes to a live Arkiv entity.');
+      return;
+    }
+    if (cluster == null || !cluster!.ok) {
+      setState(() => status = 'Needs two independent captures in the same district ±30 minutes.');
+      return;
+    }
+    if (!await ensureSignedIn(context, action: 'corroborate this capture')) return;
+    if (!mounted || story == null) return;
+    setState(() {
+      corroborating = true;
+      status = 'Writing corroboration…';
+    });
+    try {
+      final c = cluster!;
+      await Arkiv.callWrite('createCorroboration', {
+        'district': c.district,
+        'geoCell': c.geoCell,
+        'windowStartMs': c.windowStart,
+        'windowEndMs': c.windowEnd,
+        'witnessCount': c.count,
+        'storyKey': story!.key,
+      });
+      if (mounted) setState(() => status = 'Corroboration recorded.');
+    } catch (e) {
+      if (mounted) setState(() => status = sanitizeUi('$e'));
+    } finally {
+      if (mounted) setState(() => corroborating = false);
+    }
+  }
+
+  Future<void> _share() async {
+    await copy(context, protectedLink(widget.entityKey));
   }
 
   @override
   Widget build(BuildContext context) {
     final s = story;
+    final following = s != null && FollowStore.of(s.creator);
     return PageWidth(
       max: Swa.articleWidth,
       child: ListView(
-      padding: Swa.pagePadding,
-      children: [
-        TextButton.icon(
-          onPressed: () => context.go('/'),
-          style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
-          icon: const Icon(SwaI.back, size: 16, color: Swa.magenta),
-          label: Text('Feed', style: Swa.kicker),
-        ),
-        const SizedBox(height: 16),
-        if (loading) const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator())),
-        if (error != null) TestModeBanner(error!),
-        if (s != null) ...[
-          Kicker(s.category.isEmpty ? 'story' : s.category),
-          if (cluster != null) CorroborationStamp(cluster!),
-          const SizedBox(height: 12),
-          Text(s.title, style: Swa.playfair(size: 34, weight: FontWeight.w700, height: 1.12)),
-          const SizedBox(height: 16),
-          Text(standfirst(s.body), style: Swa.serif(size: 18, height: 1.45, weight: FontWeight.w400)),
-          const SizedBox(height: 12),
-          BylineRow(s),
-          const SizedBox(height: 24),
-          if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 280),
-          const SizedBox(height: 24),
-          Text(articleRest(s.body), style: Swa.serif(size: 17, height: 1.5)),
-          const SizedBox(height: 24),
-          _VerifyBlock(story: s, capture: capture, proof: proof),
-          if (cluster != null && cluster!.ok) ...[
-            const SizedBox(height: 16),
-            _WitnessList(cluster: cluster!, proof: proof),
-          ],
-          const SizedBox(height: 16),
-          const Hairline(),
-          const SizedBox(height: 16),
-          Wrap(
-            children: [
-              ActionPill(
-                icon: SwaI.tip,
-                label: 'GLM 0.01',
-                selected: !customTip && tipPreset == '0.01',
-                onTap: () {
-                  setState(() {
-                    customTip = false;
-                    tipPreset = '0.01';
-                    amount.text = '0.01';
-                  });
-                  _tip();
-                },
-              ),
-              ActionPill(
-                icon: SwaI.tip,
-                label: 'GLM 0.05',
-                selected: !customTip && tipPreset == '0.05',
-                onTap: () {
-                  setState(() {
-                    customTip = false;
-                    tipPreset = '0.05';
-                    amount.text = '0.05';
-                  });
-                  _tip();
-                },
-              ),
-              ActionPill(
-                icon: SwaI.tip,
-                label: 'Custom',
-                selected: customTip,
-                onTap: () => setState(() => customTip = true),
-              ),
-              ActionPill(icon: SwaI.extend, label: 'Keep alive', onTap: _extend),
-            ],
+        controller: scroll,
+        padding: Swa.pagePadding,
+        children: [
+          TextButton.icon(
+            onPressed: () => context.go('/'),
+            style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
+            icon: const Icon(SwaI.back, size: 16, color: Swa.magenta),
+            label: Text('Feed', style: Swa.kicker),
           ),
-          if (customTip) ...[
-            const SizedBox(height: 8),
-            Row(
+          const SizedBox(height: 16),
+          if (loading) const ArticleSkeleton(),
+          if (error != null) ErrorNote(error!),
+          if (s != null) ...[
+            Kicker(s.category.isEmpty ? 'story' : s.category),
+            if (cluster != null) CorroborationStamp(cluster!, expandable: true),
+            const SizedBox(height: 12),
+            Text(s.title, style: Swa.playfair(size: 34, weight: FontWeight.w700, height: 1.12)),
+            const SizedBox(height: 16),
+            Text(standfirst(s.body), style: Swa.serif(size: 18, height: 1.45, weight: FontWeight.w400)),
+            const SizedBox(height: 12),
+            BylineRow(s),
+            const SizedBox(height: 14),
+            Wrap(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: amount,
-                    decoration: const InputDecoration(
-                      hintText: 'GLM',
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      filled: false,
-                    ),
-                  ),
+                ActionPill(key: const ValueKey('action-tip'), icon: SwaI.tip, label: 'Tip', accent: true, onTap: _tip),
+                ActionPill(icon: SwaI.share, label: 'Share', onTap: _share),
+                ActionPill(
+                  key: const ValueKey('action-follow'),
+                  icon: following ? SwaI.following : SwaI.follow,
+                  label: following ? 'Following' : 'Follow',
+                  selected: following,
+                  onTap: _follow,
                 ),
-                ActionPill(icon: SwaI.tip, label: 'Send', accent: true, onTap: _tip),
+                ActionPill(
+                  key: const ValueKey('action-corroborate'),
+                  icon: SwaI.corroborated,
+                  label: corroborating ? 'Writing…' : 'Corroborate',
+                  selected: cluster?.ok == true,
+                  onTap: corroborating ? null : _corroborate,
+                ),
+                ActionPill(
+                  key: const ValueKey('action-report'),
+                  icon: SwaI.report,
+                  label: 'Report',
+                  onTap: _report,
+                ),
+                ActionPill(icon: SwaI.extend, label: 'Keep alive', onTap: _extend),
               ],
             ),
-          ],
-          if (tipTotal != '0')
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text('$tipTotal wei tipped · GLM on Arkiv Tiramisu', style: Swa.byline),
+            const SizedBox(height: 20),
+            if (s.mediaUrl.isNotEmpty) StoryImage(s, height: 280),
+            const SizedBox(height: 24),
+            Text(articleRest(s.body), style: Swa.serif(size: 17, height: 1.5)),
+            const SizedBox(height: 24),
+            _VerifyBlock(story: s, capture: capture, proof: proof),
+            if (cluster != null && cluster!.ok) ...[
+              const SizedBox(height: 16),
+              _WitnessList(cluster: cluster!, proof: proof),
+            ],
+            const SizedBox(height: 24),
+            const Hairline(),
+            const SizedBox(height: 20),
+            const Kicker('Support'),
+            const SizedBox(height: 8),
+            Text('Tip this desk', style: Swa.playfair(size: 22)),
+            const SizedBox(height: 8),
+            Text('GLM on Arkiv Tiramisu. Presets, or your own amount.', style: Swa.serif(size: 14, color: Swa.muted, height: 1.4)),
+            const SizedBox(height: 12),
+            Wrap(
+              children: [
+                ActionPill(icon: SwaI.tip, label: 'GLM 0.001', accent: true, onTap: () => _tip(amount: '0.001')),
+                ActionPill(icon: SwaI.tip, label: 'GLM 0.01', onTap: () => _tip(amount: '0.01')),
+                ActionPill(icon: SwaI.tip, label: 'GLM 0.05', onTap: () => _tip(amount: '0.05')),
+                ActionPill(icon: SwaI.tip, label: 'Custom', onTap: () => _tip(custom: true)),
+              ],
             ),
-          if (status != null) ...[const SizedBox(height: 12), TestModeBanner(status!)],
+            if (tipTotal != '0')
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Text('${formatGlm(tipTotal)} tipped · on Arkiv Tiramisu', style: Swa.byline),
+              ),
+            if (status != null) ...[
+              const SizedBox(height: 12),
+              Text(sanitizeUi(status!), style: Swa.serif(size: 14, color: Swa.muted, height: 1.45)),
+            ],
+          ],
         ],
-      ],
-    ),
+      ),
     );
   }
 }
@@ -265,50 +314,55 @@ class _VerifyBlock extends StatelessWidget {
         ? capture!.attr('chain_root')
         : (story.captureRoot.isNotEmpty ? story.captureRoot : '—');
     final entityUrl = proof ? Config.explorer : explorerEntity(story.key);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(SwaI.hash, size: 16, color: Swa.magenta),
-            const SizedBox(width: 6),
-            Text('CAPTURE HASH', style: Swa.dateline.copyWith(color: Swa.muted)),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Mono(hash, maxLines: 3),
-        const SizedBox(height: 12),
-        Wrap(
-          children: [
-            if (capture != null)
-              ActionPill(
-                icon: SwaI.verify,
-                label: 'Verify',
-                onTap: () => context.go('/verify?root=${capture!.attr('chain_root')}'),
-              ),
-            ActionPill(
-              icon: SwaI.copy,
-              label: 'Copy link',
-              onTap: () => copy(context, protectedLink(story.key)),
-            ),
-            ActionPill(
-              icon: SwaI.open,
-              label: 'Entity',
-              onTap: () => openUrl(entityUrl),
-            ),
-            ActionPill(
-              icon: SwaI.me,
-              label: 'Creator',
-              onTap: () => openUrl(explorerAddr(story.creator)),
-            ),
-          ],
-        ),
-        if (capture != null)
-          Text(
-            '${capture!.attr('frame_count')} frame(s) · ${capture!.district}',
-            style: Swa.byline,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Swa.wash,
+        borderRadius: BorderRadius.circular(Swa.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              CaptureSeal(),
+            ],
           ),
-      ],
+          const SizedBox(height: 12),
+          Text('CAPTURE HASH', style: Swa.dateline.copyWith(color: Swa.muted)),
+          const SizedBox(height: 4),
+          Mono(hash, maxLines: 3),
+          const SizedBox(height: 12),
+          Wrap(
+            children: [
+              if (capture != null)
+                ActionPill(
+                  icon: SwaI.verify,
+                  label: 'Verify',
+                  onTap: () => context.go('/verify?root=${capture!.attr('chain_root')}'),
+                ),
+              ActionPill(
+                icon: SwaI.copy,
+                label: 'Copy link',
+                onTap: () => copy(context, protectedLink(story.key)),
+              ),
+              OnArkivLink(url: entityUrl),
+              ActionPill(
+                icon: SwaI.me,
+                label: 'Creator',
+                onTap: () => openUrl(explorerAddr(story.creator)),
+              ),
+            ],
+          ),
+          if (capture != null)
+            Text(
+              '${capture!.attr('frame_count')} frame(s) · ${capture!.district}',
+              style: Swa.byline,
+            ),
+        ],
+      ),
     );
   }
 }
@@ -325,35 +379,53 @@ class _WitnessList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Hairline(),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         const Kicker('Witnesses'),
         const SizedBox(height: 8),
         Text('${cluster.district} district', style: Swa.playfair(size: 22)),
         const SizedBox(height: 8),
         Text(
-          'Independent captures in the same district ±30 minutes. Identity is a nullifier or \$creator, never a name. Precise GPS is never stored.',
+          'Independent captures in the same district ±30 minutes. Identity is a nullifier or \$creator, never a name.',
           style: Swa.serif(size: 14, color: Swa.muted, height: 1.45),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         _DistrictCell(district: cluster.district, geoCell: cluster.geoCell, n: cluster.count),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         for (var i = 0; i < witnesses.length; i++) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Column(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(witnesses[i].anonId, style: Swa.playfair(size: 16, height: 1.3)),
-                const SizedBox(height: 4),
-                Text(
-                  '${relativeTime(witnesses[i].captureTs)} · root ${shortAddr(witnesses[i].chainRoot)}',
-                  style: Swa.byline,
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Swa.wash,
+                    border: Border.all(color: Swa.line),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(child: Text('${i + 1}', style: Swa.ui(size: 12, weight: FontWeight.w700))),
                 ),
-                TextButton(
-                  onPressed: proof
-                      ? null
-                      : () => openUrl(explorerEntity(witnesses[i].entityKey)),
-                  child: const Text('Open capture entity'),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(witnesses[i].anonId, style: Swa.playfair(size: 16, height: 1.3)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${relativeTime(witnesses[i].captureTs)} · root ${shortAddr(witnesses[i].chainRoot)}',
+                        style: Swa.byline,
+                      ),
+                      const SizedBox(height: 6),
+                      ActionPill(
+                        icon: SwaI.open,
+                        label: 'Open capture',
+                        onTap: proof ? null : () => openUrl(explorerEntity(witnesses[i].entityKey)),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -377,7 +449,10 @@ class _DistrictCell extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(border: Border.all(color: Swa.line)),
+      decoration: BoxDecoration(
+        border: Border.all(color: Swa.line),
+        borderRadius: BorderRadius.circular(Swa.radiusMd),
+      ),
       child: Row(
         children: [
           SizedBox(
@@ -392,7 +467,10 @@ class _DistrictCell extends StatelessWidget {
                       return Expanded(
                         child: Container(
                           margin: const EdgeInsets.all(2),
-                          color: centre ? Swa.magenta : Swa.wash,
+                          decoration: BoxDecoration(
+                            color: centre ? Swa.magenta : Swa.wash,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                       );
                     }),
