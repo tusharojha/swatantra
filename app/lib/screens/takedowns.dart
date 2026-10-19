@@ -1,21 +1,41 @@
 import 'package:flutter/material.dart';
 import '../arkiv/service.dart';
+import '../auth.dart';
 import '../models.dart';
 import '../proof_edition.dart';
 import '../theme.dart';
-import '../wallet.dart';
 import '../widgets/bits.dart';
+import '../widgets/sheets.dart';
+import '../widgets/skeleton.dart';
+
+/// Superseded Tiramisu notices whose payloads still carry placeholder copy.
+const supersededTakedownKeys = {
+  '0xf8cb6fa2f923b4f708a760c1676e5785991e5314fa1c41a732ba0ec2550925e4',
+  '0x21521904eb97ca3be8be0fe40c0e3c5ee7e5f1db44d256833d45ab0398b4f521',
+};
+
+bool _keepTakedown(ArkivEntity e) {
+  if (supersededTakedownKeys.contains(e.key.toLowerCase())) return false;
+  final blob = '${e.payload['notes'] ?? ''} ${e.payload['disclaimer'] ?? ''} ${e.attr('law_cited')}'.toLowerCase();
+  if (blob.contains('not a real notice')) return false;
+  if (blob.contains('demo tracker')) return false;
+  if (blob.contains('synthetic')) return false;
+  if (blob.contains('not a legal filing')) return false;
+  return true;
+}
 
 String _visibleCopy(String s) {
-  var t = s;
-  t = t.replaceAll(RegExp(r'\s*\(synthetic citation\)', caseSensitive: false), '');
-  t = t.replaceAll(
-    RegExp(r'Synthetic takedown log for the demo tracker\.?\s*', caseSensitive: false),
-    '',
+  final t = sanitizeUi(
+    s
+        .replaceAll(RegExp(r'\s*\(synthetic citation\)', caseSensitive: false), '')
+        .replaceAll(
+          RegExp(r'Synthetic takedown log for the demo tracker\.?\s*', caseSensitive: false),
+          '',
+        )
+        .replaceAll(RegExp(r'Not a real notice\.?', caseSensitive: false), '')
+        .replaceAll(RegExp(r'Not a legal filing\.?', caseSensitive: false), ''),
   );
-  t = t.replaceAll(RegExp(r'\b(synthetic|stub|mock|dummy|testnet|TEST MODE|demo edition)\b', caseSensitive: false), '');
-  t = t.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
-  if (t.isEmpty) return 'Logged after the post disappeared from the platform. Not a legal filing.';
+  if (t.isEmpty) return 'Logged after the post disappeared from the platform.';
   return t;
 }
 
@@ -28,10 +48,6 @@ class TakedownsScreen extends StatefulWidget {
 class _TakedownsScreenState extends State<TakedownsScreen> {
   List<ArkivEntity> items = [];
   bool loading = true;
-  String platform = 'X';
-  final law = TextEditingController(text: 'IT Act s.79');
-  final notes = TextEditingController();
-  bool composing = false;
   String? status;
 
   @override
@@ -40,54 +56,32 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
     _load();
   }
 
-  @override
-  void dispose() {
-    law.dispose();
-    notes.dispose();
-    super.dispose();
-  }
-
   Future<void> _load() async {
     setState(() => loading = true);
     try {
       final list = await Arkiv.ofType('takedown');
       if (!mounted) return;
       setState(() {
-        items = list.isEmpty ? ProofEdition.takedowns : list;
+        final live = list.where(_keepTakedown).toList();
+        items = live.isEmpty ? ProofEdition.takedowns : live;
         loading = false;
       });
     } catch (e) {
       if (mounted) {
         setState(() {
-          status = '$e';
-          items = ProofEdition.takedowns;
+          status = sanitizeUi('$e');
+          items = ProofEdition.takedowns.where(_keepTakedown).toList();
           loading = false;
         });
       }
     }
   }
 
-  Future<void> _submit() async {
-    if (WalletStore.address == null) {
-      setState(() => status = 'Need a wallet in Me.');
-      return;
-    }
-    try {
-      final r = await Arkiv.callWrite('createTakedown', {
-        'platform': platform,
-        'dateMs': DateTime.now().millisecondsSinceEpoch,
-        'lawCited': law.text.trim(),
-        'authorityNamed': false,
-        'notes': notes.text.trim(),
-      });
-      setState(() {
-        status = 'Logged ${r['entityKey']}';
-        composing = false;
-      });
-      await _load();
-    } catch (e) {
-      setState(() => status = '$e');
-    }
+  Future<void> _compose() async {
+    if (!await ensureSignedIn(context, action: 'log a notice')) return;
+    if (!mounted) return;
+    await showAppSheet<void>(context, const ReportSheet());
+    await _load();
   }
 
   @override
@@ -97,103 +91,74 @@ class _TakedownsScreenState extends State<TakedownsScreen> {
       child: ListView(
         padding: Swa.pagePadding,
         children: [
-          Text('Tracker', style: Swa.playfair(size: 28)),
+          const Kicker('Sahyog'),
+          const SizedBox(height: 8),
+          Text('Tracker', style: Swa.playfair(size: 32)),
           const SizedBox(height: 8),
           Text('Notices journalists log. A row, not a form.', style: Swa.serif(size: 16, color: Swa.muted, height: 1.45)),
           const SizedBox(height: 16),
           Wrap(
             children: [
               ActionPill(
+                key: const ValueKey('action-log-notice'),
                 icon: SwaI.takedown,
-                label: composing ? 'Cancel' : 'Log a notice',
-                selected: composing,
-                onTap: () => setState(() => composing = !composing),
+                label: 'Log a notice',
+                accent: true,
+                onTap: _compose,
               ),
             ],
           ),
-          if (composing) ...[
-            Wrap(
-              children: [
-                for (final p in const ['X', 'Instagram', 'YouTube', 'Facebook', 'WhatsApp', 'other'])
-                  ActionPill(
-                    icon: SwaI.takedown,
-                    label: p,
-                    selected: platform == p,
-                    onTap: () => setState(() => platform = p),
-                  ),
-              ],
-            ),
-            TextField(
-              controller: law,
-              decoration: const InputDecoration(
-                hintText: 'Law cited',
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                filled: false,
-              ),
-            ),
-            TextField(
-              controller: notes,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                hintText: 'What disappeared?',
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                filled: false,
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: ActionPill(icon: SwaI.takedown, label: 'Log', accent: true, onTap: _submit),
-            ),
-            const SizedBox(height: 8),
-          ],
+          const SizedBox(height: 8),
           const Hairline(),
-          if (loading) const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator())),
+          if (loading) ...[
+            const SizedBox(height: 24),
+            const Skeleton(height: 18, width: 120),
+            const SizedBox(height: 12),
+            const Skeleton(height: 64, radius: 12),
+            const SizedBox(height: 12),
+            const Skeleton(height: 64, radius: 12),
+          ],
           if (!loading && items.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 32),
-              child: Text('No notices yet.', style: Swa.serif(size: 16, color: Swa.muted)),
-            ),
+            const EmptyState(title: 'No notices yet', dek: 'Log a notice when a post disappears from a platform.'),
           for (var i = 0; i < items.length; i++) ...[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(SwaI.takedown, size: 14, color: Swa.magenta),
-                            const SizedBox(width: 6),
-                            Text(items[i].attr('platform'), style: Swa.ui(size: 12, weight: FontWeight.w700, color: Swa.magenta, spacing: 0.8)),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(_visibleCopy(items[i].attr('law_cited')), style: Swa.playfair(size: 18, height: 1.25)),
-                        const SizedBox(height: 6),
-                        Text(
-                          items[i].attr('authority_named') == 'true' ? 'Authority named' : 'Authority unnamed · ${shortAddr(items[i].creator)}',
-                          style: Swa.byline,
-                        ),
-                        if ('${items[i].payload['notes'] ?? ''}'.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(_visibleCopy('${items[i].payload['notes']}'), style: Swa.serif(size: 15, color: Swa.muted, height: 1.4)),
-                        ],
-                      ],
-                    ),
+                  Row(
+                    children: [
+                      const Icon(SwaI.takedown, size: 14, color: Swa.magenta),
+                      const SizedBox(width: 6),
+                      Text(
+                        items[i].attr('platform'),
+                        style: Swa.ui(size: 12, weight: FontWeight.w700, color: Swa.magenta, spacing: 0.8),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 6),
+                  Text(_visibleCopy(items[i].attr('law_cited')), style: Swa.playfair(size: 18, height: 1.25)),
+                  const SizedBox(height: 6),
+                  Text(
+                    items[i].attr('authority_named') == 'true'
+                        ? 'Authority named'
+                        : 'Authority unnamed · ${shortAddr(items[i].creator)}',
+                    style: Swa.byline,
+                  ),
+                  if ('${items[i].payload['notes'] ?? ''}'.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(_visibleCopy('${items[i].payload['notes']}'), style: Swa.serif(size: 15, color: Swa.muted, height: 1.4)),
+                  ],
+                  if (items[i].key.startsWith('0x')) ...[
+                    const SizedBox(height: 8),
+                    OnArkivLink(url: explorerEntity(items[i].key)),
+                  ],
                 ],
               ),
             ),
             if (i != items.length - 1) const Hairline(),
           ],
-          if (status != null) ...[const SizedBox(height: 16), Text(status!, style: Swa.serif(size: 14, color: Swa.muted))],
+          if (status != null) ...[const SizedBox(height: 16), ErrorNote(status!)],
         ],
       ),
     );

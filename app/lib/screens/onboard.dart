@@ -138,17 +138,20 @@ class _OnboardPanelState extends State<OnboardPanel> {
         Wrap(
           children: [
             ActionPill(
+              key: const ValueKey('sign-in-create'),
               icon: SwaI.wallet,
               label: busy ? 'Working…' : 'Create wallet',
               accent: true,
               onTap: busy ? null : _create,
             ),
             ActionPill(
+              key: const ValueKey('sign-in-connect'),
               icon: SwaI.wallet,
               label: 'Connect wallet',
               onTap: busy ? null : _connect,
             ),
             ActionPill(
+              key: const ValueKey('sign-in-import-toggle'),
               icon: SwaI.key,
               label: showImport ? 'Hide import' : 'Import key',
               selected: showImport,
@@ -170,13 +173,13 @@ class _OnboardPanelState extends State<OnboardPanel> {
             ),
           ),
           const SizedBox(height: 12),
-          ActionPill(icon: SwaI.key, label: 'Import on this device', accent: true, onTap: busy ? null : _import),
+          ActionPill(key: const ValueKey('sign-in-import'), icon: SwaI.key, label: 'Import on this device', accent: true, onTap: busy ? null : _import),
         ],
         const SizedBox(height: 16),
         Text(
           kIsWeb
-              ? 'Desktop: Connect wallet uses an injected wallet (MetaMask) and adds Tiramisu (7738577). Phone: Create wallet, or Import key. WalletConnect is skipped unless WALLETCONNECT_PROJECT_ID is set at build time.'
-              : 'On this phone, Create wallet is the fastest path. Import a key if you already have a funded burner.',
+              ? 'On a phone, Create wallet is one tap — the key stays here. On desktop, Connect wallet uses an injected wallet and adds Arkiv Tiramisu.'
+              : 'Create wallet is one tap on this phone. Import a key if you already have a funded one.',
           style: Swa.ui(size: 13, color: Swa.muted, weight: FontWeight.w400, height: 1.45),
         ),
         if (status != null) ...[

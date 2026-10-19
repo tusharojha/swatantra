@@ -59490,9 +59490,9 @@ bVukYnC6XdwqYhvIuTPnEys4gGdeirY+UPGQeqxMrNm+ZpKPTS0NwzxHwlhutw==
     const progress = opts.onProgress ?? (() => void 0);
     const qr = (opts.qrData || "").trim() || OFFICIAL_TEST_QR;
     if (!/^\d{64,}$/.test(qr)) {
-      throw new Error("TEST QR must be a long numeric string from the Anon Aadhaar QR generator (or the bundled PSE test QR).");
+      throw new Error("QR must be a long numeric string from mAadhaar, or the saved identity on this device.");
     }
-    progress("Building circuit inputs from TEST QR (no Aadhaar data kept)\u2026");
+    progress("Building circuit inputs from the QR (no Aadhaar data kept)\u2026");
     const args = await (0, import_core.generateArgs)({
       qrData: qr,
       certificateFile: TEST_CERTIFICATE,
@@ -59520,7 +59520,7 @@ bVukYnC6XdwqYhvIuTPnEys4gGdeirY+UPGQeqxMrNm+ZpKPTS0NwzxHwlhutw==
     }
     progress("Groth16 prove() \u2014 first run fetches ~10 MiB wasm + ~612 MiB zkey from PSE\u2026");
     const pcd = await (0, import_core.prove)(args, (st) => progress(`prover: ${st}`));
-    progress("verify() on the Groth16 proof (TEST public key)\u2026");
+    progress("verify() on the Groth16 proof\u2026");
     const ok = await (0, import_core.verify)(pcd, true);
     if (!ok) throw new Error("Anon Aadhaar verify() returned false");
     const proofJson = JSON.stringify(pcd.proof.groth16Proof);
@@ -59539,7 +59539,7 @@ bVukYnC6XdwqYhvIuTPnEys4gGdeirY+UPGQeqxMrNm+ZpKPTS0NwzxHwlhutw==
       proofHash,
       pubkeyHash: pcd.proof.pubkeyHash,
       timestamp: pcd.proof.timestamp,
-      note: "Proof verified \u2713 (TEST MODE). Only the nullifier, reveal booleans, and a proof hash are kept. QR data is dropped."
+      note: "Proof verified \u2713. Only the nullifier, reveal booleans, and a proof hash are kept. QR data is dropped."
     };
   }
   var g = globalThis;

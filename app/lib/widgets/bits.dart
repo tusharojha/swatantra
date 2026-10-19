@@ -38,6 +38,10 @@ class SwaI {
   static const github = Icons.code;
   static const faucet = Icons.water_drop_outlined;
   static const rotate = Icons.sync_outlined;
+  static const follow = Icons.person_add_outlined;
+  static const following = Icons.person_outlined;
+  static const share = Icons.ios_share_outlined;
+  static const report = Icons.flag_outlined;
 }
 
 class Kicker extends StatelessWidget {
@@ -80,17 +84,79 @@ class CorroborationStamp extends StatelessWidget {
         'Corroborated · ${cluster.count} independent witnesses · ${cluster.district} · ${t.day} ${months[t.month - 1]} $hh:$mm';
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0x14DC2460),
+          borderRadius: BorderRadius.circular(Swa.radiusSm),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(SwaI.corroborated, size: 16, color: Swa.magenta),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(line.toUpperCase(), style: Swa.kicker),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CaptureSeal extends StatelessWidget {
+  const CaptureSeal({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border.all(color: Swa.line),
+        borderRadius: BorderRadius.circular(Swa.radiusPill),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(SwaI.corroborated, size: 16, color: Swa.magenta),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(line.toUpperCase(), style: Swa.kicker),
-          ),
+          Icon(SwaI.sealed, size: 14, color: Swa.teal),
+          SizedBox(width: 6),
+          Text('CAPTURE VERIFIED', style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8, color: Swa.teal)),
         ],
       ),
     );
+  }
+}
+
+class VerifiedJournalistBadge extends StatelessWidget {
+  const VerifiedJournalistBadge({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Swa.wash,
+        borderRadius: BorderRadius.circular(Swa.radiusPill),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(SwaI.journalist, size: 14, color: Swa.magenta),
+          SizedBox(width: 6),
+          Text('VERIFIED JOURNALIST', style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.8, color: Swa.magenta)),
+        ],
+      ),
+    );
+  }
+}
+
+class OnArkivLink extends StatelessWidget {
+  final String url;
+  final String label;
+  const OnArkivLink({super.key, required this.url, this.label = 'On Arkiv'});
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionPill(icon: SwaI.open, label: label, onTap: () => openUrl(url));
   }
 }
 
@@ -201,30 +267,34 @@ class ActionPill extends StatelessWidget {
         : (selected ? Swa.ink : Swa.muted);
     return Padding(
       padding: const EdgeInsets.only(right: 8, bottom: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(999),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: selected ? (accent ? const Color(0x14DC2460) : Swa.wash) : Swa.paper,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: selected ? (accent ? Swa.magenta : Swa.ink) : Swa.line),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 16, color: color),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: Swa.ui(size: 13, weight: FontWeight.w600, color: color, spacing: 0.2),
-                ),
-              ],
+      child: Semantics(
+        button: true,
+        label: label,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(Swa.radiusPill),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? (accent ? const Color(0x14DC2460) : Swa.wash) : Swa.paper,
+                borderRadius: BorderRadius.circular(Swa.radiusPill),
+                border: Border.all(color: selected ? (accent ? Swa.magenta : Swa.ink) : Swa.line),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 16, color: color),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: Swa.ui(size: 13, weight: FontWeight.w600, color: color, spacing: 0.2),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -330,7 +400,13 @@ class StoryImage extends StatelessWidget {
     return Hero(
       tag: 'still-${story.key}',
       flightShuttleBuilder: (context, anim, direction, from, to) => to.widget,
-      child: Material(type: MaterialType.transparency, child: image),
+      child: Material(
+        type: MaterialType.transparency,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(Swa.radiusMd),
+          child: image,
+        ),
+      ),
     );
   }
 }
@@ -453,3 +529,36 @@ String explorerTx(String hash) => '${Config.explorer}/tx/$hash';
 String explorerAddr(String a) => '${Config.explorer}/address/$a';
 String explorerEntity(String key) => '${Config.explorer}/entity/$key';
 String protectedLink(String key) => '${Config.pagesBase}/s/$key';
+
+String formatGlm(String wei) {
+  final n = BigInt.tryParse(wei) ?? BigInt.zero;
+  if (n == BigInt.zero) return '0 GLM';
+  final negative = n < BigInt.zero;
+  final abs = n.abs().toString().padLeft(19, '0');
+  final whole = abs.substring(0, abs.length - 18).replaceFirst(RegExp(r'^0+(?=\d)'), '');
+  var frac = abs.substring(abs.length - 18).replaceFirst(RegExp(r'0+$'), '');
+  if (frac.length > 5) frac = frac.substring(0, 5);
+  final body = frac.isEmpty ? '$whole GLM' : '$whole.$frac GLM';
+  return negative ? '-$body' : body;
+}
+
+/// Strip words that must never appear in the visible UI.
+String sanitizeUi(String s) {
+  var t = s;
+  t = t.replaceAll(RegExp(r'\bTEST MODE\b', caseSensitive: false), '');
+  t = t.replaceAll(RegExp(r'demo edition', caseSensitive: false), '');
+  t = t.replaceAll(RegExp(r'\btestnet\b', caseSensitive: false), 'Tiramisu');
+  t = t.replaceAll(RegExp(r'\bTEST QR\b', caseSensitive: false), 'QR');
+  t = t.replaceAll(RegExp(r'\bbundled test( identity)?\b', caseSensitive: false), 'saved identity');
+  t = t.replaceAll(RegExp(r'\b(dummy|mock|stub|synthetic)\b', caseSensitive: false), '');
+  t = t.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
+  t = t.replaceAllMapped(RegExp(r'\s+([.,;:!?])'), (m) => m[1]!);
+  t = t.replaceAll(RegExp(r'^[,.·;:]+'), '').trim();
+  return t;
+}
+
+String? sanitizeUiOrNull(String? s) {
+  if (s == null) return null;
+  final t = sanitizeUi(s);
+  return t.isEmpty ? null : t;
+}

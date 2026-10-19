@@ -15,7 +15,8 @@ import 'wallet.dart';
 import 'widgets/bits.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final binding = WidgetsFlutterBinding.ensureInitialized();
+  binding.ensureSemantics();
   usePathUrlStrategy();
   Config.applyLaunch();
   await WalletStore.init();

@@ -5,10 +5,12 @@ import 'package:swatantra/arkiv/anon.dart';
 import 'package:swatantra/arkiv/hash.dart';
 import 'package:swatantra/geo/districts.dart';
 import 'package:swatantra/arkiv/write.dart';
+import 'package:swatantra/auth.dart';
 import 'package:swatantra/main.dart';
 import 'package:swatantra/proof_edition.dart';
 import 'package:swatantra/theme.dart';
 import 'package:swatantra/widgets/bits.dart';
+import 'package:swatantra/widgets/sheets.dart';
 
 void main() {
   testWidgets('App loads with rangoli logo and brand palette', (tester) async {
@@ -92,5 +94,62 @@ void main() {
     final h = ident32Hex('app');
     expect(h.startsWith('0x617070'), isTrue);
     expect(h.length, 66);
+  });
+
+  test('formatGlm and sanitizeUi', () {
+    expect(formatGlm('0'), '0 GLM');
+    expect(formatGlm('1000000000000000'), '0.001 GLM');
+    expect(sanitizeUi('Anon Aadhaar TEST MODE. Nullifier only.'), 'Anon Aadhaar. Nullifier only.');
+    expect(sanitizeUi('bundled test identity'), 'saved identity');
+    expect(sanitizeUi('GLM on testnet'), 'GLM on Tiramisu');
+  });
+
+  testWidgets('browse never asks for a wallet', (tester) async {
+    await tester.pumpWidget(const SwatantraApp());
+    await tester.pump();
+    expect(find.textContaining('Needed to'), findsNothing);
+    expect(find.text('Create wallet'), findsNothing);
+    expect(find.text('Sign in'), findsNothing);
+  });
+
+  testWidgets('sign-in sheet appears for a gated action', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: swatantraTheme(),
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: ActionPill(
+            icon: SwaI.tip,
+            label: 'Tip',
+            onTap: () => ensureSignedIn(context, action: 'tip this desk'),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('Tip'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Needed to tip this desk'), findsOneWidget);
+    expect(find.text('Create wallet'), findsOneWidget);
+    expect(find.text('Connect wallet'), findsOneWidget);
+    expect(find.textContaining('TEST MODE'), findsNothing);
+  });
+
+  testWidgets('tip sheet has presets and confirm', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      theme: swatantraTheme(),
+      home: Scaffold(
+        body: TipSheet(
+          storyKey: '0xabc',
+          to: '0x2e1733523b5704cf431378618cc5e74bb1248997',
+          send: (amount) async => {'transferTx': '0xhash', 'entityKey': '0xent', 'amount': amount},
+        ),
+      ),
+    ));
+    expect(find.text('Support this desk'), findsOneWidget);
+    expect(find.text('GLM 0.001'), findsOneWidget);
+    expect(find.text('Custom'), findsOneWidget);
+    await tester.tap(find.text('Confirm tip'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tip sent'), findsOneWidget);
+    expect(find.text('On Arkiv'), findsOneWidget);
   });
 }

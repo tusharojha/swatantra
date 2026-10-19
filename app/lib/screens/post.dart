@@ -9,9 +9,11 @@ import '../arkiv/js.dart';
 import '../arkiv/service.dart';
 import '../geo/districts.dart';
 import '../models.dart';
+import '../auth.dart';
 import '../theme.dart';
 import '../wallet.dart';
 import '../widgets/bits.dart';
+import '../widgets/sheets.dart';
 
 enum _PostPhase { capture, compose }
 
@@ -146,6 +148,7 @@ class _PostScreenState extends State<PostScreen> {
   }
 
   Future<void> _camera() async {
+    if (!await ensureSignedIn(context, action: 'capture a still')) return;
     try {
       final x = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 85);
       if (x != null) {
@@ -164,6 +167,7 @@ class _PostScreenState extends State<PostScreen> {
   }
 
   Future<void> _gallery() async {
+    if (!await ensureSignedIn(context, action: 'capture a still')) return;
     try {
       final x = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 85);
       if (x != null) {
@@ -180,10 +184,8 @@ class _PostScreenState extends State<PostScreen> {
   }
 
   Future<void> _publish() async {
-    if (WalletStore.address == null) {
-      setState(() => status = 'Create a wallet in Me to publish.');
-      return;
-    }
+    if (!await ensureSignedIn(context, action: 'publish this dispatch')) return;
+    if (!mounted) return;
     if (title.text.trim().isEmpty) {
       setState(() => status = 'Add a headline.');
       return;
@@ -233,53 +235,38 @@ class _PostScreenState extends State<PostScreen> {
 
   void _successSheet(String key, {String? error}) {
     final link = protectedLink(key);
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Swa.paper,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(width: 36, height: 4, color: Swa.line),
-              ),
-              const SizedBox(height: 20),
-              Text('Published', style: Swa.playfair(size: 28)),
-              const SizedBox(height: 8),
-              Text(
-                'Ground copy is an Arkiv entity. This link is a query, not a tweet.',
-                style: Swa.serif(size: 16, color: Swa.muted, height: 1.45),
-              ),
-              if (error != null) ...[
-                const SizedBox(height: 8),
-                Text(error, style: Swa.ui(size: 12, color: Swa.muted, height: 1.4)),
-              ],
-              const SizedBox(height: 16),
-              SelectableText(link, style: Swa.ui(size: 13, color: Swa.ink, height: 1.4)),
-              const SizedBox(height: 20),
-              Wrap(
-                children: [
-                  ActionPill(icon: SwaI.copy, label: 'Copy link', accent: true, onTap: () => copy(ctx, link)),
-                  ActionPill(icon: SwaI.open, label: 'Share', onTap: () => openUrl(link)),
-                  ActionPill(
-                    icon: SwaI.feed,
-                    label: 'View',
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      context.go('/s/$key');
-                    },
-                  ),
-                ],
-              ),
+    showAppSheet<void>(
+      context,
+      SheetScaffold(
+        kicker: 'Dispatch',
+        title: 'Published',
+        dek: 'Ground copy is an Arkiv entity. This link is a query, not a tweet.',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (error != null) ...[
+              Text(sanitizeUi(error), style: Swa.ui(size: 12, color: Swa.muted, height: 1.4)),
+              const SizedBox(height: 12),
             ],
-          ),
-        );
-      },
+            SelectableText(link, style: Swa.ui(size: 13, color: Swa.ink, height: 1.4)),
+            const SizedBox(height: 16),
+            Wrap(
+              children: [
+                ActionPill(icon: SwaI.copy, label: 'Copy link', accent: true, onTap: () => copy(context, link)),
+                ActionPill(icon: SwaI.share, label: 'Share', onTap: () => openUrl(link)),
+                ActionPill(
+                  icon: SwaI.feed,
+                  label: 'View',
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.go('/s/$key');
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -373,7 +360,10 @@ class _PostScreenState extends State<PostScreen> {
                     Text(status!, style: Swa.ui(size: 13, color: Colors.white70)),
                     const SizedBox(height: 12),
                   ],
-                  GestureDetector(
+                  Semantics(
+                    button: true,
+                    label: 'Capture',
+                    child: GestureDetector(
                     onTap: busy ? null : _camera,
                     child: Container(
                       width: 72,
@@ -390,6 +380,7 @@ class _PostScreenState extends State<PostScreen> {
                         ),
                       ),
                     ),
+                  ),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
@@ -440,7 +431,10 @@ class _PostScreenState extends State<PostScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
                   children: [
                     if (preview != null)
-                      ClipRect(child: Image.memory(preview!, height: 220, width: double.infinity, fit: BoxFit.cover)),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(Swa.radiusMd),
+                        child: Image.memory(preview!, height: 220, width: double.infinity, fit: BoxFit.cover),
+                      ),
                     const SizedBox(height: 12),
                     Align(
                       alignment: Alignment.centerLeft,
@@ -497,7 +491,7 @@ class _PostScreenState extends State<PostScreen> {
                     ),
                     if (status != null) ...[
                       const SizedBox(height: 16),
-                      Text(status!, style: Swa.ui(size: 13, color: Swa.muted, height: 1.4)),
+                      Text(sanitizeUi(status!), style: Swa.ui(size: 13, color: Swa.muted, height: 1.4)),
                     ],
                     const SizedBox(height: 24),
                     Text(

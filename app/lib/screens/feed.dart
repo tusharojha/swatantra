@@ -6,6 +6,7 @@ import '../models.dart';
 import '../proof_edition.dart';
 import '../theme.dart';
 import '../widgets/bits.dart';
+import '../widgets/skeleton.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -162,18 +163,12 @@ class _FeedScreenState extends State<FeedScreen> {
               onCorr: (v) => setState(() => corroboratedOnly = v),
             ),
             const SizedBox(height: 24),
-            if (error != null) ...[
-              Text(error!, style: Swa.serif(size: 14, color: Swa.muted)),
-              const SizedBox(height: 16),
-            ],
-            if (loading) const Padding(padding: EdgeInsets.all(32), child: Center(child: CircularProgressIndicator())),
+            if (error != null) ErrorNote(sanitizeUi(error!)),
+            if (loading) const FeedSkeleton(),
             if (!loading && items.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 40),
-                child: Text(
-                  'No live stories. They may have expired, or the seed has not run yet.',
-                  style: Swa.serif(size: 16, color: Swa.muted),
-                ),
+              const EmptyState(
+                title: 'No live stories',
+                dek: 'They may have expired, or the seed has not run yet. Pull to refresh.',
               ),
             if (!loading && lead != null && desktop)
               _DesktopFront(
@@ -228,90 +223,37 @@ class _FilterRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          height: 44,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              for (final s in states)
-                _TextChip(
-                  label: s.isEmpty ? 'All India' : s,
-                  selected: state == s,
-                  onTap: () => onState(s),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 44,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: [
-              for (final c in cats)
-                _TextChip(
-                  label: c.isEmpty ? 'All desks' : c,
-                  selected: category == c,
-                  onTap: () => onCat(c),
-                ),
-              _TextChip(
-                label: 'Corroborated',
-                selected: corroboratedOnly,
-                accent: true,
-                icon: SwaI.corroborated,
-                onTap: () => onCorr(!corroboratedOnly),
+        Wrap(
+          children: [
+            for (final s in states)
+              ActionPill(
+                icon: SwaI.place,
+                label: s.isEmpty ? 'All India' : s,
+                selected: state == s,
+                onTap: () => onState(s),
               ),
-            ],
-          ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          children: [
+            for (final c in cats)
+              ActionPill(
+                icon: SwaI.feed,
+                label: c.isEmpty ? 'All desks' : c,
+                selected: category == c,
+                onTap: () => onCat(c),
+              ),
+            ActionPill(
+              icon: SwaI.corroborated,
+              label: 'Corroborated',
+              selected: corroboratedOnly,
+              accent: true,
+              onTap: () => onCorr(!corroboratedOnly),
+            ),
+          ],
         ),
       ],
-    );
-  }
-}
-
-class _TextChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final bool accent;
-  final IconData? icon;
-  final VoidCallback onTap;
-  const _TextChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-    this.accent = false,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? (accent ? Swa.magenta : Swa.ink) : Swa.muted;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 20),
-        child: Center(
-          child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 180),
-            style: Swa.ui(
-              size: 13,
-              weight: selected ? FontWeight.w700 : FontWeight.w500,
-              color: color,
-              spacing: 0.2,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(icon, size: 15, color: color),
-                  const SizedBox(width: 5),
-                ],
-                Text(label),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

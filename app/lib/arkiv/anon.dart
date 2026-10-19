@@ -12,7 +12,7 @@ const bundledTestQr =
 String testNullifier(String? qrData) {
   final qr = (qrData ?? '').trim().isEmpty ? bundledTestQr : qrData!.trim();
   if (qr.length < 32) {
-    throw ArgumentError('QR too short — paste an Anon Aadhaar QR or use the bundled identity');
+    throw ArgumentError('QR too short — paste an Anon Aadhaar QR, or prove with the saved identity');
   }
   final material = utf8.encode('$anonTestSeed|$qr');
   return hexOf(sha256.convert(material).bytes);

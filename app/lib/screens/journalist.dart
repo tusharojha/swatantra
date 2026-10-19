@@ -3,10 +3,11 @@ import 'package:go_router/go_router.dart';
 import '../arkiv/anon.dart';
 import '../arkiv/js.dart';
 import '../arkiv/service.dart';
-import '../screens/onboard.dart';
+import '../auth.dart';
 import '../theme.dart';
 import '../wallet.dart';
 import '../widgets/bits.dart';
+import '../widgets/skeleton.dart';
 
 class JournalistScreen extends StatefulWidget {
   const JournalistScreen({super.key});
@@ -43,22 +44,24 @@ class _JournalistScreenState extends State<JournalistScreen> {
     'Gujarat',
   ];
 
-  Future<void> _verify({bool bundled = false}) async {
+  Future<void> _verify({bool saved = false}) async {
     setState(() {
       proving = true;
       status = arkivJsAvailable
-          ? 'Groth16: fetching proving artifacts then prove()+verify(). First run downloads ~612 MiB.'
-          : 'APK: SHA-256 nullifier (Groth16 runs in the web build).';
+          ? 'Fetching proving artifacts, then prove and verify. First run downloads the circuit keys.'
+          : 'On this phone we store a SHA-256 nullifier. Open the web app for a full Groth16 proof.';
     });
     try {
       if (arkivJsAvailable) {
         final r = await arkivJs('verifyJournalist', {
-          'qrData': bundled ? '' : qr.text,
+          'qrData': saved ? '' : qr.text,
           if (state != null) 'state': state,
         });
         final nid = r['nullifier'] as String?;
         final isG16 = r['groth16'] == true && r['ok'] != false;
-        await WalletStore.saveAnonProof(nullifier: nid ?? '', groth16: isG16);
+        if (nid != null && nid.isNotEmpty) {
+          await WalletStore.saveAnonProof(nullifier: nid, groth16: isG16);
+        }
         if (!mounted) return;
         setState(() {
           nullifier = nid;
@@ -67,38 +70,35 @@ class _JournalistScreenState extends State<JournalistScreen> {
           stateRevealed = r['stateRevealed'] == true;
           proofHash = r['proofHash'] as String?;
           status = isG16
-              ? (r['note'] as String? ?? 'Proof verified ✓')
-              : 'SHA-256 nullifier (not Groth16). ${r['note'] ?? ''}';
+              ? sanitizeUi(r['note'] as String? ?? 'Proof verified. Nullifier only.')
+              : sanitizeUi('Nullifier derived. ${r['note'] ?? ''}');
           proving = false;
         });
         return;
       }
-      final nid = testNullifier(bundled ? '' : qr.text);
+      final nid = testNullifier(saved ? '' : qr.text);
       await WalletStore.saveAnonProof(nullifier: nid, groth16: false);
       if (!mounted) return;
       setState(() {
         nullifier = nid;
         groth16 = false;
-        status =
-            'SHA-256 nullifier on APK. Open the web app to generate a full Groth16 proof. Nullifier $nid';
+        status = 'Nullifier stored on this device. Open the web app to generate a full Groth16 proof.';
         proving = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        status = '$e';
+        status = sanitizeUi('$e');
         proving = false;
       });
     }
   }
 
   Future<void> _register() async {
-    if (WalletStore.address == null) {
-      setState(() => status = 'Generate a burner wallet in Me and fund it first.');
-      return;
-    }
+    if (!await ensureSignedIn(context, action: 'register this desk')) return;
+    if (!mounted) return;
     if (nullifier == null) {
-      await _verify(bundled: qr.text.isEmpty);
+      await _verify(saved: qr.text.isEmpty);
     }
     if (nullifier == null) return;
     setState(() => status = 'Writing journalist entity…');
@@ -118,11 +118,11 @@ class _JournalistScreenState extends State<JournalistScreen> {
       setState(() {
         entityKey = key;
         status = r['already'] == true
-            ? 'This nullifier already has a journalist entity. One person = one identity. ${r['entity']}'
-            : 'Registered. Entity $entityKey  tx ${r['txHash']}';
+            ? 'This nullifier already has a journalist entity. One person = one identity.'
+            : 'Registered. Entity ${shortAddr(entityKey ?? '')}.';
       });
     } catch (e) {
-      setState(() => status = '$e');
+      setState(() => status = sanitizeUi('$e'));
     }
   }
 
@@ -131,138 +131,133 @@ class _JournalistScreenState extends State<JournalistScreen> {
     return PageWidth(
       max: Swa.articleWidth,
       child: ListView(
-      padding: Swa.pagePadding,
-      children: [
-        TextButton.icon(
-          onPressed: () => context.go('/me'),
-          style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
-          icon: const Icon(SwaI.back, size: 16, color: Swa.magenta),
-          label: Text('Me', style: Swa.kicker),
-        ),
-        const SizedBox(height: 16),
-        const SectionHead(
-          kicker: 'The desk',
-          title: 'Verified journalist',
-          dek:
-              'Prove you are an Indian adult with Anon Aadhaar. We store only the nullifier — never QR data, never a name.',
-        ),
-        const SizedBox(height: 16),
-        if (WalletStore.address == null) ...[
-          const OnboardPanel(),
-          const SizedBox(height: 32),
-        ],
-        Text(
-          'Zero-knowledge proof. Your Aadhaar details never leave this device.',
-          style: Swa.demoLine,
-        ),
-        const SizedBox(height: 16),
-        if (groth16 && nullifier != null) ...[
-          const Row(
+        padding: Swa.pagePadding,
+        children: [
+          TextButton.icon(
+            onPressed: () => context.go('/me'),
+            style: TextButton.styleFrom(padding: EdgeInsets.zero, alignment: Alignment.centerLeft),
+            icon: const Icon(SwaI.back, size: 16, color: Swa.magenta),
+            label: Text('Me', style: Swa.kicker),
+          ),
+          const SizedBox(height: 16),
+          const SectionHead(
+            kicker: 'The desk',
+            title: 'Verified journalist',
+            dek:
+                'Prove you are an Indian adult with Anon Aadhaar. We store only the nullifier — never QR data, never a name.',
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Zero-knowledge proof. Your Aadhaar details never leave this device.',
+            style: Swa.serif(size: 15, color: Swa.muted, height: 1.45),
+          ),
+          const SizedBox(height: 20),
+          if (proving) ...[
+            const Skeleton(height: 12, width: 160),
+            const SizedBox(height: 12),
+            const Skeleton(height: 48, radius: 12),
+            const SizedBox(height: 20),
+          ],
+          if (nullifier != null) ...[
+            const VerifiedJournalistBadge(),
+            const SizedBox(height: 12),
+            Text(groth16 ? 'Proof verified' : 'Nullifier stored', style: Swa.playfair(size: 22)),
+            const SizedBox(height: 8),
+            Text('NULLIFIER', style: Swa.dateline.copyWith(color: Swa.muted)),
+            const SizedBox(height: 4),
+            Mono(nullifier!, maxLines: 4),
+            if (proofHash != null) ...[
+              const SizedBox(height: 8),
+              Text('PROOF HASH', style: Swa.dateline.copyWith(color: Swa.muted)),
+              const SizedBox(height: 4),
+              Mono(proofHash!, maxLines: 3),
+            ],
+            const SizedBox(height: 16),
+            const Hairline(),
+            const SizedBox(height: 16),
+          ],
+          Wrap(
             children: [
-              Icon(SwaI.journalist, size: 16, color: Swa.magenta),
-              SizedBox(width: 6),
-              Kicker('Proof verified ✓'),
+              ActionPill(
+                key: const ValueKey('aa-prove-saved'),
+                icon: SwaI.journalist,
+                label: proving ? 'Proving…' : 'Prove with saved identity',
+                accent: true,
+                onTap: proving ? null : () => _verify(saved: true),
+              ),
+              ActionPill(
+                key: const ValueKey('aa-prove-pasted'),
+                icon: SwaI.hash,
+                label: 'Prove pasted QR',
+                onTap: proving ? null : () => _verify(saved: false),
+              ),
+              ActionPill(
+                key: const ValueKey('aa-register'),
+                icon: SwaI.sealed,
+                label: 'Create journalist entity',
+                onTap: proving ? null : _register,
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text('Proof verified ✓', style: Swa.playfair(size: 22)),
-          const SizedBox(height: 8),
-          Text('NULLIFIER', style: Swa.dateline.copyWith(color: Swa.muted)),
-          const SizedBox(height: 4),
-          Mono(nullifier!, maxLines: 4),
-          if (proofHash != null) ...[
-            const SizedBox(height: 8),
-            Text('PROOF HASH', style: Swa.dateline.copyWith(color: Swa.muted)),
-            const SizedBox(height: 4),
-            Mono(proofHash!, maxLines: 3),
+          const SizedBox(height: 16),
+          TextField(
+            controller: name,
+            style: Swa.playfair(size: 24, height: 1.2),
+            decoration: const InputDecoration(
+              hintText: 'Public byline',
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+            ),
+          ),
+          TextField(
+            controller: bio,
+            maxLines: 3,
+            style: Swa.serif(size: 16, height: 1.45),
+            decoration: const InputDecoration(
+              hintText: 'Bio',
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+            ),
+          ),
+          DropdownButtonFormField<String>(
+            // ignore: deprecated_member_use
+            value: state,
+            decoration: const InputDecoration(
+              hintText: 'State (optional reveal)',
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+            ),
+            items: states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+            onChanged: (v) => setState(() => state = v),
+          ),
+          TextField(
+            controller: qr,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              hintText: 'Paste the QR from mAadhaar, or prove with the saved identity on this device',
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+            ),
+          ),
+          if (status != null) ...[
+            const SizedBox(height: 16),
+            Text(sanitizeUi(status!), style: Swa.serif(size: 15, color: Swa.muted, height: 1.45)),
           ],
-          const SizedBox(height: 16),
-          const Hairline(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
+          Text(
+            'On Arkiv Tiramisu: type=journalist, nid=nullifier, groth16, age_over_18, state_revealed, optional state, proof_hash. No QR, no Aadhaar fields. \$creator is the wallet. nid uniqueness: one person = one journalist.',
+            style: Swa.serif(size: 13, color: Swa.muted, height: 1.45),
+          ),
         ],
-        TextField(
-          controller: name,
-          style: Swa.playfair(size: 24, height: 1.2),
-          decoration: const InputDecoration(
-            hintText: 'Public byline',
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            filled: false,
-          ),
-        ),
-        TextField(
-          controller: bio,
-          maxLines: 3,
-          style: Swa.serif(size: 16, height: 1.45),
-          decoration: const InputDecoration(
-            hintText: 'Bio',
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            filled: false,
-          ),
-        ),
-        DropdownButtonFormField<String>(
-          // ignore: deprecated_member_use
-          value: state,
-          decoration: const InputDecoration(
-            hintText: 'State (optional reveal)',
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            filled: false,
-          ),
-          items: states.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-          onChanged: (v) => setState(() => state = v),
-        ),
-        TextField(
-          controller: qr,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Paste Anon Aadhaar QR, or use the bundled identity',
-            border: InputBorder.none,
-            enabledBorder: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            filled: false,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton(
-            onPressed: proving ? null : () => _verify(bundled: true),
-            style: FilledButton.styleFrom(minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 16)),
-            child: Text(proving ? 'Proving…' : 'Prove bundled identity'),
-          ),
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton(
-            onPressed: proving ? null : () => _verify(bundled: false),
-            child: const Text('Prove pasted QR'),
-          ),
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton(onPressed: proving ? null : _register, child: const Text('Create journalist entity')),
-        ),
-        if (!groth16 && nullifier != null) ...[
-          const SizedBox(height: 16),
-          const Hairline(),
-          const SizedBox(height: 16),
-          const Kicker('Nullifier'),
-          const SizedBox(height: 8),
-          Mono(nullifier!, maxLines: 3),
-        ],
-        if (status != null) ...[const SizedBox(height: 16), TestModeBanner(status!)],
-        const SizedBox(height: 24),
-        Text(
-          'On Arkiv Tiramisu: type=journalist, nid=nullifier, groth16, age_over_18, state_revealed, optional state, proof_hash. No QR, no Aadhaar fields. \$creator is the burner wallet. nid uniqueness: one person = one journalist.',
-          style: Swa.serif(size: 13, color: Swa.muted, height: 1.45),
-        ),
-      ],
-    ),
+      ),
     );
   }
 }

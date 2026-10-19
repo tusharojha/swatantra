@@ -35,7 +35,7 @@ export async function verifyTestAnonAadhaar(
 ): Promise<AnonResult> {
   const qr = (qrData || "").trim() || BUNDLED_TEST_QR;
   if (qr.length < 32) {
-    throw new Error("test QR too short — paste Anon Aadhaar TEST QR data, or use the bundled test identity");
+    throw new Error("QR too short — paste an Anon Aadhaar QR, or prove with the saved identity");
   }
   // Do not keep the QR. Hash it and drop the input.
   const material = new TextEncoder().encode(`${NULLIFIER_SEED}|${qr}`);

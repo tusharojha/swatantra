@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "groth16": true,
+  "nullifier": "0x06ffb52d39bcf94137fd80cd418163a22c52ec478b54e83c66fccb3ee9b7361f",
+  "keys": [
+    "ok",
+    "groth16",
+    "testMode",
+    "nullifier",
+    "nullifierField",
+    "ageAbove18",
+    "stateRevealed",
+    "proofHash",
+    "pubkeyHash",
+    "timestamp",
+    "note",
+    "indianResident",
+    "ageOver18"
+  ],
+  "note": "Proof verified ✓ (TEST MODE). Only the nullifier, reveal booleans, and a proof hash are kept. QR data is dropped.",
+  "hasQr": false
+}
