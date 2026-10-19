@@ -136,7 +136,7 @@ export async function proveAndVerifyTestMode(opts: {
     proofHash,
     pubkeyHash: pcd.proof.pubkeyHash,
     timestamp: pcd.proof.timestamp,
-    note: "Proof verified ✓ (TEST MODE). Only the nullifier, reveal booleans, and a proof hash are kept. QR data is dropped.",
+    note: "Proof verified ✓. Only the nullifier, reveal booleans, and a proof hash are kept. QR data is dropped.",
   };
 }
 
